@@ -17,11 +17,11 @@ from ub_core.utils.aiohttp_tools import aio
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
-def import_modules(plugins_dir):
+def import_modules():
+    plugins_dir = Config.WORKING_DIR + "/**/[!^_]*.py"
     for py_module in glob.glob(pathname=plugins_dir, recursive=True):
         name = os.path.splitext(py_module)[0]
         py_name = name.replace("/", ".")
-        print(py_name)
         try:
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
@@ -60,13 +60,9 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
 
     @staticmethod
     def _import():
-        [
-            import_modules(path)
-            for path in (
-                Config.WORKING_DIR + "/**/[!^_]*.py",
-                ub_core_dirname + "/**/[!^_]*.py",
-            )
-        ]
+        import ub_core.default_plugins, ub_core.utils, ub_core.core.handlers
+        import_modules()
+        
 
     @staticmethod
     async def shut_down():

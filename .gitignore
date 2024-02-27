@@ -6,6 +6,9 @@ __pycache__
 conf_backup/
 logs/
 .mypy_cache
+build/
+ub_core.egg-info/
+
 
 ! ub_core
 ! version.py

@@ -4,7 +4,7 @@ import dns.resolver
 from motor.core import AgnosticClient, AgnosticDatabase
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
-from ub_core.utils import Str
+from ub_core.core import Str
 
 dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
 dns.resolver.default_resolver.nameservers = ["8.8.8.8"]

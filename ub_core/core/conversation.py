@@ -6,7 +6,7 @@ from pyrogram import Client
 from pyrogram.filters import Filter
 from pyrogram.types import Message
 
-from ub_core.utils import Str
+from ub_core.core import Str
 
 
 class Conversation(Str):

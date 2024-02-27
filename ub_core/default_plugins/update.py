@@ -3,7 +3,7 @@ import asyncio
 from git import Repo
 
 from ub_core import BOT, Config, Message, bot
-from ub_core.plugins.restart import restart
+from ub_core.default_plugins.restart import restart
 from ub_core.utils import run_shell_cmd
 
 

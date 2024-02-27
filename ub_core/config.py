@@ -1,11 +1,10 @@
 import asyncio
 import importlib
+import json
 from os import environ, path
 from typing import Callable, Coroutine
 
 from git import Repo
-
-from ub_core.utils import Str
 
 
 def update_extra_config():
@@ -19,7 +18,7 @@ def update_extra_config():
         ...
 
 
-class Cmd(Str):
+class Cmd():
     def __init__(self, cmd: str, func: Callable, cmd_path: str, sudo: bool):
         self.cmd: str = cmd
         self.cmd_path: str = cmd_path
@@ -28,6 +27,9 @@ class Cmd(Str):
         self.func: Callable = func
         self.loaded = False
         self.sudo: bool = sudo
+
+    def __str__(self):
+        return json.dumps(self.__dict__, indent=4, ensure_ascii=False, default=str)
 
 
 class Config:

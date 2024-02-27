@@ -1,10 +1,4 @@
-import json
-
-class Str:
-    def __str__(self):
-        return json.dumps(self.__dict__, indent=4, ensure_ascii=False, default=str)
-
-# fmt:off
+from ub_core.core import Str
 from ub_core.utils.aiohttp_tools import aio
 from ub_core.utils.downloader import Download, DownloadedFile
 from ub_core.utils.helpers import (
@@ -30,5 +24,3 @@ from ub_core.utils.shell import (
     run_shell_cmd,
     take_ss,
 )
-
-# fmt:on
