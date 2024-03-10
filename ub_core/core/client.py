@@ -8,7 +8,7 @@ import sys
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
-from ub_core import DB_CLIENT, Config, ub_core_dirname
+from ub_core import DB_CLIENT, Config
 from ub_core.core.conversation import Conversation
 from ub_core.core.decorators.add_cmd import AddCmd
 from ub_core.core.methods import ChannelLogger, SendMessage
@@ -33,7 +33,7 @@ def import_modules():
 class BOT(AddCmd, SendMessage, ChannelLogger, Client):
     def __init__(self):
         super().__init__(
-            name="bot",
+            name=Config.BOT_NAME,
             api_id=int(os.environ.get("API_ID")),
             api_hash=os.environ.get("API_HASH"),
             bot_token=os.environ.get("BOT_TOKEN"),
@@ -60,9 +60,11 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
 
     @staticmethod
     def _import():
-        import ub_core.default_plugins, ub_core.utils, ub_core.core.handlers
+        import ub_core.default_plugins  # NOQA
+        import ub_core.utils  # NOQA
+        import ub_core.core.handlers  # NOQA
+
         import_modules()
-        
 
     @staticmethod
     async def shut_down():

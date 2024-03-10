@@ -6,21 +6,10 @@ from io import StringIO
 
 from pyrogram.enums import ParseMode
 
-# fmt: off
-from ub_core import (
-    BOT,
-    DB,
-    DB_CLIENT,
-    Cmd,
-    Config,
-    CustomDB,
-    Message,
-    bot,
-)
+from ub_core import BOT, DB, DB_CLIENT, Cmd, Config, CustomDB, Message, bot  # NOQA
 
-from ub_core.utils import shell
-from ub_core.utils.aiohttp_tools import aio
-# fmt:on
+from ub_core.utils import shell  # NOQA
+from ub_core.utils.aiohttp_tools import aio  # NOQA
 
 
 async def executor(bot: BOT, message: Message) -> Message | None:

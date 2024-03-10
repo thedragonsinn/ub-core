@@ -1,4 +1,7 @@
+# fmt: off
+
 import json
+
 
 class Str:
     def __str__(self):

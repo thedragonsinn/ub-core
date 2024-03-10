@@ -18,7 +18,7 @@ def update_extra_config():
         ...
 
 
-class Cmd():
+class Cmd:
     def __init__(self, cmd: str, func: Callable, cmd_path: str, sudo: bool):
         self.cmd: str = cmd
         self.cmd_path: str = cmd_path
