@@ -75,6 +75,7 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
         if DB_CLIENT is not None:
             LOGGER.info("DB Closed.")
             DB_CLIENT.close()
+        Config.REPO.close()
 
     async def restart(self, hard=False) -> None:
         await self.shut_down()

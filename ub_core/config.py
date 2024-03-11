@@ -1,10 +1,14 @@
 import asyncio
 import importlib
 import json
+import logging
+
 from os import environ, path
 from typing import Callable, Coroutine
 
 from git import Repo
+
+LOGGER = logging.getLogger("Config")
 
 
 def update_extra_config():
@@ -14,8 +18,8 @@ def update_extra_config():
         for key, val in vars(extra_config).items():
             if not key.startswith("_"):
                 setattr(Config, key, val)
-    except (ImportError, ModuleNotFoundError):
-        ...
+    except (ImportError, ModuleNotFoundError) as e:
+        LOGGER.error(e)
 
 
 class Cmd:
@@ -47,11 +51,11 @@ class Config:
 
     INIT_TASKS: list[Coroutine] = []
 
-    LOG_CHAT: int = int(environ.get("LOG_CHAT"))
+    LOG_CHAT: int = int(environ.get("LOG_CHAT", 0))
 
     LOAD_HANDLERS: bool = True
 
-    OWNER_ID: int = int(environ.get("OWNER_ID"), 0)
+    OWNER_ID: int = int(environ.get("OWNER_ID", 0))
 
     REPO: Repo = Repo(".")
 

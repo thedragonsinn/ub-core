@@ -20,7 +20,7 @@ async def cmd_dispatcher(bot: BOT, message: Message, func: Callable = None) -> N
     except asyncio.exceptions.CancelledError:
         await bot.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
     except StopPropagation:
-        raise StopPropagation
+        raise
     except Exception as e:
         bot.log.error(e, exc_info=True, extra={"tg_message": message})
     message.stop_propagation()

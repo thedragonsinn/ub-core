@@ -3,6 +3,11 @@ import tracemalloc
 
 from dotenv import load_dotenv
 
+from ub_core.config import Cmd, Config
+from ub_core.core import DB, DB_CLIENT, Convo, CustomDB, Message
+from ub_core.core.client import BOT, bot
+from ub_core.core.logger import LOGGER
+
 tracemalloc.start()
 
 load_dotenv("config.env")
@@ -17,9 +22,4 @@ except (ImportError, ModuleNotFoundError):
 ub_core_dirname = os.path.dirname(__file__)
 
 # fmt:off
-from ub_core.config import Cmd, Config
-from ub_core.core import DB, DB_CLIENT, Convo, CustomDB, Message
-from ub_core.core.client import BOT, bot
-from ub_core.core.logger import LOGGER
-
-# fmt:on
+from ub_core.version import __version__
