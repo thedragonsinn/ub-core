@@ -43,11 +43,11 @@ async def update_core():
     tag_info = await aio.get_json(
         "https://api.github.com/repos/thedragonsinn/ub-core/tags"
     )
-    tag_info[0]["name"]
-    if lastest_version == "v" + __version__:
+    latest_version = tag_info[0]["name"]
+    if latest_version == "v" + __version__:
         return
     await run_shell_cmd(f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}")
-    return lastest_version
+    return latest_version
 
 
 @bot.add_cmd(cmd="update")
