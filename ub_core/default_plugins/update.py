@@ -79,7 +79,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
                     f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}"
                 ),
                 reply.edit(
-                    f"An update is available!: {updated_version}\nPulling and Restarting..."
+                    f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"
                 ),
             )
             await restart(bot, message, reply)
