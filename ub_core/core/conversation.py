@@ -9,7 +9,10 @@ from pyrogram.types import Message
 from ub_core.core import Str
 
 
+# relies on ub_core/core/handlers/convo_handler
 class Conversation(Str):
+    """A Custom Class to get responses from chats"""
+
     CONVO_DICT: dict[int, list["Conversation"]] = defaultdict(list)
 
     class DuplicateConvo(Exception):
@@ -54,6 +57,11 @@ class Conversation(Str):
         if not Conversation.CONVO_DICT[self.chat_id]:
             Conversation.CONVO_DICT.pop(self.chat_id)
 
+    def set_future(self, *args, **kwargs):
+        future = asyncio.Future()
+        future.add_done_callback(self.set_future)
+        self.response_future = future
+
     @classmethod
     async def get_resp(cls, client, *args, **kwargs) -> Message | None:
         """
@@ -67,11 +75,6 @@ class Conversation(Str):
         except TimeoutError:
             return
 
-    def set_future(self, *args, **kwargs):
-        future = asyncio.Future()
-        future.add_done_callback(self.set_future)
-        self.response_future = future
-
     """Methods"""
 
     async def get_response(self, timeout: int = 0) -> Message | None:
@@ -82,7 +85,9 @@ class Conversation(Str):
             )
             return response
         except asyncio.TimeoutError:
-            raise TimeoutError("Conversation Timeout")
+            raise TimeoutError(
+                f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}"
+            )
 
     async def send_message(
         self,

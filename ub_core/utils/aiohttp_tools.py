@@ -13,6 +13,7 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 class Aio:
     def __init__(self):
+        """Setup aio object and params"""
         self.session: ClientSession | None = None
         self.app = None
         self.port = os.environ.get("API_PORT", 0)
@@ -22,22 +23,29 @@ class Aio:
         Config.INIT_TASKS.append(self.set_session())
 
     async def close(self):
+        """Gracefully Shutdown Clients"""
         if not self.session.closed:
             await self.session.close()
         if self.runner:
             await self.runner.cleanup()
 
     async def set_session(self):
+        """Setup ClientSession on boot."""
         self.session = ClientSession()
 
     async def set_site(self):
+        """Start A Dummy Website to pass Health Checks"""
         LOGGER.info("Starting Static WebSite.")
         self.app = web.Application()
         self.app.router.add_get(path="/", handler=self.handle_request)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         site = web.TCPSite(
-            self.runner, "0.0.0.0", self.port, reuse_address=True, reuse_port=True
+            runner=self.runner,
+            host="0.0.0.0",
+            port=self.port,
+            reuse_address=True,
+            reuse_port=True,
         )
         await site.start()
 

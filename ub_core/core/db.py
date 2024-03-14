@@ -23,13 +23,19 @@ else:
 
 
 class CustomDB(AsyncIOMotorCollection, Str):
+    """A Custom Class with a few Extra Methods for ease of access"""
+
     def __init__(self, collection_name: str):
         super().__init__(database=DB, name=collection_name)
 
-    async def add_data(self, data: dict) -> int:
+    async def add_data(self, data: dict) -> int | str:
         """
-        :param data: {"_id": db_id, rest of the data}
-        entry is added or updated if exists.
+        Add or Update Existing Data
+
+        Args:
+            data: {"_id":id, rest of the data to be added/updated}
+
+        Returns: Inserted Data ID if inserted else Modified Count
         """
         found = await self.find_one({"_id": data["_id"]})
         if not found:
@@ -43,17 +49,42 @@ class CustomDB(AsyncIOMotorCollection, Str):
 
     async def delete_data(self, id: int | str) -> int:
         """
-        :param id: the db id key to delete.
-        :return: True if entry was deleted.
+        Delete a DB Collection Entry
+
+        Args:
+            id: collection_entry id
+
+        Returns: Count of Number of Entries Deleted.
+
         """
         delete_result: DeleteResult = await self.delete_one({"_id": id})
         return delete_result.deleted_count
 
     async def increment(self, id: int, key: str, count: int) -> int:
+        """
+        Increment a DB Entry Value for specified key.
+
+        Args:
+            id:  collection_entry id
+            key: key to be incremented
+            count: number to increment by
+
+        Returns: Modified Count
+
+        """
         increment_result = await self.update_one({"_id": id}, {"$inc": {key: count}})
         return increment_result.modified_count
 
     async def get_total(self, keys: Iterable) -> list[dict]:
+        """
+        Get Sum for key's value across the Collection
+
+        Args:
+            keys: Keys to get total of
+
+        Returns: [ {_id: None, key_name: total, key_name: total, ...} ]
+
+        """
         data = {key: {"$sum": f"${key}"} for key in keys}
         pipeline = [{"$group": {"_id": None, **data}}]
         return [results async for results in self.aggregate(pipeline=pipeline)]

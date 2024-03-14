@@ -19,6 +19,10 @@ LOGGER = getLogger(Config.BOT_NAME)
 
 
 class TgErrorHandler(Handler):
+    """
+    A Custom Logging Handler to Log Error and Above Events in TG LOG CHANNEL.
+    """
+
     def emit(self, log_record):
         if not bot.is_connected:
             return

@@ -10,6 +10,7 @@ from ub_core.core.handlers import filters
 
 
 async def cmd_dispatcher(bot: BOT, message: Message, func: Callable = None) -> None:
+    """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
     message = Message.parse(message)
     func = func or Config.CMD_DICT[message.cmd].func
     task = asyncio.create_task(func(bot, message), name=message.task_id)
@@ -26,6 +27,10 @@ async def cmd_dispatcher(bot: BOT, message: Message, func: Callable = None) -> N
     message.stop_propagation()
 
 
+# Don't Load Handler is Value is not True
+# Useful for Legacy non-db type bots or
+# Bots who would like to use custom filters
+# for those, Manually add handler on the above function
 if Config.LOAD_HANDLERS:
     bot.add_handler(
         MessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter), group=1
@@ -39,6 +44,7 @@ if Config.LOAD_HANDLERS:
 @bot.on_message(filters.convo_filter, group=0)
 @bot.on_edited_message(filters.convo_filter, group=0)
 async def convo_handler(bot: BOT, message: Msg):
+    """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Convo] = Convo.CONVO_DICT[message.chat.id]
     for conv_object in conv_objects:
         if conv_object.filters and not (await conv_object.filters(bot, message)):

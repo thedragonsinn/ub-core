@@ -2,7 +2,6 @@ import asyncio
 import importlib
 import json
 import logging
-
 from os import environ, path
 from typing import Callable, Coroutine
 
@@ -12,6 +11,7 @@ LOGGER = logging.getLogger("Config")
 
 
 def update_extra_config():
+    """Update Config Attrs from the custom extra_config"""
     try:
         extra_config_path = Config.WORKING_DIR + ".extra_config"
         extra_config = importlib.import_module(extra_config_path)
@@ -69,7 +69,7 @@ class Config:
 
     UPSTREAM_REPO: str = ""
 
-    UPDATE_REPO = "https://github.com/thedragonsinn/ub-core.git"
+    UPDATE_REPO = "https://github.com/thedragonsinn/ub-core"
 
     WORKING_DIR = environ.get("WORKING_DIR", "app")
 

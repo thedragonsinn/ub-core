@@ -26,6 +26,7 @@ class MediaExts:
 
 
 def bytes_to_mb(size: int):
+    """Returns Size in MegaBytes"""
     return round(size / 1048576, 1)
 
 
@@ -39,7 +40,7 @@ def get_filename_from_url(url: str, tg_safe: bool = False) -> str:
 
 def get_filename_from_headers(headers: dict, tg_safe: bool = False) -> str | None:
     content_disposition = headers.get("Content-Disposition", "")
-    match = re.search(r"filename=(.+)", content_disposition)
+    match = re.search(pattern=r"filename=(.+)", string=content_disposition)
     if not match:
         return
     if tg_safe:
@@ -48,6 +49,11 @@ def get_filename_from_headers(headers: dict, tg_safe: bool = False) -> str | Non
 
 
 def make_file_name_tg_safe(file_name: str) -> str:
+    """Rename TG File Type Ext to non TG File type Ext:
+    .webp: a sticker
+    .heic: not supported as Image
+    .webm: Video Sticker
+    """
     if file_name.lower().endswith((".webp", ".heic")):
         file_name = file_name + ".jpg"
     elif file_name.lower().endswith(".webm"):

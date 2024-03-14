@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
 def import_modules():
+    """Import Plugins and Append init_task to Config.INIT_TASK"""
     plugins_dir = Config.WORKING_DIR + "/**/[!^_]*.py"
     for py_module in glob.glob(pathname=plugins_dir, recursive=True):
         name = os.path.splitext(py_module)[0]
@@ -60,6 +61,7 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
 
     @staticmethod
     def _import():
+        """Import Inbuilt and external Modules"""
         import ub_core.default_plugins  # NOQA
         import ub_core.utils  # NOQA
         import ub_core.core.handlers  # NOQA
@@ -68,6 +70,7 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
 
     @staticmethod
     async def shut_down():
+        """Gracefully ShutDown all Processes"""
         await aio.close()
         for task in Config.BACKGROUND_TASKS:
             if not task.done():

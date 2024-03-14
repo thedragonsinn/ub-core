@@ -4,6 +4,7 @@ from pyrogram.types import Message
 from ub_core import Config
 from ub_core.core.conversation import Conversation
 
+# Conversation Filter to check for incoming messages.
 convo_filter = create(
     lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
     and (not message.reactions)
@@ -11,6 +12,10 @@ convo_filter = create(
 
 
 def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
+    """
+    Check if first word of message is a valid cmd \n
+    if sudo: check if sudo users have access to the cmd.
+    """
     start_str = message.text.split(maxsplit=1)[0]
     cmd = start_str.replace(trigger, "", 1)
     cmd_obj = Config.CMD_DICT.get(cmd)
@@ -28,6 +33,7 @@ def basic_check(message: Message):
 
 
 def owner_check(_, __, message: Message) -> bool:
+    """Check if Message is from the Owner"""
     if (
         basic_check(message)
         or not message.text.startswith(Config.CMD_TRIGGER)
@@ -39,6 +45,7 @@ def owner_check(_, __, message: Message) -> bool:
 
 
 def sudo_check(_, __, message: Message) -> bool:
+    """Check if Message is from a Sudo User"""
     if (
         not Config.SUDO
         or basic_check(message)
@@ -50,6 +57,7 @@ def sudo_check(_, __, message: Message) -> bool:
 
 
 def super_user_check(_, __, message: Message):
+    """Check if Message is from a Super User"""
     if (
         basic_check(message)
         or not message.text.startswith(Config.SUDO_TRIGGER)

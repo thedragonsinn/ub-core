@@ -30,14 +30,14 @@ class DownloadedFile(Str):
 class Download(Str):
     """Download a file in async using aiohttp.
 
-    Attributes:
+    Parameters:
         url (str):
             file url.
         path (str):
             download path without file name.
-        message_to_edit:
+        message_to_edit(Message):
             response message to edit for progress.
-        custom_file_name:
+        custom_file_name(str):
             override the file name.
 
     Returns:

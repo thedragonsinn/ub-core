@@ -8,6 +8,8 @@ from ub_core.config import Cmd, Config
 class AddCmd:
     @staticmethod
     def add_cmd(cmd: str | list[str], allow_sudo: bool = True):
+        """A Custom Decorator to add commands to bot and alternative to pyro's on_message"""
+
         def the_decorator(func: Callable):
             path = inspect.stack()[1][1]
 

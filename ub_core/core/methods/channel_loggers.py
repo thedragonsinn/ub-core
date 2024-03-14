@@ -19,12 +19,16 @@ class ChannelLogger(Client):
         parse_mode=ParseMode.HTML,
         type: str = "",
     ) -> Message:
+        """Log Text to Channel and to Stream/File if type matches logging method."""
+
         if type:
             if hasattr(LOGGER, type):
                 getattr(LOGGER, type)(text)
             text = f"#{type.upper()}\n{text}"
 
-        schedule_date = datetime.utcnow() + timedelta(seconds=10)
+        schedule_date = None
+        if not self.me.is_bot:
+            schedule_date = datetime.utcnow() + timedelta(seconds=10)
 
         return (await self.send_message(
             chat_id=Config.LOG_CHAT,
@@ -36,9 +40,11 @@ class ChannelLogger(Client):
             disable_notification=False,
         ))  # fmt:skip
 
-    @staticmethod
-    async def log_message(message: Message):
-        schedule_date = datetime.utcnow() + timedelta(seconds=10)
+    async def log_message(self, message: Message):
+        """Log a Message to Log Channel"""
+        schedule_date = None
+        if not self.me.is_bot:
+            schedule_date = datetime.utcnow() + timedelta(seconds=10)
         return (await message.copy(
             chat_id=Config.LOG_CHAT,
             schedule_date=schedule_date,

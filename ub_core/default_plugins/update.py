@@ -39,15 +39,22 @@ async def pull_commits() -> None | bool:
         return
 
 
-async def update_core():
+async def get_core_update():
     tag_info = await aio.get_json(
         "https://api.github.com/repos/thedragonsinn/ub-core/tags"
     )
-    latest_version = tag_info[0]["name"]
-    if latest_version == "v" + __version__:
-        return
-    await run_shell_cmd(f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}")
-    return latest_version
+    name = tag_info[0]["name"].strip("v")
+
+    latest_version_parts = [int(i) for i in name.split(".")]
+    current_version_parts = [int(x) for x in __version__.split(".")]
+
+    for current, latest in zip(current_version_parts, latest_version_parts):
+        if current < latest:
+            return -1, name  # Current is older
+        elif current > latest:
+            return 1, name  # Current is Newer
+
+    return 0, name  # No update
 
 
 @bot.add_cmd(cmd="update")
@@ -64,16 +71,26 @@ async def updater(bot: BOT, message: Message) -> None | Message:
     reply: Message = await message.reply("Checking for Updates....")
 
     if "-c" in message.flags:
-        updated_version = await update_core()
+        update_status, version = await get_core_update()
 
-        if updated_version:
-            await reply.edit(
-                f"Core Updated to version: {updated_version}\nRestarting..."
+        if update_status == -1:
+            await asyncio.gather(
+                run_shell_cmd(
+                    f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}"
+                ),
+                reply.edit(
+                    f"An update is available!: {updated_version}\nPulling and Restarting..."
+                ),
             )
-            await restart(bot, message, resp)
+            await restart(bot, message, reply)
+            return
+        elif update_status == 0:
+            await reply.edit(f"Already on latest version: {__version__}")
             return
         else:
-            await reply.edit(f"Core Already on latest version: {__version__}")
+            await reply.edit(
+                f"Currently on a test version: {__version__} ahead of {version}"
+            )
             return
 
     commits: str = await get_commits()

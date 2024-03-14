@@ -14,8 +14,14 @@ class SendMessage(Client):
         disable_web_page_preview: bool = False,
         **kwargs,
     ) -> Message:
+        """
+        Custom Method to Gracefully Handle text over 4096 chars. \n
+        Sends a document if text goes over the limit.
+        """
+
         if not isinstance(text, str):
             text = str(text)
+
         if len(text) < 4096:
             message = await super().send_message(
                 chat_id=chat_id,
@@ -24,6 +30,7 @@ class SendMessage(Client):
                 **kwargs,
             )
             return Message.parse(message=message)
+
         doc = BytesIO(bytes(text, encoding="utf-8"))
         doc.name = name
         return (await super().send_document(
