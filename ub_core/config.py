@@ -55,6 +55,8 @@ class Config:
 
     LOAD_HANDLERS: bool = True
 
+    MODE: str = "dual"
+
     OWNER_ID: int = int(environ.get("OWNER_ID", 0))
 
     REPO: Repo = Repo(".")

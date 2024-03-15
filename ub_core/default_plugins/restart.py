@@ -11,7 +11,7 @@ async def init_task() -> None:
     restart_chat = int(os.environ.get("RESTART_CHAT", 0))
     if restart_msg and restart_chat:
         await bot.get_chat(restart_chat)
-        await bot.edit_message_text(
+        await bot.client.edit_message_text(
             chat_id=restart_chat, message_id=restart_msg, text="__Started__"
         )
         os.environ.pop("RESTART_MSG")

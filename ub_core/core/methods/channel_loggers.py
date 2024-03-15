@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timedelta
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
@@ -25,28 +24,22 @@ class ChannelLogger(Client):
             if hasattr(LOGGER, type):
                 getattr(LOGGER, type)(text)
             text = f"#{type.upper()}\n{text}"
-
-        schedule_date = None
-        if not self.me.is_bot:
-            schedule_date = datetime.utcnow() + timedelta(seconds=10)
-
-        return (await self.send_message(
+        if self.bot:
+            client = self.bot
+        else:
+            client = self
+        return (await client.send_message(
             chat_id=Config.LOG_CHAT,
             text=text,
             name=name,
             disable_web_page_preview=disable_web_page_preview,
             parse_mode=parse_mode,
-            schedule_date=schedule_date,
             disable_notification=False,
         ))  # fmt:skip
 
     async def log_message(self, message: Message):
         """Log a Message to Log Channel"""
-        schedule_date = None
-        if not self.me.is_bot:
-            schedule_date = datetime.utcnow() + timedelta(seconds=10)
         return (await message.copy(
             chat_id=Config.LOG_CHAT,
-            schedule_date=schedule_date,
             disable_notification=False,
         ))  # fmt:skip

@@ -1,3 +1,4 @@
+from pyrogram.enums import ChatType
 from pyrogram.filters import create
 from pyrogram.types import Message
 
@@ -9,6 +10,16 @@ convo_filter = create(
     lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
     and (not message.reactions)
 )
+
+
+def client_check(_, client, message):
+    if message.chat and message.chat.type == ChatType.PRIVATE:
+        if Config.MODE == "bot" and not client.is_bot:
+            return False
+        return True
+    if Config.MODE == "bot" and client.is_bot:
+        return True
+    return Config.MODE == "dual" and not client.is_bot
 
 
 def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
@@ -56,16 +67,21 @@ def sudo_check(_, __, message: Message) -> bool:
     return cmd_check(message, Config.SUDO_TRIGGER, sudo=True)
 
 
-def super_user_check(_, __, message: Message):
+def super_user_check(_, client, message: Message):
     """Check if Message is from a Super User"""
     if (
         basic_check(message)
         or not message.text.startswith(Config.SUDO_TRIGGER)
-        or message.from_user.id not in Config.SUPERUSERS
+        or (
+            message.from_user.id not in Config.SUPERUSERS
+            and (message.from_user.id == Config.OWNER_ID and not client.is_bot)
+        )
         or message.from_user.id in Config.DISABLED_SUPERUSERS
     ):
         return False
     return cmd_check(message, Config.SUDO_TRIGGER)
 
 
-cmd_filter = create(owner_check) | create(sudo_check) | create(super_user_check)
+cmd_filter = create(client_check) & (
+    create(owner_check) | create(sudo_check) | create(super_user_check)
+)

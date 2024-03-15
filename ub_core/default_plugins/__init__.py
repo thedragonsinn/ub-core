@@ -5,6 +5,7 @@ from ub_core.default_plugins import (
     help,
     loader,
     logs,
+    mode,
     repo,
     restart,
     shell,

@@ -104,7 +104,11 @@ class Message(Msg):
         if hasattr(Config, "TRIGGER"):
             return Config.TRIGGER
 
-        return Config.CMD_TRIGGER if self.is_from_owner else Config.SUDO_TRIGGER
+        return (
+            Config.CMD_TRIGGER
+            if self.is_from_owner and not self._client.is_bot
+            else Config.SUDO_TRIGGER
+        )
 
     @cached_property
     def unique_chat_user_id(self) -> int | str:

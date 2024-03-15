@@ -24,7 +24,7 @@ class TgErrorHandler(Handler):
     """
 
     def emit(self, log_record):
-        if not bot.is_connected:
+        if not bot.client.is_connected:
             return
         self.format(log_record)
         chat = ""
@@ -43,7 +43,7 @@ class TgErrorHandler(Handler):
             f"\n<b>Error Message</b>:\n<pre language=python>{log_record.exc_text or log_record.message}</pre>"
         )
         asyncio.run_coroutine_threadsafe(
-            coro=bot.log_text(text=text, name="traceback.txt"), loop=bot.loop
+            coro=bot.client.log_text(text=text, name="traceback.txt"), loop=bot.loop
         )
 
 

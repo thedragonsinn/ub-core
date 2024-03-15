@@ -12,7 +12,13 @@ from ub_core.core.handlers import filters
 async def cmd_dispatcher(bot: BOT, message: Message, func: Callable = None) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
     message = Message.parse(message)
-    func = func or Config.CMD_DICT[message.cmd].func
+
+    if not func:
+        cmd_object = Config.CMD_DICT.get(message.cmd)
+        if not cmd_object:
+            return
+        func = cmd_object.func
+
     task = asyncio.create_task(func(bot, message), name=message.task_id)
     try:
         await task
@@ -36,6 +42,14 @@ if Config.LOAD_HANDLERS:
         MessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter), group=1
     )
     bot.add_handler(
+        EditedMessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter),
+        group=1,
+    )
+    if bot.bot:
+        bot.bot.add_handler(
+            MessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter), group=1
+        )
+    bot.bot.add_handler(
         EditedMessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter),
         group=1,
     )
