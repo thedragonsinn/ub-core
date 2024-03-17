@@ -4,6 +4,7 @@ import importlib
 import logging
 import os
 import sys
+from functools import cached_property
 
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
@@ -46,9 +47,13 @@ class Bot(AddCmd, SendMessage, ChannelLogger, Client):
         self.log = LOGGER
         self.Convo = Conversation
 
-    @property
+    @cached_property
     def is_bot(self):
         return self.me.is_bot
+
+    @cached_property
+    def is_user(self):
+        return not self.me.is_bot
 
 
 class DualClient(Bot):
@@ -61,6 +66,7 @@ class DualClient(Bot):
         if only a single var is available, boot into that specific mode.
         """
         self._bot = None
+        self.is_idling = False
         session_string = os.environ.get("SESSION_STRING")
         bot_token = os.environ.get("BOT_TOKEN")
 
@@ -81,13 +87,17 @@ class DualClient(Bot):
         # BOT ONLY MODE
         super().__init__(bot_token=bot_token)
 
-    @property
+    @cached_property
     def bot(self):
         return self if self.is_bot else self._bot
 
     @property
     def client(self):
         return self if Config.MODE == "dual" else self.bot
+
+    @cached_property
+    def has_bot(self):
+        return self._bot is not None
 
     @staticmethod
     async def set_mode(force_bot: bool = False):
@@ -110,26 +120,6 @@ class DualClient(Bot):
 
         import_modules()
 
-    @staticmethod
-    async def shut_down():
-        """Gracefully ShutDown all Processes"""
-
-        await super().stop(block=False)
-        if self._bot:
-            await self._bot.stop(block=False)
-
-        await aio.close()
-
-        for task in Config.BACKGROUND_TASKS:
-            if not task.done():
-                task.cancel()
-
-        if DB_CLIENT is not None:
-            LOGGER.info("DB Closed.")
-            DB_CLIENT.close()
-
-        Config.REPO.close()
-
     async def boot(self) -> None:
         await super().start()
         if self._bot:
@@ -145,7 +135,7 @@ class DualClient(Bot):
 
         await self.log_text(text="<i>Started</i>")
         LOGGER.info(f"Idling on [{Config.MODE.upper()}] Mode...")
-
+        self.is_idling = True
         await idle()
         await self.shut_down()
 
@@ -155,6 +145,25 @@ class DualClient(Bot):
             os.execl("/bin/bash", "/bin/bash", "run")
         LOGGER.info("Restarting...")
         os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
+
+    async def shut_down(self):
+        """Gracefully ShutDown all Processes"""
+
+        await super().stop(block=False)
+        if self._bot:
+            await self._bot.stop(block=False)
+
+        await aio.close()
+
+        for task in Config.BACKGROUND_TASKS:
+            if not task.done():
+                task.cancel()
+
+        if DB_CLIENT is not None:
+            LOGGER.info("DB Closed.")
+            DB_CLIENT.close()
+        if Config.REPO:
+            Config.REPO.close()
 
 
 bot: DualClient = DualClient()

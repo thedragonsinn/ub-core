@@ -10,7 +10,6 @@ setup(
     name="ub_core",
     version=__version__,
     author="Meliodas",
-    author_email="",
     description="BoilerPlate Code for Bot projects.",
     packages=find_packages(),
     classifiers=[
@@ -20,4 +19,5 @@ setup(
     ],
     python_requires="~=3.11",
     install_requires=requires,
+    scripts=['bin/run-ub-core'],
 )

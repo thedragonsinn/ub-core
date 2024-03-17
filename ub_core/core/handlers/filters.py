@@ -14,12 +14,12 @@ convo_filter = create(
 
 def client_check(_, client, message):
     if message.chat and message.chat.type == ChatType.PRIVATE:
-        if Config.MODE == "bot" and not client.is_bot:
+        if Config.MODE == "bot" and client.is_user:
             return False
         return True
-    if Config.MODE == "bot" and client.is_bot:
-        return True
-    return Config.MODE == "dual" and not client.is_bot
+    if Config.MODE == "bot":
+        return client.is_bot
+    return True
 
 
 def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
@@ -74,7 +74,7 @@ def super_user_check(_, client, message: Message):
         or not message.text.startswith(Config.SUDO_TRIGGER)
         or (
             message.from_user.id not in Config.SUPERUSERS
-            and (message.from_user.id == Config.OWNER_ID and not client.is_bot)
+            and (message.from_user.id == Config.OWNER_ID and client.is_user)
         )
         or message.from_user.id in Config.DISABLED_SUPERUSERS
     ):

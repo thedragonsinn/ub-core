@@ -8,28 +8,49 @@ from pyrogram.types import Message as Msg
 from ub_core import BOT, Config, Convo, Message, bot
 from ub_core.core.handlers import filters
 
+USER_IS_PROCESSING_MESSAGE: list[int] = []
 
-async def cmd_dispatcher(bot: BOT, message: Message, func: Callable = None) -> None:
+
+async def cmd_dispatcher(client: BOT, message: Message, func: Callable = None) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
+
+    if Config.MODE == "dual":
+        if client.is_user:
+            USER_IS_PROCESSING_MESSAGE.append(message.id)
+        else:
+            await asyncio.sleep(0.1)
+            if message.id in USER_IS_PROCESSING_MESSAGE:
+                message.stop_propagation()
+
     message = Message.parse(message)
 
     if not func:
         cmd_object = Config.CMD_DICT.get(message.cmd)
+
         if not cmd_object:
             return
         func = cmd_object.func
 
-    task = asyncio.create_task(func(bot, message), name=message.task_id)
+    task = asyncio.create_task(func(client, message), name=message.task_id)
+
     try:
         await task
         if message.is_from_owner:
             await message.delete()
+
     except asyncio.exceptions.CancelledError:
-        await bot.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
+        await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
+
     except StopPropagation:
         raise
+
     except Exception as e:
-        bot.log.error(e, exc_info=True, extra={"tg_message": message})
+        client.log.error(e, exc_info=True, extra={"tg_message": message})
+
+    if not client.is_bot and message.id in USER_IS_PROCESSING_MESSAGE:
+        await asyncio.sleep(1)
+        USER_IS_PROCESSING_MESSAGE.remove(message.id)
+
     message.stop_propagation()
 
 
@@ -45,14 +66,14 @@ if Config.LOAD_HANDLERS:
         EditedMessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter),
         group=1,
     )
-    if bot.bot:
+    if bot.has_bot:
         bot.bot.add_handler(
             MessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter), group=1
         )
-    bot.bot.add_handler(
-        EditedMessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter),
-        group=1,
-    )
+        bot.bot.add_handler(
+            EditedMessageHandler(callback=cmd_dispatcher, filters=filters.cmd_filter),
+            group=1,
+        )
 
 
 @bot.on_message(filters.convo_filter, group=0)
@@ -60,9 +81,24 @@ if Config.LOAD_HANDLERS:
 async def convo_handler(bot: BOT, message: Msg):
     """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Convo] = Convo.CONVO_DICT[message.chat.id]
+
     for conv_object in conv_objects:
+        if conv_object._client != bot:
+            continue
         if conv_object.filters and not (await conv_object.filters(bot, message)):
             continue
+
         conv_object.responses.append(message)
         conv_object.response_future.set_result(message)
+
     message.continue_propagation()
+
+
+if bot.has_bot:
+    bot.bot.add_handler(
+        MessageHandler(callback=convo_handler, filters=filters.convo_filter), group=0
+    )
+    bot.bot.add_handler(
+        EditedMessageHandler(callback=convo_handler, filters=filters.convo_filter),
+        group=0,
+    )
