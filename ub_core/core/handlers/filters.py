@@ -82,6 +82,6 @@ def super_user_check(_, client, message: Message):
     return cmd_check(message, Config.SUDO_TRIGGER)
 
 
-cmd_filter = create(client_check) & (
-    create(owner_check) | create(sudo_check) | create(super_user_check)
+cmd_filter = create(owner_check) | create(client_check) & (
+    create(sudo_check) | create(super_user_check)
 )
