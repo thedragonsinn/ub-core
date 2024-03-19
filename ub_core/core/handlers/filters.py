@@ -55,6 +55,17 @@ def owner_check(_, __, message: Message) -> bool:
     return cmd_check(message, Config.CMD_TRIGGER)
 
 
+def owner_sudo_check(_, client, message):
+    if (
+        basic_check(message)
+        or not message.text.startswith(Config.SUDO_TRIGGER)
+        or message.from_user.id != Config.OWNER_ID
+        or client.is_user
+    ):
+        return False
+    return cmd_check(message, Config.SUDO_TRIGGER)
+
+
 def sudo_check(_, __, message: Message) -> bool:
     """Check if Message is from a Sudo User"""
     if (
@@ -67,21 +78,20 @@ def sudo_check(_, __, message: Message) -> bool:
     return cmd_check(message, Config.SUDO_TRIGGER, sudo=True)
 
 
-def super_user_check(_, client, message: Message):
+def super_user_check(_, __, message: Message):
     """Check if Message is from a Super User"""
     if (
         basic_check(message)
         or not message.text.startswith(Config.SUDO_TRIGGER)
-        or (
-            message.from_user.id not in Config.SUPERUSERS
-            and (message.from_user.id == Config.OWNER_ID and client.is_user)
-        )
+        or message.from_user.id not in Config.SUPERUSERS
         or message.from_user.id in Config.DISABLED_SUPERUSERS
     ):
         return False
     return cmd_check(message, Config.SUDO_TRIGGER)
 
 
-cmd_filter = create(owner_check) | create(client_check) & (
-    create(sudo_check) | create(super_user_check)
+cmd_filter = (
+    create(owner_check)
+    | create(owner_sudo_check)
+    | (create(client_check) & (create(sudo_check) | create(super_user_check)))
 )

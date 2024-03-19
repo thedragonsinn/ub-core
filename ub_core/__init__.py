@@ -7,6 +7,7 @@ tracemalloc.start()
 
 load_dotenv("config.env")
 
+
 try:
     import uvloop  # NOQA
 

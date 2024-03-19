@@ -40,6 +40,7 @@ async def pull_commits() -> None | bool:
 
 
 async def get_core_update():
+    return -1, ""
     tag_info = await aio.get_json(
         "https://api.github.com/repos/thedragonsinn/ub-core/tags"
     )
@@ -76,7 +77,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
         if update_status == -1:
             await asyncio.gather(
                 run_shell_cmd(
-                    f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}"
+                    f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}@dual_mode"
                 ),
                 reply.edit(
                     f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"
@@ -118,7 +119,9 @@ async def updater(bot: BOT, message: Message) -> None | Message:
             text=f"#Updater\nPulled:\n{commits}", disable_web_page_preview=True
         ),
         reply.edit("<b>Update Found</b>\n<code>Pulling....</code>"),
-        run_shell_cmd(f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}"),
+        run_shell_cmd(
+            f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}@dual_mode"
+        ),
     )
 
     await restart(bot, message, reply)
