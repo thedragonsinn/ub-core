@@ -9,5 +9,6 @@ from ub_core.default_plugins import (
     repo,
     restart,
     shell,
+    stop,
     update,
 )

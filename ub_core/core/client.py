@@ -146,12 +146,15 @@ class DualClient(Bot):
         LOGGER.info("Restarting...")
         os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
 
-    async def shut_down(self):
-        """Gracefully ShutDown all Processes"""
-
+    async def stop_clients(self):
         await super().stop(block=False)
         if self._bot:
             await self._bot.stop(block=False)
+
+    async def shut_down(self):
+        """Gracefully ShutDown all Processes"""
+
+        await self.stop_clients()
 
         await aio.close()
 
