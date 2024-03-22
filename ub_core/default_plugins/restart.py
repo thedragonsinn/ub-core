@@ -12,7 +12,7 @@ async def init_task() -> None:
     if restart_msg and restart_chat:
         await bot.get_chat(restart_chat)
         await bot.client.edit_message_text(
-            chat_id=restart_chat, message_id=restart_msg, text="__Started__"
+            chat_id=restart_chat, message_id=restart_msg, text="`Started`"
         )
         os.environ.pop("RESTART_MSG")
         os.environ.pop("RESTART_CHAT")
@@ -37,5 +37,5 @@ async def restart(bot: BOT, message: Message, u_resp: Message | None = None) -> 
     if "-cl" in message.flags:
         os.remove("logs/app_logs.txt")
     if "-cp" in message.flags:
-        shutil.rmtree("app/temp")
+        shutil.rmtree("app/temp", ignore_errors=True)
     await bot.restart(hard="-h" in message.flags)

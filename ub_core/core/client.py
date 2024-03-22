@@ -9,7 +9,7 @@ from functools import cached_property
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
-from ub_core import DB_CLIENT, Config, CustomDB
+from ub_core import DB_CLIENT, Config, CustomDB, ub_core_dirname
 from ub_core.core.conversation import Conversation
 from ub_core.core.decorators.add_cmd import AddCmd
 from ub_core.core.methods import ChannelLogger, SendMessage
@@ -18,16 +18,17 @@ from ub_core.utils.aiohttp_tools import aio
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
-def import_modules():
+def import_modules(dirname):
     """Import Plugins and Append init_task to Config.INIT_TASK"""
-    plugins_dir = Config.WORKING_DIR + "/**/[!^_]*.py"
+    plugins_dir = os.path.join(dirname, "**/[!^_]*.py")
     for py_module in glob.glob(pathname=plugins_dir, recursive=True):
-        name = os.path.splitext(py_module)[0]
-        py_name = name.replace("/", ".")
+        module_path, module_name = py_module, os.path.basename(py_module)
         try:
-            mod = importlib.import_module(py_name)
-            if hasattr(mod, "init_task"):
-                Config.INIT_TASKS.append(mod.init_task())
+            spec = importlib.util.spec_from_file_location(module_name, module_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            if hasattr(module, "init_task"):
+                Config.INIT_TASKS.append(module.init_task())
         except Exception as ie:
             LOGGER.error(ie, exc_info=True)
 
@@ -114,11 +115,8 @@ class DualClient(Bot):
     @staticmethod
     def _import():
         """Import Inbuilt and external Modules"""
-        import ub_core.default_plugins  # NOQA
-        import ub_core.utils  # NOQA
-        import ub_core.core.handlers  # NOQA
-
-        import_modules()
+        import_modules(ub_core_dirname)
+        import_modules(Config.WORKING_DIR)
 
     async def boot(self) -> None:
         await super().start()

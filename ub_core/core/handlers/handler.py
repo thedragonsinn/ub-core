@@ -18,9 +18,12 @@ async def cmd_dispatcher(client: BOT, message: Message, func: Callable = None) -
         if client.is_user:
             USER_IS_PROCESSING_MESSAGE.append(message.id)
         else:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
             if message.id in USER_IS_PROCESSING_MESSAGE:
                 message.stop_propagation()
+
+    if filters.anti_reaction(message):
+        message.stop_propagation()
 
     message = Message.parse(message)
 
