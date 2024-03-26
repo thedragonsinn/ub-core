@@ -37,5 +37,5 @@ async def restart(bot: BOT, message: Message, u_resp: Message | None = None) -> 
     if "-cl" in message.flags:
         os.remove("logs/app_logs.txt")
     if "-cp" in message.flags:
-        shutil.rmtree("app/temp")
+        shutil.rmtree("app/temp", ignore_errors=True)
     await bot.restart(hard="-h" in message.flags)

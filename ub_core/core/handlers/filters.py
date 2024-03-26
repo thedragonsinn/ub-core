@@ -1,3 +1,6 @@
+from collections import defaultdict
+from datetime import datetime, timedelta
+
 from pyrogram.filters import create
 from pyrogram.types import Message
 
@@ -9,6 +12,23 @@ convo_filter = create(
     lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
     and (not message.reactions)
 )
+
+MESSAGE_TEXT_CACHE = defaultdict(str)
+
+
+def anti_reaction(message: Message):
+    """Check if Message.text is same as before or if message is older than 6 hours and stop execution"""
+    unique_id = f"{message.chat.id}-{message.id}"
+
+    if MESSAGE_TEXT_CACHE[unique_id] == message.text:
+        return True
+
+    time_diff = datetime.utcnow() - message.date
+    if time_diff >= timedelta(hours=6):
+        return True
+
+    MESSAGE_TEXT_CACHE[unique_id] = message.text
+    return False
 
 
 def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
@@ -29,7 +49,7 @@ def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
 
 
 def basic_check(message: Message):
-    return message.reactions or not message.text or not message.from_user
+    return not message.chat or not message.text or not message.from_user
 
 
 def owner_check(_, __, message: Message) -> bool:

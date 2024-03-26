@@ -24,7 +24,7 @@ class TgErrorHandler(Handler):
     """
 
     def emit(self, log_record):
-        if not bot.is_connected:
+        if not bot.is_connected or not bot.is_idling:
             return
         self.format(log_record)
         chat = ""

@@ -13,3 +13,5 @@ ub_core.egg-info/
 ! ub_core
 ! version.py
 ! setup.py
+! bin
+! sample-config.env

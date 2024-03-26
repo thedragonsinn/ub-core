@@ -5,7 +5,7 @@ import logging
 from os import environ, path
 from typing import Callable, Coroutine
 
-from git import Repo
+from git import InvalidGitRepositoryError, Repo
 
 LOGGER = logging.getLogger("Config")
 
@@ -57,7 +57,10 @@ class Config:
 
     OWNER_ID: int = int(environ.get("OWNER_ID", 0))
 
-    REPO: Repo = Repo(".")
+    try:
+        REPO: Repo = Repo(".")
+    except InvalidGitRepositoryError:
+        REPO = None
 
     SUDO: bool = False
 
