@@ -38,7 +38,7 @@ class TgErrorHandler(Handler):
             f"<b>\nChat</b>: {chat}"
             f"\n<b>Line No</b>: <code>{log_record.lineno}</code>"
             f"\n<b>Func</b>: <code>{log_record.funcName}</code>"
-            f"\n<b>Module</b>: <pre language=python>{log_record.module.__file__}</pre>"
+            f"\n<b>Module</b>: <pre language=python>{log_record.pathname}</pre>"
             f"\n<b>Time</b>: <code>{log_record.asctime}</code>"
             f"\n<b>Error Message</b>:\n<pre language=python>{log_record.exc_text or log_record.message}</pre>"
         )
