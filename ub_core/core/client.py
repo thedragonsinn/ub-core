@@ -1,6 +1,6 @@
 import asyncio
 import glob
-from importlib.util import spec_from_file_location, module_from_spec
+import importlib
 import logging
 import os
 import sys
@@ -13,7 +13,7 @@ from ub_core import DB_CLIENT, Config, ub_core_dirname
 from ub_core.core.conversation import Conversation
 from ub_core.core.decorators.add_cmd import AddCmd
 from ub_core.core.methods import ChannelLogger, SendMessage
-from ub_core.utils.aiohttp_tools import aio
+from ub_core.utils import aio
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -24,8 +24,8 @@ def import_modules(dirname):
     for py_module in glob.glob(pathname=plugins_dir, recursive=True):
         module_path, module_name = py_module, os.path.basename(py_module)
         try:
-            spec = spec_from_file_location(module_name, module_path)
-            module = module_from_spec(spec)
+            spec = importlib.util.spec_from_file_location(module_name, module_path)
+            module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             if hasattr(module, "init_task"):
                 Config.INIT_TASKS.append(module.init_task())
@@ -99,6 +99,3 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
             os.execl("/bin/bash", "/bin/bash", "run")
         LOGGER.info("Restarting...")
         os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
-
-
-bot: BOT = BOT()

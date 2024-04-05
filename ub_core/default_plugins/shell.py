@@ -52,14 +52,8 @@ async def live_shell(bot: BOT, message: Message):
 
 if Config.DEV_MODE:
     Config.CMD_DICT["shell"] = Cmd(
-        cmd="shell",
-        func=live_shell,
-        cmd_path=inspect.stack()[0][1],
-        sudo=False,
+        cmd="shell", func=live_shell, cmd_path=inspect.stack()[0][1], sudo=False
     )
     Config.CMD_DICT["sh"] = Cmd(
-        cmd="sh",
-        func=run_cmd,
-        cmd_path=inspect.stack()[0][1],
-        sudo=False,
+        cmd="sh", func=run_cmd, cmd_path=inspect.stack()[0][1], sudo=False
     )

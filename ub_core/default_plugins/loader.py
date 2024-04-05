@@ -39,8 +39,5 @@ async def loader(bot: BOT, message: Message) -> Message | None:
 
 if Config.DEV_MODE:
     Config.CMD_DICT["load"] = Cmd(
-        cmd="load",
-        func=loader,
-        cmd_path=inspect.stack()[0][1],
-        sudo=False,
+        cmd="load", func=loader, cmd_path=inspect.stack()[0][1], sudo=False
     )
