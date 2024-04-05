@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from pyrogram.enums import ChatType
 from pyrogram.filters import create
-from pyrogram.types import Message
+from pyrogram.types import InlineQuery, Message
 
 from ub_core import Config
 from ub_core.core.conversation import Conversation
@@ -113,3 +113,37 @@ cmd_filter = (
     | create(owner_sudo_check)
     | (create(client_check) & (create(sudo_check) | create(super_user_check)))
 )
+
+
+def inline_check(_, __, inline_query: InlineQuery):
+    if not inline_query.query or not inline_query.from_user:
+        return False
+    user_id = inline_query.from_user.id
+    supers = [Config.OWNER_ID, *Config.SUPERUSERS]
+    if user_id not in Config.SUDO_USERS + supers:
+        return False
+    super = user_id in supers
+    query_list: list = inline_query.query.split(maxsplit=1)
+    cmd = query_list[0]
+    cmd_obj = Config.CMD_DICT.get(cmd)
+    if not cmd_obj:
+        return False
+    if not super:
+        in_loaded = cmd_obj.loaded
+        has_access = cmd_obj.sudo
+        return in_loaded and has_access
+    return True
+
+
+inline_filter = create(inline_check)
+
+
+def callback_check(_, __, callback_query):
+    if isinstance(callback_query.data, bytes):
+        data = callback_query.data.decode("utf-8")
+    else:
+        data = callback_query.data
+    return data in Config.INLINE_QUERY_CACHE.keys()
+
+
+callback_filter = create(callback_check)

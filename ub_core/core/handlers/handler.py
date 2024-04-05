@@ -2,10 +2,23 @@ import asyncio
 from typing import Callable
 
 from pyrogram import StopPropagation
-from pyrogram.handlers import EditedMessageHandler, MessageHandler
+from pyrogram.handlers import (
+    CallbackQueryHandler,
+    EditedMessageHandler,
+    InlineQueryHandler,
+    MessageHandler,
+)
+from pyrogram.types import CallbackQuery as CQ
+from pyrogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+)
 from pyrogram.types import Message as Msg
 
-from ub_core import BOT, Config, Convo, Message, bot
+from ub_core import BOT, CallbackQuery, Config, Convo, Message, bot
 from ub_core.core.handlers import filters
 
 USER_IS_PROCESSING_MESSAGE: list[int] = []
@@ -104,4 +117,67 @@ if bot.has_bot:
     bot.bot.add_handler(
         EditedMessageHandler(callback=convo_handler, filters=filters.convo_filter),
         group=0,
+    )
+
+
+async def inline_handler(bot: BOT, inline_query: InlineQuery):
+    query_list: list = inline_query.query.split(maxsplit=1)
+    cmd = query_list[0]
+    text = ""
+    if len(query_list) >= 2:
+        text = query_list[1]
+    Config.INLINE_QUERY_CACHE[inline_query.id] = {"cmd": cmd, "text": text}
+    reply_markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton(text=f"run {cmd}", callback_data=inline_query.id)]]
+    )
+    await inline_query.answer(
+        results=[
+            InlineQueryResultArticle(
+                title=f"run {cmd}",
+                input_message_content=InputTextMessageContent(text or "No Input."),
+                reply_markup=reply_markup,
+            )
+        ],
+        cache_time=10,
+    )
+
+
+if bot.bot and bot.bot.is_bot:
+    bot.bot.add_handler(
+        InlineQueryHandler(callback=inline_handler, filters=filters.inline_filter),
+        group=1,
+    )
+
+
+async def callback_handler(client: BOT, callback_query: CQ):
+    callback_query = CallbackQuery.parse(callback_query)
+
+    cmd_object = Config.CMD_DICT[callback_query.cmd]
+    coro = cmd_object.func(client, callback_query)
+    task = asyncio.create_task(coro, name=callback_query.task_id)
+
+    try:
+        await client.send_message(
+            chat_id=callback_query.from_user.id,
+            text=f"Use `.c -i {callback_query.task_id}` to cancel Inline code execution.",
+        )
+    except Exception as e:
+        await callback_query.edit(str(e))
+
+    try:
+        await task
+    except asyncio.exceptions.CancelledError:
+        await callback_query.edit("`Cancelled...`")
+    except StopPropagation:
+        raise
+    except Exception as e:
+        client.log.error(e, exc_info=True)
+
+
+if bot.bot and bot.bot.is_bot:
+    bot.bot.add_handler(
+        CallbackQueryHandler(
+            callback=callback_handler, filters=filters.callback_filter
+        ),
+        group=1,
     )

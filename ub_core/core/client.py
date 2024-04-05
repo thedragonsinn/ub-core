@@ -13,7 +13,7 @@ from ub_core import DB_CLIENT, Config, CustomDB, ub_core_dirname
 from ub_core.core.conversation import Conversation
 from ub_core.core.decorators.add_cmd import AddCmd
 from ub_core.core.methods import ChannelLogger, SendMessage
-from ub_core.utils.aiohttp_tools import aio
+from ub_core.utils import aio
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -165,6 +165,3 @@ class DualClient(Bot):
             DB_CLIENT.close()
         if Config.REPO:
             Config.REPO.close()
-
-
-bot: DualClient = DualClient()

@@ -8,13 +8,16 @@ async def cancel_task(bot: BOT, message: Message) -> Message | None:
     """
     CMD: CANCEL
     INFO: Cancel a running command by replying to a message.
-    USAGE: .c
+    USAGE: .c | .c -i <inline query id>
     """
-    task_id: str | None = message.replied_task_id
-    if not task_id:
-        return await message.reply(
-            text="Reply To a Command or Bot's Response Message.", del_in=8
-        )
+    if "-i" in message.flags:
+        task_id: str = message.filtered_input
+    else:
+        task_id: str | None = message.replied_task_id
+        if not task_id:
+            return await message.reply(
+                text="Reply To a Command or Bot's Response Message.", del_in=8
+            )
     all_tasks: set[asyncio.all_tasks] = asyncio.all_tasks()
     tasks: list[asyncio.Task] | None = [x for x in all_tasks if x.get_name() == task_id]
     if not tasks:

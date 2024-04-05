@@ -90,11 +90,7 @@ class Conversation(Str):
             )
 
     async def send_message(
-        self,
-        text: str,
-        timeout: int = 0,
-        get_response: bool = False,
-        **kwargs,
+        self, text: str, timeout: int = 0, get_response: bool = False, **kwargs
     ) -> Message | tuple[Message, Message]:
         """
         Bound Method to Send Texts in Convo Chat.

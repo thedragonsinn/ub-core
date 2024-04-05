@@ -51,6 +51,8 @@ class Config:
 
     INIT_TASKS: list[Coroutine] = []
 
+    INLINE_QUERY_CACHE: dict[dict] = {}
+
     LOG_CHAT: int = int(environ.get("LOG_CHAT", 0))
 
     LOAD_HANDLERS: bool = True

@@ -85,6 +85,3 @@ class Aio:
         if not thumb or not thumb.startswith("http"):
             return thumb
         return (await self.in_memory_dl(thumb))  # fmt:skip
-
-
-aio = Aio()

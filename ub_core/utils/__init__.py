@@ -1,5 +1,5 @@
 from ub_core.core import Str
-from ub_core.utils.aiohttp_tools import aio
+from ub_core.utils.aiohttp_tools import Aio
 from ub_core.utils.downloader import Download, DownloadedFile
 from ub_core.utils.helpers import (
     extract_user_data,
@@ -24,3 +24,5 @@ from ub_core.utils.shell import (
     run_shell_cmd,
     take_ss,
 )
+
+aio = Aio()

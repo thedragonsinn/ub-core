@@ -7,10 +7,9 @@ from io import StringIO
 from pyrogram.enums import ParseMode
 
 import ub_core  # NOQA
-from ub_core import BOT, DB, DB_CLIENT, Cmd, Config, CustomDB, Message, bot  # NOQA
 
-from ub_core.utils import shell  # NOQA
-from ub_core.utils.aiohttp_tools import aio  # NOQA
+from ub_core import BOT, DB, DB_CLIENT, Cmd, Config, CustomDB, Message, bot  # NOQA
+from ub_core.utils import shell, aio  # NOQA
 
 
 async def executor(bot: BOT, message: Message) -> Message | None:
@@ -61,8 +60,5 @@ async def executor(bot: BOT, message: Message) -> Message | None:
 
 if Config.DEV_MODE:
     Config.CMD_DICT["py"] = Cmd(
-        cmd="py",
-        func=executor,
-        cmd_path=inspect.stack()[0][1],
-        sudo=False,
+        cmd="py", func=executor, cmd_path=inspect.stack()[0][1], sudo=False
     )
