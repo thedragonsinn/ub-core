@@ -163,6 +163,7 @@ async def callback_handler(client: BOT, callback_query: CQ):
         )
     except Exception as e:
         await callback_query.edit(str(e))
+        return 
 
     try:
         await task
