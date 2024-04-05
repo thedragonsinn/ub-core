@@ -2,6 +2,7 @@ import asyncio
 from typing import Callable
 
 from pyrogram import StopPropagation
+from pyrogram.errors import UserIsBlocked
 from pyrogram.handlers import (
     CallbackQueryHandler,
     EditedMessageHandler,
@@ -157,9 +158,20 @@ async def callback_handler(client: BOT, callback_query: CQ):
             chat_id=callback_query.from_user.id,
             text=f"Use `.c -i {callback_query.task_id}` to cancel Inline code execution.",
         )
-    except Exception as e:
-        await callback_query.edit(str(e))
-        return 
+    except UserIsBlocked:
+        reply_markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text=f"Restart Me", url="http://t.me/RyukShinigamiXBot"
+                    )
+                ]
+            ]
+        )
+        await callback_query.edit(
+            text=f"You have Blocked @{client.me.username}.", reply_markup=reply_markup
+        )
+        return
 
     cmd_object = Config.CMD_DICT[callback_query.cmd]
     coro = cmd_object.func(client, callback_query)

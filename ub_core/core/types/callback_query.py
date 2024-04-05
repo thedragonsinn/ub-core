@@ -9,8 +9,7 @@ from ub_core.core.types.message import Message
 
 def construct_properties(inline_query_id: str) -> tuple[str, list, str, str]:
     cmd, text = (Config.INLINE_QUERY_CACHE.pop(inline_query_id)).values()
-    text_list = text.split()
-    flags = [i for i in text_list if i.startswith("-")]
+    flags = [i for i in text.split() if i.startswith("-")]
     input = text
     split_lines = input.split(sep="\n", maxsplit=1)
     split_lines[0] = " ".join(
@@ -31,6 +30,7 @@ class CallbackQuery(CQ):
         self.cmd, self.flags, self.input, self.filtered_input = construct_properties(
             self.data
         )
+        self.replied = self.reply_id = self.replied_task_id = None
 
     @cached_property
     def message(self):
@@ -45,6 +45,19 @@ class CallbackQuery(CQ):
     @cached_property
     def task_id(self) -> str:
         """Task ID to Cancel/Track Command Progress."""
+        return self.id
+
+    @cached_property
+    def trigger(self) -> str:
+        """Returns Cmd or Sudo Trigger"""
+        # Legacy w/o db and sudo support
+        if hasattr(Config, "TRIGGER"):
+            return Config.TRIGGER
+
+        return Config.CMD_TRIGGER if self.is_from_owner else Config.SUDO_TRIGGER
+
+    @cached_property
+    def unique_chat_user_id(self) -> int | str:
         return self.id
 
     async def edit_message_text(
