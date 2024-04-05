@@ -152,10 +152,6 @@ if bot.bot and bot.bot.is_bot:
 async def callback_handler(client: BOT, callback_query: CQ):
     callback_query = CallbackQuery.parse(callback_query)
 
-    cmd_object = Config.CMD_DICT[callback_query.cmd]
-    coro = cmd_object.func(client, callback_query)
-    task = asyncio.create_task(coro, name=callback_query.task_id)
-
     try:
         await client.send_message(
             chat_id=callback_query.from_user.id,
@@ -164,6 +160,10 @@ async def callback_handler(client: BOT, callback_query: CQ):
     except Exception as e:
         await callback_query.edit(str(e))
         return 
+
+    cmd_object = Config.CMD_DICT[callback_query.cmd]
+    coro = cmd_object.func(client, callback_query)
+    task = asyncio.create_task(coro, name=callback_query.task_id)
 
     try:
         await task
