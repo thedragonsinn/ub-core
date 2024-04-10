@@ -1,10 +1,10 @@
 import asyncio
 import glob
-import importlib
 import logging
 import os
 import sys
 from functools import cached_property
+from importlib.util import module_from_spec, spec_from_file_location
 
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
@@ -24,8 +24,8 @@ def import_modules(dirname):
     for py_module in glob.glob(pathname=plugins_dir, recursive=True):
         module_path, module_name = py_module, os.path.basename(py_module)
         try:
-            spec = importlib.util.spec_from_file_location(module_name, module_path)
-            module = importlib.util.module_from_spec(spec)
+            spec = spec_from_file_location(module_name, module_path)
+            module = module_from_spec(spec)
             spec.loader.exec_module(module)
             if hasattr(module, "init_task"):
                 Config.INIT_TASKS.append(module.init_task())
@@ -60,13 +60,14 @@ class Bot(AddCmd, SendMessage, ChannelLogger, Client):
 class DualClient(Bot):
     """A custom Class to Handle Both User and Bot client"""
 
-    def __init__(self, force_bot: bool = False):
+    def __init__(self, force_bot: bool = False, _user: Bot | None = None):
         """
         Initialise the class as per config vars.
         If both the bot token and string are available, boot into dual mode.
         if only a single var is available, boot into that specific mode.
         """
         self._bot = None
+        self._user = _user
         self.is_idling = False
         session_string = os.environ.get("SESSION_STRING")
         bot_token = os.environ.get("BOT_TOKEN")
@@ -82,7 +83,7 @@ class DualClient(Bot):
             super().__init__(session_string=session_string)
             # BOT
             if bot_token:
-                self._bot = DualClient(force_bot=True)
+                self._bot = DualClient(force_bot=True, _user=self)
             return
 
         # BOT ONLY MODE
@@ -92,6 +93,10 @@ class DualClient(Bot):
     def bot(self):
         return self if self.is_bot else self._bot
 
+    @cached_property
+    def user(self):
+        return self if self.is_user else self._user
+
     @property
     def client(self):
         return self if Config.MODE == "dual" else self.bot
@@ -99,6 +104,10 @@ class DualClient(Bot):
     @cached_property
     def has_bot(self):
         return self._bot is not None
+
+    @cached_property
+    def has_user(self):
+        return self._user is not None
 
     @staticmethod
     async def set_mode(force_bot: bool = False):
