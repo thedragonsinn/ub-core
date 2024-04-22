@@ -9,7 +9,7 @@ from ub_core import BOT, Config, Convo, Message, bot
 from ub_core.core.handlers import filters
 
 
-async def cmd_dispatcher(bot: BOT, message: Message, func: Callable = None) -> None:
+async def cmd_dispatcher(client: BOT, message: Message, func: Callable = None) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
     if filters.anti_reaction(message):
         message.stop_propagation()
@@ -23,18 +23,18 @@ async def cmd_dispatcher(bot: BOT, message: Message, func: Callable = None) -> N
             return
         func = cmd_object.func
 
-    task = asyncio.create_task(func(bot, message), name=message.task_id)
+    task = asyncio.create_task(func(client, message), name=message.task_id)
 
     try:
         await task
         if message.is_from_owner:
             await message.delete()
     except asyncio.exceptions.CancelledError:
-        await bot.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
+        await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
     except StopPropagation:
         raise
     except Exception as e:
-        bot.log.error(e, exc_info=True, extra={"tg_message": message})
+        client.log.error(e, exc_info=True, extra={"tg_message": message})
     message.stop_propagation()
 
 

@@ -1,10 +1,10 @@
 import asyncio
 import glob
-import importlib
 import logging
 import os
 import sys
 from functools import cached_property
+from importlib.util import module_from_spec, spec_from_file_location
 
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
@@ -24,8 +24,8 @@ def import_modules(dirname):
     for py_module in glob.glob(pathname=plugins_dir, recursive=True):
         module_path, module_name = py_module, os.path.basename(py_module)
         try:
-            spec = importlib.util.spec_from_file_location(module_name, module_path)
-            module = importlib.util.module_from_spec(spec)
+            spec = spec_from_file_location(module_name, module_path)
+            module = module_from_spec(spec)
             spec.loader.exec_module(module)
             if hasattr(module, "init_task"):
                 Config.INIT_TASKS.append(module.init_task())
