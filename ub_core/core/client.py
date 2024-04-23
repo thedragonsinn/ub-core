@@ -30,7 +30,7 @@ def import_modules(dirname):
             py_name = name.replace("/", ".")
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
-                Config.INIT_TASKS.append(module.init_task())
+                Config.INIT_TASKS.append(mod.init_task())
         except Exception as ie:
             LOGGER.error(ie, exc_info=True)
 
