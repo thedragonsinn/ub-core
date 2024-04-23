@@ -25,7 +25,12 @@ from ub_core.core.handlers import filters
 USER_IS_PROCESSING_MESSAGE: list[int] = []
 
 
-async def cmd_dispatcher(client: BOT, message: Message, func: Callable = None) -> None:
+async def cmd_dispatcher(
+    client: BOT,
+    message: Message,
+    func: Callable = None,
+    check_for_reactions: bool = False,
+) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
 
     if Config.MODE == "dual":
@@ -36,7 +41,7 @@ async def cmd_dispatcher(client: BOT, message: Message, func: Callable = None) -
             if message.id in USER_IS_PROCESSING_MESSAGE:
                 message.stop_propagation()
 
-    if filters.anti_reaction(message):
+    if check_for_reactions and filters.anti_reaction(message):
         message.stop_propagation()
 
     message = Message.parse(message)
@@ -163,7 +168,7 @@ async def callback_handler(client: BOT, callback_query: CQ):
             [
                 [
                     InlineKeyboardButton(
-                        text=f"Restart Me", url="http://t.me/RyukShinigamiXBot"
+                        text=f"Restart Me", url=f"http://t.me/{client.me.username}"
                     )
                 ]
             ]
