@@ -9,9 +9,14 @@ from ub_core import BOT, Config, Convo, Message, bot
 from ub_core.core.handlers import filters
 
 
-async def cmd_dispatcher(client: BOT, message: Message, func: Callable = None) -> None:
+async def cmd_dispatcher(
+    client: BOT,
+    message: Message,
+    func: Callable = None,
+    check_for_reactions: bool = True,
+) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
-    if filters.anti_reaction(message):
+    if check_for_reactions and filters.anti_reaction(message):
         message.stop_propagation()
 
     message = Message.parse(message)
