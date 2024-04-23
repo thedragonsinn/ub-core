@@ -1,10 +1,10 @@
 import asyncio
 import glob
+import importlib
 import logging
 import os
 import sys
 from functools import cached_property
-from importlib.util import module_from_spec, spec_from_file_location
 
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
@@ -21,13 +21,15 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 def import_modules(dirname):
     """Import Plugins and Append init_task to Config.INIT_TASK"""
     plugins_dir = os.path.join(dirname, "**/[!^_]*.py")
-    for py_module in glob.glob(pathname=plugins_dir, recursive=True):
-        module_path, module_name = py_module, os.path.basename(py_module)
+    modules = glob.glob(pathname=plugins_dir, recursive=True)
+    if dirname == ub_core_dirname:
+        modules = [m.split("site-packages/")[1] for m in modules]
+    for py_module in modules:
         try:
-            spec = spec_from_file_location(module_name, module_path)
-            module = module_from_spec(spec)
-            spec.loader.exec_module(module)
-            if hasattr(module, "init_task"):
+            name = os.path.splitext(py_module)[0]
+            py_name = name.replace("/", ".")
+            mod = importlib.import_module(py_name)
+            if hasattr(mod, "init_task"):
                 Config.INIT_TASKS.append(module.init_task())
         except Exception as ie:
             LOGGER.error(ie, exc_info=True)
@@ -136,7 +138,9 @@ class DualClient(Bot):
         self._import()
         LOGGER.info("Plugins Imported.")
 
-        await asyncio.gather(self.set_mode(force_bot=self.is_bot), *Config.INIT_TASKS)
+        await self.set_mode(force_bot=self.is_bot)
+
+        await asyncio.gather(*Config.INIT_TASKS)
         Config.INIT_TASKS.clear()
         LOGGER.info("Init Tasks Completed.")
 
