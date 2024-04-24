@@ -19,6 +19,5 @@ setup(
     ],
     python_requires="~=3.11",
     install_requires=requires,
-    dependency_links=["git+https://github.com/thedragonsinn/pyrogram@master"],
     scripts=['bin/run-ub-core'],
 )
