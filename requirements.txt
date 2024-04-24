@@ -6,7 +6,10 @@ dnspython==2.3.0
 motor==3.2.0
 pymongo==4.4.0
 gitpython==3.1.41
-pyrogram==2.0.106
+#pyrogram==2.0.106
+
+git+https://github.com/thedragonsinn/pyrogram@master
+
 python-dotenv==0.21.0
 tgcrypto
 telegraph==2.2.0
