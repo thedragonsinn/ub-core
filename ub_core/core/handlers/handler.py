@@ -29,7 +29,7 @@ async def cmd_dispatcher(
     client: BOT,
     message: Message,
     func: Callable = None,
-    check_for_reactions: bool = False,
+    check_for_reactions: bool = True,
 ) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
 
