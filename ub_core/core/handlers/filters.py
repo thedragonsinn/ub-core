@@ -52,13 +52,17 @@ def basic_check(message: Message):
     return not message.chat or not message.text or not message.from_user
 
 
-def owner_check(_, __, message: Message) -> bool:
+def owner_check(_, client, message: Message) -> bool:
     """Check if Message is from the Owner"""
     if (
         basic_check(message)
         or not message.text.startswith(Config.CMD_TRIGGER)
         or message.from_user.id != Config.OWNER_ID
-        or (message.chat.id != Config.OWNER_ID and not message.outgoing)
+        or (
+            client.is_user
+            and message.chat.id != Config.OWNER_ID
+            and not message.outgoing
+        )
     ):
         return False
     return cmd_check(message, Config.CMD_TRIGGER)
