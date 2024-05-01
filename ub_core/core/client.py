@@ -100,7 +100,7 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
         await super().stop(block=False)
 
         processes = psutil.Process(os.getpid())
-        for handler in processes.get_open_files() + processes.connections():
+        for handler in processes.open_files() + processes.net_connections():
             try:
                 os.close(handler.fd)
             except Exception as e:
