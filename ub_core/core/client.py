@@ -95,16 +95,19 @@ class BOT(AddCmd, SendMessage, ChannelLogger, Client):
         if Config.REPO:
             Config.REPO.close()
 
-    async def restart(self, hard=False) -> None:
-        await self.shut_down()
-        await super().stop(block=False)
+        pid = os.getpid()
+        open_files = psutil.Process(pid).open_files()
+        net_connections = [conn for conn in psutil.net_connections() if conn.pid == pid]
 
-        processes = psutil.Process(os.getpid())
-        for handler in processes.open_files() + processes.net_connections():
+        for handler in open_files + net_connections:
             try:
                 os.close(handler.fd)
             except Exception as e:
-                LOGGING.error(e, exc_info=True)
+                LOGGER.error(e, exc_info=True)
+
+    async def restart(self, hard=False) -> None:
+        await self.shut_down()
+        await super().stop(block=False)
 
         if hard:
             os.execl("/bin/bash", "/bin/bash", "run")
