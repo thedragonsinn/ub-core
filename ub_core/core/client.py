@@ -6,6 +6,7 @@ import os
 import sys
 from functools import cached_property
 
+import psutil
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
@@ -152,8 +153,17 @@ class DualClient(Bot):
 
     async def restart(self, hard=False) -> None:
         await self.shut_down()
+
+        processes = psutil.Process(os.getpid())
+        for handler in processes.get_open_files() + processes.connections():
+            try:
+                os.close(handler.fd)
+            except Exception as e:
+                LOGGING.error(e, exc_info=True)
+
         if hard:
             os.execl("/bin/bash", "/bin/bash", "run")
+
         LOGGER.info("Restarting...")
         os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
 
