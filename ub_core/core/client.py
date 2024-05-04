@@ -152,12 +152,13 @@ class DualClient(Bot):
         await self.shut_down()
 
     async def restart(self, hard=False) -> None:
+        LOGGER.info("Restarting...")
+
         await self.shut_down()
 
         if hard:
             os.execl("/bin/bash", "/bin/bash", "run")
 
-        LOGGER.info("Restarting...")
         os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
 
     async def stop_clients(self):
@@ -190,5 +191,5 @@ class DualClient(Bot):
             try:
                 os.close(handler.fd)
             except Exception as e:
-                LOGGER.error(e, exc_info=True)
+                print(e)
 
