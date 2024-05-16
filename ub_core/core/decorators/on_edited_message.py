@@ -23,7 +23,7 @@ class OnEditedMessage(Client):
                     client=client,
                     message=message,
                     func=func,
-                    check_for_reactions=False,
+                    check_for_reactions=check_for_reactions,
                     mode_sensitive=mode_sensitive,
                     is_command=is_command,
                 )
