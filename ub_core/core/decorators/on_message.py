@@ -9,9 +9,9 @@ class OnMessage(Client):
     def on_message(
         self=None,
         filters=None,
-        group: int = 0,
+        group: int = 2,
         mode_sensitive: bool = False,
-        is_command: bool = True,
+        is_command: bool = False,
     ):
         from ub_core.core.handlers.handler import cmd_dispatcher
 

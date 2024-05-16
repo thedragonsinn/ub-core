@@ -9,10 +9,10 @@ class OnEditedMessage(Client):
     def on_edited_message(
         self=None,
         filters=None,
-        group: int = 0,
+        group: int = 2,
         mode_sensitive: bool = False,
         check_for_reactions: bool = True,
-        is_command: bool = True,
+        is_command: bool = False,
     ):
         from ub_core.core.handlers.handler import cmd_dispatcher
 
