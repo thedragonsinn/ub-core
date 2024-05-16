@@ -51,9 +51,12 @@ class Conversation(Str):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Exit Context Manager and remove Chat ID from Dict."""
-        Conversation.CONVO_DICT[self.chat_id].remove(self)
+        if self in Conversation.CONVO_DICT[self.chat_id]:
+            Conversation.CONVO_DICT[self.chat_id].remove(self)
+
         if not self.response_future.done():
             self.response_future.cancel()
+
         if not Conversation.CONVO_DICT[self.chat_id]:
             Conversation.CONVO_DICT.pop(self.chat_id)
 
