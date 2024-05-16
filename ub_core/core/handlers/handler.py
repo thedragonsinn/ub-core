@@ -1,7 +1,7 @@
 import asyncio
 from typing import Callable
 
-from pyrogram import StopPropagation
+from pyrogram import ContinuePropagation, StopPropagation
 from pyrogram.errors import UserIsBlocked
 from pyrogram.handlers import (
     CallbackQueryHandler,
@@ -25,14 +25,7 @@ from ub_core.core.handlers import filters
 USER_IS_PROCESSING_MESSAGE: list[int] = []
 
 
-async def cmd_dispatcher(
-    client: BOT,
-    message: Message,
-    func: Callable = None,
-    check_for_reactions: bool = True,
-) -> None:
-    """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
-
+async def client_check(client: BOT, message: Message):
     if Config.MODE == "dual":
         if client.is_user:
             USER_IS_PROCESSING_MESSAGE.append(message.id)
@@ -40,6 +33,20 @@ async def cmd_dispatcher(
             await asyncio.sleep(0.5)
             if message.id in USER_IS_PROCESSING_MESSAGE:
                 message.stop_propagation()
+
+
+async def cmd_dispatcher(
+    client: BOT,
+    message: Message,
+    func: Callable = None,
+    check_for_reactions: bool = True,
+    mode_sensitive: bool = True,
+    is_command: bool = True,
+) -> None:
+    """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
+
+    if mode_sensitive:
+        await client_check(client, message)
 
     if check_for_reactions and filters.anti_reaction(message):
         message.stop_propagation()
@@ -57,13 +64,13 @@ async def cmd_dispatcher(
 
     try:
         await task
-        if message.is_from_owner:
+        if is_command and message.is_from_owner:
             await message.delete()
 
     except asyncio.exceptions.CancelledError:
         await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
 
-    except StopPropagation:
+    except (StopPropagation, ContinuePropagation):
         raise
 
     except Exception as e:
@@ -73,7 +80,8 @@ async def cmd_dispatcher(
         await asyncio.sleep(1)
         USER_IS_PROCESSING_MESSAGE.remove(message.id)
 
-    message.stop_propagation()
+    if is_command:
+        message.stop_propagation()
 
 
 # Don't Load Handler is Value is not True
@@ -98,8 +106,8 @@ if Config.LOAD_HANDLERS:
         )
 
 
-@bot.on_message(filters.convo_filter, group=0)
-@bot.on_edited_message(filters.convo_filter, group=0)
+@bot.on_message(filters.convo_filter, group=0, is_command=False)
+@bot.on_edited_message(filters.convo_filter, group=0, is_command=False)
 async def convo_handler(bot: BOT, message: Msg):
     """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Convo] = Convo.CONVO_DICT[message.chat.id]

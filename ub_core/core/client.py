@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from functools import cached_property
+from typing import Self
 
 import psutil
 from pyrogram import Client, idle
@@ -12,8 +13,8 @@ from pyrogram.enums import ParseMode
 
 from ub_core import DB_CLIENT, Config, CustomDB, ub_core_dirname
 from ub_core.core.conversation import Conversation
-from ub_core.core.decorators.add_cmd import AddCmd
-from ub_core.core.methods import ChannelLogger, SendMessage
+from ub_core.core.decorators import CustomDecorators
+from ub_core.core.methods import Methods
 from ub_core.utils import aio
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
@@ -23,12 +24,14 @@ def import_modules(dirname):
     """Import Plugins and Append init_task to Config.INIT_TASK"""
     plugins_dir = os.path.join(dirname, "**/[!^_]*.py")
     modules = glob.glob(pathname=plugins_dir, recursive=True)
+
     if dirname == ub_core_dirname:
         modules = [m.split("site-packages/")[1] for m in modules]
+
     for py_module in modules:
+        name = os.path.splitext(py_module)[0]
+        py_name = name.replace("/", ".")
         try:
-            name = os.path.splitext(py_module)[0]
-            py_name = name.replace("/", ".")
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
                 Config.INIT_TASKS.append(mod.init_task())
@@ -36,7 +39,7 @@ def import_modules(dirname):
             LOGGER.error(ie, exc_info=True)
 
 
-class Bot(AddCmd, SendMessage, ChannelLogger, Client):
+class Bot(CustomDecorators, Methods, Client):
     def __init__(self, bot_token: str | None = None, session_string: str | None = None):
         super().__init__(
             name=Config.BOT_NAME,
@@ -63,7 +66,7 @@ class Bot(AddCmd, SendMessage, ChannelLogger, Client):
 class DualClient(Bot):
     """A custom Class to Handle Both User and Bot client"""
 
-    def __init__(self, force_bot: bool = False, _user: Bot | None = None):
+    def __init__(self, force_bot: bool = False, _user: Self | None = None):
         """
         Initialise the class as per config vars.
         If both the bot token and string are available, boot into dual mode.
@@ -72,6 +75,7 @@ class DualClient(Bot):
         self._bot = None
         self._user = _user
         self.is_idling = False
+
         session_string = os.environ.get("SESSION_STRING")
         bot_token = os.environ.get("BOT_TOKEN")
 
@@ -136,7 +140,7 @@ class DualClient(Bot):
             await self._bot.start()
         LOGGER.info("Connected to TG.")
 
-        self._import()
+        await asyncio.to_thread(self._import)
         LOGGER.info("Plugins Imported.")
 
         await self.set_mode(force_bot=self.is_bot)
@@ -148,6 +152,7 @@ class DualClient(Bot):
         await self.log_text(text="<i>Started</i>")
         LOGGER.info(f"Idling on [{Config.MODE.upper()}] Mode...")
         self.is_idling = True
+
         await idle()
         await self.shut_down()
 
@@ -162,15 +167,14 @@ class DualClient(Bot):
         os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
 
     async def stop_clients(self):
-        await super().stop(block=False)
-        if self._bot:
-            await self._bot.stop(block=False)
+        if self.user:
+            await self.user.stop(block=False)
+        if self.bot:
+            await self.bot.stop(block=False)
 
     async def shut_down(self):
         """Gracefully ShutDown all Processes"""
-
         await self.stop_clients()
-
         await aio.close()
 
         for task in Config.BACKGROUND_TASKS:
@@ -180,9 +184,10 @@ class DualClient(Bot):
         if DB_CLIENT is not None:
             LOGGER.info("DB Closed.")
             DB_CLIENT.close()
+
         if Config.REPO:
             Config.REPO.close()
-
+        
         pid = os.getpid()
         open_files = psutil.Process(pid).open_files()
         net_connections = [conn for conn in psutil.net_connections() if conn.pid == pid]
@@ -192,4 +197,3 @@ class DualClient(Bot):
                 os.close(handler.fd)
             except Exception as e:
                 print(e)
-
