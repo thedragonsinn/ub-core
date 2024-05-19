@@ -14,8 +14,8 @@ async def cmd_dispatcher(
     message: Message,
     func: Callable = None,
     check_for_reactions: bool = True,
-    mode_sensitive: bool = True,
-    is_command: bool = False,
+    mode_sensitive: bool = False,
+    is_command: bool = True,
 ) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
     if check_for_reactions and filters.anti_reaction(message):
@@ -64,8 +64,8 @@ if Config.LOAD_HANDLERS:
     )
 
 
-@bot.on_message(filters.convo_filter, group=0, is_command=False)
-@bot.on_edited_message(filters.convo_filter, group=0, is_command=False)
+@bot.on_message(filters.convo_filter, group=0)
+@bot.on_edited_message(filters.convo_filter, group=0)
 async def convo_handler(bot: BOT, message: Msg):
     """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Convo] = Convo.CONVO_DICT[message.chat.id]
