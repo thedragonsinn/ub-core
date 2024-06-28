@@ -187,7 +187,7 @@ class DualClient(Bot):
 
         if Config.REPO:
             Config.REPO.close()
-        
+
         pid = os.getpid()
         open_files = psutil.Process(pid).open_files()
         net_connections = [conn for conn in psutil.net_connections() if conn.pid == pid]

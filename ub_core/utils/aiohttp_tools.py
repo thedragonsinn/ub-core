@@ -53,6 +53,26 @@ class Aio:
     async def handle_request(_):
         return web.Response(text="Web Server Running...")
 
+    async def get(
+        self,
+        url: str,
+        json: bool = False,
+        text: bool = False,
+        content: bool = False,
+        **kwargs,
+    ):
+        if json:
+            return await self.get_json(url=url, **kwargs)
+
+        if text:
+            return await self.get_text(url=url, **kwargs)
+        if content:
+            return await self.get_content(url=url, **kwargs)
+
+        raise TypeError(
+            "aio.get method requires a type to fetch: json, text or content."
+        )
+
     async def get_json(
         self,
         url: str,
@@ -68,11 +88,41 @@ class Aio:
                 if json_:
                     return await ses.json()
                 else:
-                    return (json.loads(await ses.text()))  # fmt:skip
+                    return json.loads(await ses.text())  # fmt:skip
         except (json.JSONDecodeError, ContentTypeError):
             LOGGER.debug(await ses.text())
         except TimeoutError:
-            LOGGER.debug("Timeout")
+            LOGGER.debug(f"Timeout: {url}")
+
+    async def get_text(
+        self,
+        url: str,
+        headers: dict = None,
+        params: dict | str = None,
+        timeout: int = 10,
+    ):
+        try:
+            async with self.session.get(
+                url=url, headers=headers, params=params, timeout=timeout
+            ) as ses:
+                return await ses.text()
+        except TimeoutError:
+            LOGGER.debug(f"Timeout: {url}")
+
+    async def get_content(
+        self,
+        url: str,
+        headers: dict = None,
+        params: dict | str = None,
+        timeout: int = 10,
+    ):
+        try:
+            async with self.session.get(
+                url=url, headers=headers, params=params, timeout=timeout
+            ) as ses:
+                return await ses.content.read()
+        except TimeoutError:
+            LOGGER.debug(f"Timeout: {url}")
 
     async def in_memory_dl(self, url: str) -> BytesIO:
         async with self.session.get(url) as remote_file:
