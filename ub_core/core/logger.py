@@ -1,4 +1,5 @@
 import asyncio
+import re
 import os
 from logging import (
     ERROR,
@@ -47,8 +48,30 @@ class TgErrorHandler(Handler):
         )
 
 
-custom_handler = TgErrorHandler()
-custom_handler.setLevel(ERROR)
+class NetworkAndPyroHandlerIssuesHandler(Handler):
+    CLOSED_HANDLER_REGEX = (
+        r"\[WARNING\] \[\d{2}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M\]"
+        r" \[pyrogram\.session\.session\] \[session\]: \[\d+\] "
+        r'Retrying "[^"]+" due to: unable to perform operation on '
+        r"<TCPTransport closed=True reading=False [^>]+>; the handler is closed"
+    )
+
+    def emit(self, log_record):
+        warning = self.format(log_record)
+
+        if log_record.levelno != WARNING:
+            return
+
+        if re.search(self.CLOSED_HANDLER_REGEX, warning):
+            LOGGER.info("Network Issues Detected, Restarting client(s)")
+            asyncio.run_coroutine_threadsafe(coro=bot.restart(hard=True), loop=bot.loop)
+
+
+custom_error_handler = TgErrorHandler()
+custom_error_handler.setLevel(ERROR)
+
+custom_network_error_handler = NetworkAndPyroHandlerIssuesHandler()
+custom_network_error_handler.setLevel(WARNING)
 
 basicConfig(
     level=INFO,
@@ -64,7 +87,8 @@ basicConfig(
             delay=False,
         ),
         StreamHandler(),
-        custom_handler,
+        custom_error_handler,
+        custom_network_error_handler,
     },
 )
 

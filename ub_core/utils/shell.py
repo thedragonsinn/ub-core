@@ -1,40 +1,54 @@
 import asyncio
 import os
 from asyncio.subprocess import Process
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 
-async def run_shell_cmd(cmd: str) -> str:
+async def run_shell_cmd(
+    cmd: str, timeout: int = 300, ret_val: Any | None = None
+) -> str:
     """Runs a Shell Command and Returns Output"""
     proc: asyncio.create_subprocess_shell = await asyncio.create_subprocess_shell(
         cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
     )
-    stdout, _ = await proc.communicate()
-    return stdout.decode("utf-8")
+
+    try:
+
+        async with asyncio.timeout(timeout):
+            stdout, _ = await proc.communicate()
+            return stdout.decode("utf-8")
+
+    except (asyncio.CancelledError, TimeoutError):
+        proc.kill()
+
+        if ret_val is not None:
+            return ret_val
+
+        raise
 
 
 async def take_ss(video: str, path: str) -> None | str:
     """Returns First Frame of Video for Thumbnails"""
     thumb = f"{path}/i.png"
     await run_shell_cmd(
-        f'''ffmpeg -hide_banner -loglevel error -ss 0.1 -i "{video}" -vframes 1 "{thumb}"'''
+        f'''ffmpeg -hide_banner -loglevel error -ss 0.1 -i "{video.strip()}" -vframes 1 "{thumb}"'''
     )
     if os.path.isfile(thumb):
         return thumb
 
 
-async def check_audio(file) -> int:
+async def check_audio(file: str) -> int:
     """Returns True/1 if input has audio else 0/False"""
     result = await run_shell_cmd(
-        f'''ffprobe -v error -show_entries format=nb_streams -of default=noprint_wrappers=1:nokey=1 "{file}"'''
+        f'''ffprobe -v error -show_entries format=nb_streams -of default=noprint_wrappers=1:nokey=1 "{file.strip()}"'''
     )
     return int(result or 0) - 1
 
 
-async def get_duration(file) -> int:
+async def get_duration(file: str) -> int:
     """Returns Input Duration"""
     duration = await run_shell_cmd(
-        f'''ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{file}"'''
+        f'''ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{file.strip()}"'''
     )
     return round(float(duration.strip() or 0))
 
