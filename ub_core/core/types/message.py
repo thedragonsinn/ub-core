@@ -122,8 +122,12 @@ class Message(Msg):
             await x.delete()
             return x
         else:
-            asyncio.create_task(
+            del_task = asyncio.create_task(
                 self.async_deleter(del_in=del_in, task=task, block=True)
+            )
+            Config.BACKGROUND_TASKS.append(del_task)
+            del_task.add_done_callback(
+                lambda _, del_task=del_task: Config.BACKGROUND_TASKS.remove(del_task)
             )
 
     async def delete(self, reply: bool = False) -> None:

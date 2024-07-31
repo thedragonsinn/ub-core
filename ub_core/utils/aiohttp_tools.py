@@ -4,6 +4,7 @@ import os
 from io import BytesIO
 
 from aiohttp import ClientSession, ContentTypeError, web
+from yarl import URL
 
 from ub_core.config import Config
 from ub_core.utils.media_helper import get_filename_from_url
@@ -124,8 +125,8 @@ class Aio:
         except TimeoutError:
             LOGGER.debug(f"Timeout: {url}")
 
-    async def in_memory_dl(self, url: str) -> BytesIO:
-        async with self.session.get(url) as remote_file:
+    async def in_memory_dl(self, url: str, encoded: bool = False) -> BytesIO:
+        async with self.session.get(URL(url, encoded=encoded)) as remote_file:
             bytes_data = await remote_file.read()
         file = BytesIO(bytes_data)
         file.name = get_filename_from_url(url, tg_safe=True)
