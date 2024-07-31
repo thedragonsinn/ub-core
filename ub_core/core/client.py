@@ -6,10 +6,10 @@ import os
 import sys
 from functools import cached_property
 
-import psutil
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
+import psutil
 from ub_core import DB_CLIENT, Config, ub_core_dirname
 from ub_core.core.conversation import Conversation
 from ub_core.core.decorators import CustomDecorators
@@ -112,7 +112,7 @@ class BOT(CustomDecorators, Methods, Client):
         await super().stop(block=False)
 
         if hard:
-            os.execl("/bin/bash", "/bin/bash", "run")
+            sys.exit(69)
 
         LOGGER.info("Restarting...")
         os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)

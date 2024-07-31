@@ -1,6 +1,6 @@
 import asyncio
-import re
 import os
+import re
 from logging import (
     ERROR,
     INFO,
