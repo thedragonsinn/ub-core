@@ -10,7 +10,6 @@ from typing import Self
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
-import psutil
 from ub_core import DB_CLIENT, Config, CustomDB, ub_core_dirname
 from ub_core.core.conversation import Conversation
 from ub_core.core.decorators import CustomDecorators
@@ -187,13 +186,3 @@ class DualClient(Bot):
 
         if Config.REPO:
             Config.REPO.close()
-
-        pid = os.getpid()
-        open_files = psutil.Process(pid).open_files()
-        net_connections = [conn for conn in psutil.net_connections() if conn.pid == pid]
-
-        for handler in open_files + net_connections:
-            try:
-                os.close(handler.fd)
-            except Exception as e:
-                print(e)
