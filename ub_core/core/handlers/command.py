@@ -1,41 +1,13 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
-
 from pyrogram.enums import ChatType
-from pyrogram.filters import create
-from pyrogram.types import InlineQuery, Message
+from pyrogram.handlers import EditedMessageHandler, MessageHandler
+from pyrogram.types import Message
 
-from ub_core import Config
-from ub_core.core.conversation import Conversation
-
-valid_chat_filter = create(lambda _, __, message: bool(message.chat))
-
-
-# Conversation Filter to check for incoming messages.
-convo_filter = valid_chat_filter & create(
-    lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
-    and (not message.reactions)
-)
-
-MESSAGE_TEXT_CACHE = defaultdict(str)
+from ub_core import BOT, Config, bot
+from ub_core.config import Cmd
+from ub_core.core.handlers import cmd_dispatcher, create, valid_chat_filter
 
 
-def anti_reaction(message: Message):
-    """Check if Message.text is same as before or if message is older than 6 hours and stop execution"""
-    unique_id = f"{message.chat.id}-{message.id}"
-
-    if MESSAGE_TEXT_CACHE[unique_id] == message.text:
-        return True
-
-    time_diff = datetime.utcnow() - message.date
-    if time_diff >= timedelta(hours=6):
-        return True
-
-    MESSAGE_TEXT_CACHE[unique_id] = message.text
-    return False
-
-
-def client_check(_, client, message):
+def client_check(_, client: BOT, message: Message):
     if message.chat and message.chat.type == ChatType.PRIVATE:
         return Config.MODE != "bot" or client.is_bot
     if Config.MODE == "bot":
@@ -43,7 +15,7 @@ def client_check(_, client, message):
     return True
 
 
-def check_sudo_access(cmd_obj):
+def check_sudo_access(cmd_obj: Cmd):
     in_loaded = cmd_obj.loaded
     has_access = cmd_obj.sudo
     return in_loaded and has_access
@@ -80,7 +52,7 @@ def owner_check(_, __, message: Message) -> bool:
     return cmd_check(message, Config.CMD_TRIGGER)
 
 
-def owner_sudo_check(_, client, message):
+def owner_sudo_check(_, client: BOT, message: Message):
     if (
         basic_check(message)
         or not message.text.startswith(Config.SUDO_TRIGGER)
@@ -115,49 +87,28 @@ def super_user_check(_, __, message: Message):
     return cmd_check(message, Config.SUDO_TRIGGER)
 
 
-cmd_filter = valid_chat_filter & (
+CMD_FILTER = valid_chat_filter & (
     create(owner_check)
     | create(owner_sudo_check)
     | (create(client_check) & (create(sudo_check) | create(super_user_check)))
 )
 
+# Don't Load Handler if Value is not True
+# Useful for Legacy non-db type bots or
+# Bots who would like to use custom filters
+# for those, Manually add handler on the cmd_dispatcher
 
-def inline_check(_, __, inline_query: InlineQuery):
-
-    if not inline_query.query or not inline_query.from_user:
-        return False
-
-    user_id = inline_query.from_user.id
-    supers = [Config.OWNER_ID, *Config.SUPERUSERS]
-
-    if user_id not in Config.SUDO_USERS + supers:
-        return False
-
-    super = user_id in supers
-
-    query_list: list = inline_query.query.split(maxsplit=1)
-
-    cmd = query_list[0]
-    cmd_obj = Config.CMD_DICT.get(cmd)
-
-    if not cmd_obj:
-        return False
-
-    if not super:
-        return check_sudo_access(cmd_obj)
-
-    return True
-
-
-inline_filter = create(inline_check)
-
-
-def callback_check(_, __, callback_query):
-    if isinstance(callback_query.data, bytes):
-        data = callback_query.data.decode("utf-8")
-    else:
-        data = callback_query.data
-    return data in Config.INLINE_QUERY_CACHE.keys()
-
-
-callback_filter = create(callback_check)
+if Config.LOAD_HANDLERS:
+    bot.add_handler(
+        MessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+    )
+    bot.add_handler(
+        EditedMessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+    )
+    if bot.has_bot:
+        bot.bot.add_handler(
+            MessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+        )
+        bot.bot.add_handler(
+            EditedMessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+        )

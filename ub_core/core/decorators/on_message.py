@@ -13,7 +13,7 @@ class OnMessage(Client):
         mode_sensitive: bool = False,
         is_command: bool = False,
     ):
-        from ub_core.core.handlers.handler import cmd_dispatcher
+        from ub_core.core.handlers import cmd_dispatcher
 
         def decorator(func: Callable) -> Callable:
 

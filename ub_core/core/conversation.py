@@ -8,8 +8,9 @@ from pyrogram.types import Message
 
 from ub_core.core import Str
 
+# Relies on ub_core/core/handlers/conversation
 
-# relies on ub_core/core/handlers/convo_handler
+
 class Conversation(Str):
     """A Custom Class to get responses from chats"""
 
@@ -60,7 +61,7 @@ class Conversation(Str):
         if not Conversation.CONVO_DICT[self.chat_id]:
             Conversation.CONVO_DICT.pop(self.chat_id)
 
-    def set_future(self, *args, **kwargs):
+    def set_future(self, *_, **__):
         future = asyncio.Future()
         future.add_done_callback(self.set_future)
         self.response_future = future
