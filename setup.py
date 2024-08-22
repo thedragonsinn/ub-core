@@ -1,3 +1,6 @@
+import glob
+import os
+
 from setuptools import find_packages, setup
 
 with open("requirements.txt", mode="r", encoding="utf-8") as req_file:
@@ -5,6 +8,12 @@ with open("requirements.txt", mode="r", encoding="utf-8") as req_file:
 
 with open("ub_core/version.py", mode="r", encoding="utf-8") as version_file:
     exec(version_file.read())
+
+
+def clean_up():
+    cache = [item for item in ("./build", "./*egg-info", "./dist") if glob.glob(item)]
+    os.system(" ".join(["rm -r", *cache]))
+
 
 setup(
     name="ub_core",
@@ -19,5 +28,7 @@ setup(
     ],
     python_requires="~=3.11",
     install_requires=requires,
-    scripts=['bin/run-ub-core'],
+    scripts=["bin/run-ub-core"],
 )
+
+clean_up()
