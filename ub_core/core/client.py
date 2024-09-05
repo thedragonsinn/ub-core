@@ -9,7 +9,6 @@ from functools import cached_property
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
-import psutil
 from ub_core import DB_CLIENT, Config, ub_core_dirname
 from ub_core.core.conversation import Conversation
 from ub_core.core.decorators import CustomDecorators
@@ -62,20 +61,6 @@ class BOT(CustomDecorators, Methods, Client):
     def is_user(self):
         return not self.me.is_bot
 
-    async def boot(self) -> None:
-        await super().start()
-        LOGGER.info("Connected to TG.")
-        await asyncio.to_thread(self._import)
-        LOGGER.info("Plugins Imported.")
-        await asyncio.gather(*Config.INIT_TASKS)
-        Config.INIT_TASKS.clear()
-        LOGGER.info("Init Tasks Completed.")
-        await self.log_text(text="<i>Started</i>")
-        LOGGER.info("Idling...")
-        self.is_idling = True
-        await idle()
-        await self.shut_down()
-
     @staticmethod
     def _import():
         """Import Inbuilt and external Modules"""
@@ -94,18 +79,28 @@ class BOT(CustomDecorators, Methods, Client):
         if DB_CLIENT is not None:
             LOGGER.info("DB Closed.")
             DB_CLIENT.close()
+
         if Config.REPO:
             Config.REPO.close()
 
-        pid = os.getpid()
-        open_files = psutil.Process(pid).open_files()
-        net_connections = [conn for conn in psutil.net_connections() if conn.pid == pid]
+    async def boot(self) -> None:
+        await super().start()
+        LOGGER.info("Connected to TG.")
 
-        for handler in open_files + net_connections:
-            try:
-                os.close(handler.fd)
-            except Exception as e:
-                LOGGER.error(e, exc_info=True)
+        await asyncio.to_thread(self._import)
+        LOGGER.info("Plugins Imported.")
+
+        await asyncio.gather(*Config.INIT_TASKS)
+        Config.INIT_TASKS.clear()
+        LOGGER.info("Init Tasks Completed.")
+
+        await self.log_text(text="<i>Started</i>")
+        LOGGER.info("Idling...")
+
+        self.is_idling = True
+        await idle()
+
+        await self.shut_down()
 
     async def restart(self, hard=False) -> None:
         await self.shut_down()
