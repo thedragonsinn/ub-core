@@ -25,15 +25,24 @@ class TgErrorHandler(Handler):
     """
 
     def emit(self, log_record):
+        try:
+            self.format(log_record)
+            self.log_to_tg(log_record)
+        except Exception as e:
+            print(e)
+
+    def log_to_tg(self, log_record):
         if not (bot.is_connected and bot.is_idling):
             return
-        self.format(log_record)
-        chat = ""
-        if hasattr(log_record, "tg_message"):
+
+        try:
             chat = (
                 log_record.tg_message.chat.title
                 or log_record.tg_message.chat.first_name
             )
+        except BaseException:
+            chat = ""
+
         text = (
             f"#{log_record.levelname} #TRACEBACK"
             f"<b>\nChat</b>: {chat}"
@@ -43,6 +52,7 @@ class TgErrorHandler(Handler):
             f"\n<b>Time</b>: <code>{log_record.asctime}</code>"
             f"\n<b>Error Message</b>:\n<pre language=python>{log_record.exc_text or log_record.message}</pre>"
         )
+
         asyncio.run_coroutine_threadsafe(
             coro=bot.log_text(text=text, name="traceback.txt"), loop=bot.loop
         )
