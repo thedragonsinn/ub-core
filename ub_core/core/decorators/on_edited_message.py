@@ -14,7 +14,7 @@ class OnEditedMessage(Client):
         check_for_reactions: bool = False,
         is_command: bool = False,
     ):
-        from ub_core.core.handlers.handler import cmd_dispatcher
+        from ub_core.core.handlers import cmd_dispatcher
 
         def decorator(func: Callable) -> Callable:
 

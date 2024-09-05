@@ -1,34 +1,8 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
+from pyrogram.handlers import EditedMessageHandler, MessageHandler
 
-from pyrogram.filters import create
-from pyrogram.types import Message
-
-from ub_core import Config
-from ub_core.core.conversation import Conversation
-
-# Conversation Filter to check for incoming messages.
-convo_filter = create(
-    lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
-    and (not message.reactions)
-)
-
-MESSAGE_TEXT_CACHE = defaultdict(str)
-
-
-def anti_reaction(message: Message):
-    """Check if Message.text is same as before or if message is older than 6 hours and stop execution"""
-    unique_id = f"{message.chat.id}-{message.id}"
-
-    if MESSAGE_TEXT_CACHE[unique_id] == message.text:
-        return True
-
-    time_diff = datetime.utcnow() - message.date
-    if time_diff >= timedelta(hours=6):
-        return True
-
-    MESSAGE_TEXT_CACHE[unique_id] = message.text
-    return False
+from ub_core import Message, bot
+from ub_core.config import Cmd, Config
+from ub_core.core.handlers import cmd_dispatcher, create
 
 
 def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
@@ -38,13 +12,16 @@ def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
     """
     start_str = message.text.split(maxsplit=1)[0]
     cmd = start_str.replace(trigger, "", 1)
-    cmd_obj = Config.CMD_DICT.get(cmd)
+    cmd_obj: Cmd | None = Config.CMD_DICT.get(cmd)
+
     if not cmd_obj:
         return False
+
     if sudo:
         in_loaded = cmd_obj.loaded
         has_access = cmd_obj.sudo
         return in_loaded and has_access
+
     return True
 
 
@@ -92,4 +69,17 @@ def super_user_check(_, __, message: Message):
     return cmd_check(message, Config.SUDO_TRIGGER)
 
 
-cmd_filter = create(owner_check) | create(sudo_check) | create(super_user_check)
+CMD_FILTER = create(owner_check) | create(sudo_check) | create(super_user_check)
+
+
+# Don't Load Handler is Value is not True
+# Useful for Legacy non-db type bots or
+# Bots who would like to use custom filters
+# for those, Manually add handler on the above function
+if Config.LOAD_HANDLERS:
+    bot.add_handler(
+        MessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+    )
+    bot.add_handler(
+        EditedMessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+    )
