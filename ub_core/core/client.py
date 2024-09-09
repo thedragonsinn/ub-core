@@ -9,8 +9,7 @@ from functools import cached_property
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
-from ub_core import DB_CLIENT, Config, ub_core_dirname
-from ub_core.core.conversation import Conversation
+from ub_core import DB_CLIENT, Config, Convo, ub_core_dirname
 from ub_core.core.decorators import CustomDecorators
 from ub_core.core.methods import Methods
 from ub_core.utils import aio
@@ -18,12 +17,12 @@ from ub_core.utils import aio
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
-def import_modules(dirname):
+def import_modules(dir_name):
     """Import Plugins and Append init_task to Config.INIT_TASK"""
-    plugins_dir = os.path.join(dirname, "**/[!^_]*.py")
+    plugins_dir = os.path.join(dir_name, "**/[!^_]*.py")
     modules = glob.glob(pathname=plugins_dir, recursive=True)
 
-    if dirname == ub_core_dirname:
+    if dir_name == ub_core_dirname:
         modules = [m.split("site-packages/")[1] for m in modules]
 
     for py_module in modules:
@@ -51,7 +50,7 @@ class BOT(CustomDecorators, Methods, Client):
         )
         self.is_idling = False
         self.log = LOGGER
-        self.Convo = Conversation
+        self.Convo = Convo
 
     @cached_property
     def is_bot(self):

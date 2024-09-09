@@ -12,6 +12,25 @@ from ub_core import Config
 from ub_core.core.conversation import Conversation
 
 
+def del_task_cleaner(del_task):
+    Config.BACKGROUND_TASKS.remove(del_task)
+
+
+async def async_deleter(del_in, task, block) -> Msg | None:
+    """Delete Message w/wo blocking code execution."""
+    if block:
+        task_result: Msg = await task
+        await asyncio.sleep(del_in)
+        await task_result.delete()
+        return task_result
+    else:
+        del_task = asyncio.create_task(
+            async_deleter(del_in=del_in, task=task, block=True)
+        )
+        Config.BACKGROUND_TASKS.append(del_task)
+        del_task.add_done_callback(del_task_cleaner)
+
+
 class Message(Msg):
     """A Custom Message Class with ease of access methods"""
 
@@ -110,22 +129,6 @@ class Message(Msg):
     def unique_chat_user_id(self) -> int | str:
         return f"{self.chat.id}-{self.from_user.id}" if self.from_user else 0
 
-    async def async_deleter(self, del_in, task, block) -> None:
-        """Delete Message w/wo blocking code execution."""
-        if block:
-            x = await task
-            await asyncio.sleep(del_in)
-            await x.delete()
-            return x
-        else:
-            del_task = asyncio.create_task(
-                self.async_deleter(del_in=del_in, task=task, block=True)
-            )
-            Config.BACKGROUND_TASKS.append(del_task)
-            del_task.add_done_callback(
-                lambda _, del_task=del_task: Config.BACKGROUND_TASKS.remove(del_task)
-            )
-
     async def delete(self, reply: bool = False) -> None:
         """Delete Self and Replied if True"""
         try:
@@ -142,7 +145,7 @@ class Message(Msg):
         if len(str(text)) < 4096:
             task = super().edit_text(text=text, **kwargs)
             if del_in:
-                reply = await self.async_deleter(task=task, del_in=del_in, block=block)
+                reply = await async_deleter(task=task, del_in=del_in, block=block)
             else:
                 reply = Message.parse((await task))  # fmt:skip
             self.text = reply.text
@@ -197,7 +200,7 @@ class Message(Msg):
             chat_id=self.chat.id, text=text, reply_to_message_id=self.id, **kwargs
         )
         if del_in:
-            await self.async_deleter(task=task, del_in=del_in, block=block)
+            await async_deleter(task=task, del_in=del_in, block=block)
         else:
             return Message.parse((await task))  # fmt:skip
 
@@ -206,14 +209,11 @@ class Message(Msg):
         """Remove Extra/Custom Attrs from Message Object"""
         kwargs = vars(message).copy()
         kwargs["client"] = kwargs.pop("_client", message._client)
-        [
-            kwargs.pop(arg, 0)
-            for arg in dir(Message)
-            if (
-                isinstance(getattr(Message, arg, 0), (cached_property, property))
-                and not hasattr(Msg, arg)
-            )
-        ]
+        for arg in dir(Message):
+            if isinstance(
+                getattr(Message, arg, 0), (cached_property, property)
+            ) and not hasattr(Msg, arg):
+                kwargs.pop(arg, 0)
         return kwargs
 
     @classmethod
