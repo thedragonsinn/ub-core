@@ -32,7 +32,7 @@ class Conversation(Str):
         self._client: Client = client
         self.check_for_duplicates: bool = check_for_duplicates
         self.filters: Filter = filters
-        self.response_future: asyncio.Future | None = None
+        self.response_future: asyncio.Future | Message | None = None
         self.responses: list[Message] = []
         self.timeout: int = timeout
         self.set_future()
@@ -87,7 +87,7 @@ class Conversation(Str):
     async def get_response(self, timeout: int = 0) -> Message | None:
         """Returns Latest Message for Specified Filters."""
         try:
-            response: asyncio.Future.result = await asyncio.wait_for(
+            response: Message = await asyncio.wait_for(
                 fut=self.response_future, timeout=timeout or self.timeout
             )
             return response
@@ -98,16 +98,16 @@ class Conversation(Str):
 
     async def send_message(
         self, text: str, timeout: int = 0, get_response: bool = False, **kwargs
-    ) -> Message | tuple[Message, Message]:
+    ) -> tuple[Message, Message] | Message:
         """
         Bound Method to Send Texts in Convo Chat.
         Returns Sent Message and Response if get_response is True.
         """
-        message = await self._client.send_message(
+        message: Message = await self._client.send_message(
             chat_id=self.chat_id, text=text, **kwargs
         )
         if get_response:
-            response = await self.get_response(timeout=timeout)
+            response: Message = await self.get_response(timeout=timeout)
             return message, response
         return message
 
