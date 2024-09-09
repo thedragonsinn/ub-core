@@ -45,7 +45,7 @@ class OnMessage(Client):
 
                 func.handlers.append(
                     (
-                        handler(cmd_dispatcher, self),
+                        handler(dispatch_wrapper, self),
                         group if filters is None else filters,
                     )
                 )
