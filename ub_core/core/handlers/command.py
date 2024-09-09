@@ -1,8 +1,6 @@
-from pyrogram.handlers import EditedMessageHandler, MessageHandler
-
 from ub_core import Message, bot
 from ub_core.config import Cmd, Config
-from ub_core.core.handlers import cmd_dispatcher, create
+from ub_core.core.handlers import UnifiedHandler, cmd_dispatcher, create
 
 
 def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
@@ -78,8 +76,5 @@ CMD_FILTER = create(owner_check) | create(sudo_check) | create(super_user_check)
 # for those, Manually add handler on the above function
 if Config.LOAD_HANDLERS:
     bot.add_handler(
-        MessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
-    )
-    bot.add_handler(
-        EditedMessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+        UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
     )

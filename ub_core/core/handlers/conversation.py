@@ -12,8 +12,7 @@ CONVO_FILTER = create(
 )
 
 
-@bot.on_message(CONVO_FILTER, group=0)
-@bot.on_edited_message(CONVO_FILTER, group=0)
+@bot.on_message(CONVO_FILTER, group=0, filters_edited=True)
 async def convo_handler(bot: BOT, message: Msg):
     """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Convo] = Convo.CONVO_DICT[message.chat.id]

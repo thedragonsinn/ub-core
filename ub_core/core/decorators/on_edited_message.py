@@ -37,7 +37,7 @@ class OnEditedMessage(Client):
 
                 func.handlers.append(
                     (
-                        EditedMessageHandler(func, self),
+                        EditedMessageHandler(dispatch_wrapper, self),
                         group if filters is None else filters,
                     )
                 )
