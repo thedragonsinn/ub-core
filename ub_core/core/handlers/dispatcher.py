@@ -3,6 +3,12 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Callable
 
+from pyrogram.types import (
+    Message as MessageUpdate,
+    CallbackQuery as CallbackQueryUpdate,
+)
+
+
 from pyrogram import ContinuePropagation, StopPropagation
 
 from ub_core import BOT, CallbackQuery, Config, Message
@@ -37,9 +43,19 @@ async def client_check(client: BOT, message: Message):
                 message.stop_propagation()
 
 
+def make_custom_object(
+    update: MessageUpdate | CallbackQueryUpdate,
+) -> Message | CallbackQuery | None:
+    if isinstance(update, MessageUpdate):
+        return Message.parse(update)
+
+    if isinstance(update, CallbackQueryUpdate):
+        return CallbackQuery.parse(update)
+
+
 async def cmd_dispatcher(
     client: BOT,
-    message: Message | CallbackQuery,
+    update: MessageUpdate | CallbackQueryUpdate,
     func: Callable = None,
     check_for_reactions: bool = True,
     mode_sensitive: bool = True,
@@ -49,40 +65,40 @@ async def cmd_dispatcher(
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
 
     if mode_sensitive:
-        await client_check(client, message)
+        await client_check(client, update)
 
-    if check_for_reactions and anti_reaction(message):
-        message.stop_propagation()
+    if check_for_reactions and anti_reaction(update):
+        update.stop_propagation()
 
     if use_custom_object:
-        message = Message.parse(message)
+        update = make_custom_object(update)
 
     if not func:
-        cmd_object = Config.CMD_DICT.get(message.cmd)
+        cmd_object = Config.CMD_DICT.get(update.cmd)
 
         if not cmd_object:
             return
         func = cmd_object.func
 
-    task = asyncio.create_task(func(client, message), name=message.task_id)
+    task = asyncio.create_task(func(client, update), name=update.task_id)
 
     try:
         await task
-        if is_command and message.is_from_owner:
-            await message.delete()
+        if is_command and update.is_from_owner:
+            await update.delete()
 
     except asyncio.exceptions.CancelledError:
-        await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
+        await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{update.text}</code>")
 
     except (StopPropagation, ContinuePropagation):
         raise
 
     except Exception as e:
-        client.log.error(e, exc_info=True, extra={"tg_message": message})
+        client.log.error(e, exc_info=True, extra={"tg_message": update})
 
-    if not client.is_bot and message.id in USER_IS_PROCESSING_MESSAGE:
+    if not client.is_bot and update.id in USER_IS_PROCESSING_MESSAGE:
         await asyncio.sleep(1)
-        USER_IS_PROCESSING_MESSAGE.remove(message.id)
+        USER_IS_PROCESSING_MESSAGE.remove(update.id)
 
     if is_command:
-        message.stop_propagation()
+        update.stop_propagation()

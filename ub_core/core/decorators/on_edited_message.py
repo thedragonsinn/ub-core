@@ -21,7 +21,7 @@ class OnEditedMessage(Client):
             async def dispatch_wrapper(client, message):
                 await cmd_dispatcher(
                     client=client,
-                    message=message,
+                    update=message,
                     func=func,
                     check_for_reactions=check_for_reactions,
                     mode_sensitive=mode_sensitive,
@@ -37,7 +37,7 @@ class OnEditedMessage(Client):
 
                 func.handlers.append(
                     (
-                        EditedMessageHandler(func, self),
+                        EditedMessageHandler(dispatch_wrapper, self),
                         group if filters is None else filters,
                     )
                 )

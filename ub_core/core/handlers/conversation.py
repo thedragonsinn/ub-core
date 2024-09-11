@@ -1,9 +1,8 @@
-from pyrogram.handlers import EditedMessageHandler, MessageHandler
-from pyrogram.types import Message as Msg
+from pyrogram.types import Message as MessageUpdate
 
 from ub_core import BOT, Convo, bot
-from ub_core.core.conversation import Conversation
-from ub_core.core.handlers import create, valid_chat_filter
+from ..handlers import create, valid_chat_filter, UnifiedHandler
+from ...core.conversation import Conversation
 
 CONVO_FILTER = valid_chat_filter & create(
     lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
@@ -11,9 +10,8 @@ CONVO_FILTER = valid_chat_filter & create(
 )
 
 
-@bot.on_message(CONVO_FILTER, group=0, is_command=False)
-@bot.on_edited_message(CONVO_FILTER, group=0, is_command=False)
-async def convo_handler(bot: BOT, message: Msg):
+@bot.on_message(CONVO_FILTER, group=0, is_command=False, filters_edited=True)
+async def convo_handler(bot: BOT, message: MessageUpdate):
     """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Convo] = Convo.CONVO_DICT[message.chat.id]
 
@@ -31,8 +29,5 @@ async def convo_handler(bot: BOT, message: Msg):
 
 if bot.has_bot:
     bot.bot.add_handler(
-        MessageHandler(callback=convo_handler, filters=CONVO_FILTER), group=0
-    )
-    bot.bot.add_handler(
-        EditedMessageHandler(callback=convo_handler, filters=CONVO_FILTER), group=0
+        UnifiedHandler(callback=convo_handler, filters=CONVO_FILTER), group=0
     )

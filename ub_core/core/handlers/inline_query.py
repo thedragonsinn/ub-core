@@ -8,8 +8,8 @@ from pyrogram.types import (
 )
 
 from ub_core import BOT, Config, bot
-from ub_core.core.handlers import create
-from ub_core.core.handlers.command import check_sudo_access
+from ..handlers import create
+from ..handlers.command import check_sudo_access
 
 
 def inline_check(_, __, inline_query: InlineQuery):
@@ -63,7 +63,7 @@ async def inline_handler(bot: BOT, inline_query: InlineQuery):
     await inline_query.answer(results=[result], cache_time=10)
 
 
-if bot.bot and bot.bot.is_bot:
+if bot.has_bot or bot.is_bot:
     bot.bot.add_handler(
         InlineQueryHandler(callback=inline_handler, filters=INLINE_FILTER), group=1
     )

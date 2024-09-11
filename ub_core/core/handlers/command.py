@@ -1,10 +1,9 @@
 from pyrogram.enums import ChatType
-from pyrogram.handlers import EditedMessageHandler, MessageHandler
 from pyrogram.types import Message
 
 from ub_core import BOT, Config, bot
 from ub_core.config import Cmd
-from ub_core.core.handlers import cmd_dispatcher, create, valid_chat_filter
+from ..handlers import cmd_dispatcher, create, valid_chat_filter, UnifiedHandler
 
 
 def client_check(_, client: BOT, message: Message):
@@ -100,15 +99,9 @@ CMD_FILTER = valid_chat_filter & (
 
 if Config.LOAD_HANDLERS:
     bot.add_handler(
-        MessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
-    )
-    bot.add_handler(
-        EditedMessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+        UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
     )
     if bot.has_bot:
         bot.bot.add_handler(
-            MessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
-        )
-        bot.bot.add_handler(
-            EditedMessageHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
+            UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
         )

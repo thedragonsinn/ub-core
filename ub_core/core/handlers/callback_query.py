@@ -1,13 +1,13 @@
 from pyrogram.errors import UserIsBlocked
 from pyrogram.handlers import CallbackQueryHandler
-from pyrogram.types import CallbackQuery as CQ
+from pyrogram.types import CallbackQuery as CallbackQueryUpdate
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from ub_core import BOT, CallbackQuery, Config, bot
-from ub_core.core.handlers import cmd_dispatcher, create
+from ..handlers import cmd_dispatcher, create
 
 
-def callback_check(_, __, callback_query):
+def callback_check(_, __, callback_query: CallbackQueryUpdate):
     if isinstance(callback_query.data, bytes):
         data = callback_query.data.decode("utf-8")
     else:
@@ -15,11 +15,11 @@ def callback_check(_, __, callback_query):
     return data in Config.INLINE_QUERY_CACHE.keys()
 
 
-callback_filter = create(callback_check)
+CALLBACK_FILTER = create(callback_check)
 
 
-async def callback_handler(client: BOT, callback_query: CQ):
-    callback_query = CallbackQuery.parse(callback_query)
+async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate):
+    callback_query: CallbackQuery = CallbackQuery.parse(callback_query)
 
     try:
         await client.send_message(
@@ -38,7 +38,7 @@ async def callback_handler(client: BOT, callback_query: CQ):
 
     await cmd_dispatcher(
         client=client,
-        message=callback_query,
+        update=callback_query,
         is_command=False,
         check_for_reactions=False,
         mode_sensitive=False,
@@ -47,8 +47,8 @@ async def callback_handler(client: BOT, callback_query: CQ):
     await callback_query.stop_propagation()
 
 
-if bot.bot and bot.bot.is_bot:
+if bot.has_bot or bot.is_bot:
     bot.bot.add_handler(
-        CallbackQueryHandler(callback=callback_handler, filters=callback_filter),
+        CallbackQueryHandler(callback=callback_handler, filters=CALLBACK_FILTER),
         group=1,
     )
