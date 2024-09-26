@@ -26,7 +26,7 @@ class Cmd:
     def __init__(self, cmd: str, func: Callable, cmd_path: str, sudo: bool):
         self.cmd: str = cmd
         self.cmd_path: str = cmd_path
-        self.dirname: str = path.basename(path.dirname(cmd_path))
+        self.dir_name: str = path.basename(path.dirname(cmd_path))
         self.doc: str = func.__doc__ or "Not Documented."
         self.func: Callable = func
         self.loaded = False

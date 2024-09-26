@@ -2,7 +2,7 @@ import inspect
 from functools import wraps
 from typing import Callable
 
-from ub_core.config import Cmd, Config
+from ...config import Cmd, Config
 
 
 class AddCmd:

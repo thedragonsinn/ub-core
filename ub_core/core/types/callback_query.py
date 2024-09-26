@@ -1,10 +1,14 @@
 from functools import cached_property
-from typing import Self
+from io import BytesIO
+from typing import TYPE_CHECKING, Self
 
-from pyrogram.types import CallbackQuery as CQ
+from pyrogram.types import CallbackQuery as CallbackQueryUpdate
 
-from ub_core import Config
-from ub_core.core.types.message import Message
+from .message import Message
+from ...config import Config
+
+if TYPE_CHECKING:
+    from ..client import DualClient
 
 
 def construct_properties(inline_query_id: str) -> tuple[str, list, str, str]:
@@ -19,14 +23,18 @@ def construct_properties(inline_query_id: str) -> tuple[str, list, str, str]:
     return cmd, flags, input, filtered_input
 
 
-class CallbackQuery(CQ):
+class CallbackQuery(CallbackQueryUpdate):
     """A Custom CallbackQuery Class with ease of access methods"""
 
-    def __init__(self, callback_query: CQ | Self) -> None:
+    _client: "DualClient"
+
+    def __init__(self, callback_query: CallbackQueryUpdate | Self) -> None:
         kwargs = self.sanitize_cq(callback_query)
         super().__init__(**kwargs)
+
         if isinstance(self.data, bytes):
             self.data = self.data.decode("utf-8")
+
         self.cmd, self.flags, self.input, self.filtered_input = construct_properties(
             self.data
         )
@@ -80,7 +88,7 @@ class CallbackQuery(CQ):
         else:
             doc = BytesIO(bytes(text, encoding="utf-8"))
             doc.name = name
-            await super().send_document(
+            await self._client.send_document(
                 chat_id=self.from_user.id, document=doc, **kwargs
             )
         return self
@@ -95,10 +103,10 @@ class CallbackQuery(CQ):
         for arg in dir(CallbackQuery):
             if isinstance(
                 getattr(CallbackQuery, arg, 0), (cached_property, property)
-            ) and not hasattr(CQ, arg):
+            ) and not hasattr(CallbackQueryUpdate, arg):
                 kwargs.pop(arg, 0)
         return kwargs
 
     @classmethod
-    def parse(cls, callback_query: CQ) -> "CallbackQuery":
+    def parse(cls, callback_query: CallbackQueryUpdate) -> "CallbackQuery":
         return cls(callback_query)

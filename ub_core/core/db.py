@@ -7,8 +7,7 @@ from motor.core import AgnosticClient, AgnosticCollection, AgnosticDatabase
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
-from ub_core import Config
-from ub_core.core import Str
+from ..config import Config
 
 dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
 dns.resolver.default_resolver.nameservers = ["8.8.8.8"]
@@ -23,7 +22,7 @@ else:
     DB_CLIENT = DB = None
 
 
-class CustomDB(AsyncIOMotorCollection, Str):
+class CustomDB(AsyncIOMotorCollection):
     """A Custom Class with a few Extra Methods for ease of access"""
 
     def __init__(self, collection_name: str):

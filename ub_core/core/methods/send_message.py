@@ -1,13 +1,17 @@
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from pyrogram import Client
 
-from ub_core.core.types.message import Message
+from ..types.message import Message
+
+if TYPE_CHECKING:
+    from ..client import DualClient
 
 
 class SendMessage(Client):
     async def send_message(
-        self,
+        self: "DualClient",
         chat_id: int | str,
         text,
         name: str = "output.txt",

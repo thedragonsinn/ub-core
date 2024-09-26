@@ -17,16 +17,12 @@ except (ImportError, ModuleNotFoundError):
 
 ub_core_dirname = os.path.dirname(__file__)
 
-# fmt:off
-
-from ub_core.config import Cmd, Config
-from ub_core.core import DB, DB_CLIENT, CallbackQuery, Convo, CustomDB, Message
-from ub_core.core.client import DualClient
+from .config import Cmd, Config
+from .core import DB, DB_CLIENT, CallbackQuery, Convo, CustomDB, Message
+from .core.client import DualClient
+from .version import __version__
 
 bot: DualClient = DualClient()
 BOT = DualClient
 
-from ub_core.core.logger import LOGGER
-from ub_core.version import __version__
-
-# fmt: on
+from .core.logger import LOGGER

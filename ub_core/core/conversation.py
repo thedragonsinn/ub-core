@@ -1,17 +1,16 @@
 import asyncio
 from collections import defaultdict
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
-from pyrogram import Client
 from pyrogram.filters import Filter
 from pyrogram.types import Message
 
-from ub_core.core import Str
+if TYPE_CHECKING:
+    from .client import DualClient
+
 
 # Relies on ub_core/core/handlers/conversation
-
-
-class Conversation(Str):
+class Conversation:
     """A Custom Class to get responses from chats"""
 
     CONVO_DICT: dict[int, list["Conversation"]] = defaultdict(list)
@@ -22,14 +21,14 @@ class Conversation(Str):
 
     def __init__(
         self,
-        client: Client,
+        client: "DualClient",
         chat_id: int | str,
         check_for_duplicates: bool = True,
         filters: Filter | None = None,
         timeout: int = 10,
     ):
         self.chat_id: int | str = chat_id
-        self._client: Client = client
+        self._client: "DualClient" = client
         self.check_for_duplicates: bool = check_for_duplicates
         self.filters: Filter = filters
         self.response_future: asyncio.Future | None = None

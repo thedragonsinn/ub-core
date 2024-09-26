@@ -3,15 +3,13 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Callable
 
-from pyrogram.types import (
-    Message as MessageUpdate,
-    CallbackQuery as CallbackQueryUpdate,
-)
-
-
 from pyrogram import ContinuePropagation, StopPropagation
+from pyrogram.types import CallbackQuery as CallbackQueryUpdate
+from pyrogram.types import Message as MessageUpdate
 
-from ub_core import BOT, CallbackQuery, Config, Message
+from ub_core import BOT, Config
+
+from ..types import CallbackQuery, Message
 
 USER_IS_PROCESSING_MESSAGE: list[int] = []
 

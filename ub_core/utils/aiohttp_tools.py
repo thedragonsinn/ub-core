@@ -6,8 +6,8 @@ from io import BytesIO
 from aiohttp import ClientSession, ContentTypeError, web
 from yarl import URL
 
-from ub_core.config import Config
-from ub_core.utils.media_helper import get_filename_from_url
+from .media_helper import get_filename_from_url
+from ..config import Config
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 

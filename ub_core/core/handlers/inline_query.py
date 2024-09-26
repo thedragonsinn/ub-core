@@ -7,9 +7,10 @@ from pyrogram.types import (
     InputTextMessageContent,
 )
 
-from ub_core import BOT, Config, bot
 from ..handlers import create
 from ..handlers.command import check_sudo_access
+from ... import BOT, bot
+from ...config import Config
 
 
 def inline_check(_, __, inline_query: InlineQuery):

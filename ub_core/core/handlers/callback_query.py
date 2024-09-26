@@ -3,8 +3,10 @@ from pyrogram.handlers import CallbackQueryHandler
 from pyrogram.types import CallbackQuery as CallbackQueryUpdate
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from ub_core import BOT, CallbackQuery, Config, bot
+from ub_core import BOT, Config, bot
+
 from ..handlers import cmd_dispatcher, create
+from ..types import CallbackQuery
 
 
 def callback_check(_, __, callback_query: CallbackQueryUpdate):

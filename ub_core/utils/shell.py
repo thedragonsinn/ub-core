@@ -1,11 +1,12 @@
 import asyncio
 import os
 from asyncio.subprocess import Process
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyrogram.enums import ParseMode
 
-from ub_core import Message
+if TYPE_CHECKING:
+    from ..core.types.message import Message
 
 
 async def run_shell_cmd(
@@ -72,7 +73,7 @@ class AsyncShell:
             self.last_line = decoded_line
         self.is_done = True
 
-    async def send_output(self, message: Message) -> None:
+    async def send_output(self, message: "Message") -> None:
         sleep_duration: int = 1
         old_output: str = ""
 
@@ -141,7 +142,7 @@ class InteractiveShell:
 
         self.is_running = False
 
-    async def send_output(self, message: Message) -> None:
+    async def send_output(self, message: "Message") -> None:
         sleep_duration: int = 1
         old_output: str = ""
 

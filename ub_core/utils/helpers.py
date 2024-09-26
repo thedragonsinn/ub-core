@@ -4,8 +4,8 @@ import time
 from pyrogram.types import Chat, Message, User
 from telegraph.aio import Telegraph
 
-from ub_core.config import Config
-from ub_core.utils.media_helper import bytes_to_mb
+from .media_helper import bytes_to_mb
+from ..config import Config
 
 TELEGRAPH: None | Telegraph = None
 

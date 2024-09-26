@@ -1,33 +1,39 @@
 import logging
+from typing import TYPE_CHECKING
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 
-from ub_core import Config
-from ub_core.core.types.message import Message
+from ...config import Config
+
+if TYPE_CHECKING:
+    from ..client import DualClient
+    from ..types.message import Message
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
 class ChannelLogger(Client):
     async def log_text(
-        self,
+        self: "DualClient",
         text,
         name="log.txt",
         disable_web_page_preview=True,
         parse_mode=ParseMode.HTML,
         type: str = "",
-    ) -> Message:
+    ) -> "Message":
         """Log Text to Channel and to Stream/File if type matches logging method."""
 
         if type:
             if hasattr(LOGGER, type):
                 getattr(LOGGER, type)(text)
             text = f"#{type.upper()}\n{text}"
+
         if self.bot:
             client = self.bot
         else:
             client = self
+
         return (await client.send_message(
             chat_id=Config.LOG_CHAT,
             text=text,
@@ -37,7 +43,8 @@ class ChannelLogger(Client):
             disable_notification=False,
         ))  # fmt:skip
 
-    async def log_message(self, message: Message):
+    @staticmethod
+    async def log_message(message: "Message") -> "Message":
         """Log a Message to Log Channel"""
         return (await message.copy(
             chat_id=Config.LOG_CHAT,

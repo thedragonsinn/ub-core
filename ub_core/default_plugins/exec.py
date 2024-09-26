@@ -7,9 +7,8 @@ from io import StringIO
 from pyrogram.enums import ParseMode
 
 import ub_core  # NOQA
-
 from ub_core import BOT, DB, DB_CLIENT, Cmd, Config, CustomDB, Message, bot  # NOQA
-from ub_core.utils import shell, aio  # NOQA
+from ub_core.utils import aio, shell  # NOQA
 
 
 async def executor(bot: BOT, message: Message) -> Message | None:
