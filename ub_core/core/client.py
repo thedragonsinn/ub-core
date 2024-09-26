@@ -179,7 +179,7 @@ class DualClient(Bot):
 
     async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
-         await self.stop_clients()
+        await self.stop_clients()
 
         for task in Config.BACKGROUND_TASKS:
             if not task.done():
