@@ -5,16 +5,21 @@ import logging
 import os
 import sys
 from functools import cached_property
+from inspect import iscoroutinefunction
+from signal import SIGINT, raise_signal
 from typing import Self
 
 from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 
-from ub_core import DB_CLIENT, Config, CustomDB, ub_core_dirname
+from ub_core import ub_core_dirname
+
 from .conversation import Conversation
+from .db import DB_CLIENT, CustomDB
 from .decorators import CustomDecorators
 from .methods import Methods
-from ub_core.utils import aio
+from ..config import Config
+from ..utils import aio
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -52,6 +57,7 @@ class Bot(CustomDecorators, Methods, Client):
         )
         self.log = LOGGER
         self.Convo = Conversation
+        self.exit_code = 0
 
     @cached_property
     def is_bot(self):
@@ -96,23 +102,27 @@ class DualClient(Bot):
         super().__init__(bot_token=bot_token)
 
     @cached_property
-    def bot(self):
+    def bot(self) -> "DualClient":
         return self if self.is_bot else self._bot
 
     @cached_property
-    def user(self):
+    def user(self) -> "DualClient":
         return self if self.is_user else self._user
 
     @property
-    def client(self):
+    def client(self) -> "DualClient":
         return self if Config.MODE == "dual" else self.bot
 
+    @property
+    def client_type(self) -> str:
+        return "User" if self.is_user else "Bot"
+
     @cached_property
-    def has_bot(self):
+    def has_bot(self) -> bool:
         return self._bot is not None
 
     @cached_property
-    def has_user(self):
+    def has_user(self) -> bool:
         return self._user is not None
 
     @staticmethod
@@ -128,16 +138,17 @@ class DualClient(Bot):
             Config.MODE = mode_data.get("value")
 
     @staticmethod
-    def _import():
+    def _import() -> None:
         """Import Inbuilt and external Modules"""
         import_modules(ub_core_dirname)
         import_modules(Config.WORKING_DIR)
 
     async def boot(self) -> None:
         await super().start()
+        LOGGER.info(f"[{self.client_type}] Connected to TG.")
         if self._bot:
             await self._bot.start()
-        LOGGER.info("Connected to TG.")
+            LOGGER.info(f"[BOT] Connected  to TG.")
 
         await asyncio.to_thread(self._import)
         LOGGER.info("Plugins Imported.")
@@ -151,38 +162,35 @@ class DualClient(Bot):
         await self.log_text(text="<i>Started</i>")
         LOGGER.info(f"Idling on [{Config.MODE.upper()}] Mode...")
         self.is_idling = True
-
         await idle()
-        await self.shut_down()
-
-    async def restart(self, hard=False) -> None:
-        LOGGER.info("Restarting...")
 
         await self.shut_down()
+        sys.exit(self.exit_code)
 
-        if hard:
-            sys.exit(69)
+    def raise_sigint(self):
+        self.exit_code = 69
+        raise_signal(SIGINT)
 
-        os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
-
-    async def stop_clients(self):
+    async def stop_clients(self) -> None:
         if self.user:
-            await self.user.stop(block=False)
+            await self.user.stop(block=True)
         if self.bot:
-            await self.bot.stop(block=False)
+            await self.bot.stop(block=True)
 
-    async def shut_down(self):
+    async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
-        await self.stop_clients()
-        await aio.close()
+         await self.stop_clients()
 
         for task in Config.BACKGROUND_TASKS:
             if not task.done():
                 task.cancel()
 
-        if DB_CLIENT is not None:
-            LOGGER.info("DB Closed.")
-            DB_CLIENT.close()
+        for resource in (DB_CLIENT, Config.REPO, aio):
+            if resource is None:
+                continue
+            if iscoroutinefunction(resource.close):
+                await resource.close()
+            else:
+                resource.close()
 
-        if Config.REPO:
-            Config.REPO.close()
+        LOGGER.info("Database, Git-Repository, and Aiohttp-Client connections closed.")

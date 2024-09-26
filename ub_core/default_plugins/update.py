@@ -1,7 +1,6 @@
 import asyncio
 
 from ub_core import BOT, Config, Message, __version__, bot
-from ub_core.default_plugins.restart import restart
 from ub_core.utils import aio, run_shell_cmd
 
 REPO = Config.REPO
@@ -77,22 +76,23 @@ async def updater(bot: BOT, message: Message) -> None | Message:
         if update_status == -1:
             await asyncio.gather(
                 run_shell_cmd(
-                    f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}@dual_mode"
+                    f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"
                 ),
                 reply.edit(
                     f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"
                 ),
             )
-            await restart(bot, message, reply)
-            return
+            bot.raise_sigint()
+
         elif update_status == 0:
             await reply.edit(f"Already on latest version: {__version__}")
-            return
+
         else:
             await reply.edit(
                 f"Currently on a test version: {__version__} ahead of {version}"
             )
-            return
+
+        return
 
     commits: str = await get_commits()
 
@@ -120,8 +120,8 @@ async def updater(bot: BOT, message: Message) -> None | Message:
         ),
         reply.edit("<b>Update Found</b>\n<code>Pulling....</code>"),
         run_shell_cmd(
-            f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}@dual_mode"
+            f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"
         ),
     )
 
-    await restart(bot, message, reply)
+    bot.raise_sigint()
