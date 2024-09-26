@@ -2,32 +2,36 @@ import asyncio
 import os
 import shutil
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 import aiofiles
 import aiohttp
-from pyrogram.types import Message as Msg
 
-from ub_core.core.types.message import Message
-from ub_core.utils import Str
-from ub_core.utils.helpers import progress
-from ub_core.utils.media_helper import (
+from .helpers import progress
+from .media_helper import (
     bytes_to_mb,
     get_filename_from_headers,
     get_filename_from_url,
     get_type,
 )
 
+if TYPE_CHECKING:
+    from ub_core import Message
 
-class DownloadedFile(Str):
-    def __init__(self, name: str, path: str, full_path: str, size: int | float):
+
+class DownloadedFile:
+    def __init__(self, name: str, path: str, file_path: str, size: int | float):
         self.name = name
         self.path = path
-        self.full_path = full_path
+        self.file_path = file_path
         self.size = size
         self.type = get_type(path=name)
 
+    def __str__(self):
+        return self.file_path
 
-class Download(Str):
+
+class Download:
     """Download a file in async using aiohttp.
 
     Parameters:
@@ -64,7 +68,7 @@ class Download(Str):
         session: aiohttp.client,
         headers: aiohttp.ClientResponse.headers,
         custom_file_name: str | None = None,
-        message_to_edit: Message | Msg | None = None,
+        message_to_edit: "Message" = None,
     ):
         self.url: str = url
         self.path: str = path
@@ -72,7 +76,7 @@ class Download(Str):
         self.custom_file_name: str = custom_file_name
         self.file_session: aiohttp.ClientResponse = file_session
         self.session: aiohttp.ClientSession = session
-        self.message_to_edit: Message | Msg | None = message_to_edit
+        self.message_to_edit: "Message" = message_to_edit
         self.raw_completed_size: int = 0
         self.has_started: bool = False
         self.is_done: bool = False
@@ -83,7 +87,7 @@ class Download(Str):
         cls,
         url: str,
         path: str = "downloads",
-        message_to_edit: Message | None = None,
+        message_to_edit: "Message" = None,
         custom_file_name: str | None = None,
     ) -> "Download":
         session = aiohttp.ClientSession()
@@ -111,9 +115,9 @@ class Download(Str):
             )
 
     async def check_duplicates(self):
-        if os.path.isfile(self.full_path):
+        if os.path.isfile(self.file_path):
             await self.close()
-            raise self.DuplicateDownload(self.full_path)
+            raise self.DuplicateDownload(self.file_path)
 
     @property
     def completed_size(self):
@@ -129,7 +133,7 @@ class Download(Str):
         )
 
     @cached_property
-    def full_path(self):
+    def file_path(self):
         return os.path.join(self.path, self.file_name)
 
     @cached_property
@@ -151,7 +155,7 @@ class Download(Str):
     async def download(self) -> DownloadedFile | None:
         if self.session.closed:
             return
-        async with aiofiles.open(self.full_path, "wb") as async_file:
+        async with aiofiles.open(self.file_path, "wb") as async_file:
             self.has_started = True
             while file_chunk := (await self.file_session.content.read(1024)):  # NOQA
                 await async_file.write(file_chunk)
@@ -162,17 +166,17 @@ class Download(Str):
                     response=self.message_to_edit,
                     action="Downloading...",
                     file_name=self.file_name,
-                    file_path=self.full_path,
+                    file_path=self.file_path,
                 )
         self.is_done = True
         await self.close()
         return self.return_file()
 
     def return_file(self) -> DownloadedFile:
-        if os.path.isfile(self.full_path):
+        if os.path.isfile(self.file_path):
             return DownloadedFile(
                 name=self.file_name,
                 path=self.path,
-                full_path=self.full_path,
+                file_path=self.file_path,
                 size=self.size,
             )
