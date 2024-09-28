@@ -20,15 +20,15 @@ if TYPE_CHECKING:
 
 
 class DownloadedFile:
-    def __init__(self, name: str, path: str, file_path: str, size: int | float):
+    def __init__(self, name: str, dir: str, size: int | float):
+        self.dir = dir
         self.name = name
-        self.path = path
-        self.file_path = file_path
+        self.path = os.path.join(dir, name)
         self.size = size
         self.type = get_type(path=name)
 
     def __str__(self):
-        return self.file_path
+        return self.path
 
 
 class Download:
@@ -37,7 +37,7 @@ class Download:
     Parameters:
         url (str):
             file url.
-        path (str):
+        dir (str):
             download path without file name.
         message_to_edit(Message):
             response message to edit for progress.
@@ -56,37 +56,38 @@ class Download:
         file = await dl_obj.download()
     """
 
-    class DuplicateDownload(Exception):
-        def __init__(self, path: str):
-            super().__init__(f"path {path} already exists!")
-
     def __init__(
         self,
         url: str,
-        path: str,
+        dir: str,
         file_session: aiohttp.ClientResponse,
         session: aiohttp.client,
         headers: aiohttp.ClientResponse.headers,
         custom_file_name: str | None = None,
         message_to_edit: "Message" = None,
     ):
-        self.url: str = url
-        self.path: str = path
-        self.headers: aiohttp.ClientResponse.headers = headers
         self.custom_file_name: str = custom_file_name
+        self.dir: str = dir
+        os.makedirs(name=dir, exist_ok=True)
+
         self.file_session: aiohttp.ClientResponse = file_session
         self.session: aiohttp.ClientSession = session
-        self.message_to_edit: "Message" = message_to_edit
+        self.url: str = url
+        self.headers: aiohttp.ClientResponse.headers = headers
+
         self.raw_completed_size: int = 0
+
         self.has_started: bool = False
         self.is_done: bool = False
-        os.makedirs(name=path, exist_ok=True)
+
+        self.message_to_edit: "Message" = message_to_edit
+        self.progress_task: asyncio.Task | None = None
 
     @classmethod
     async def setup(
         cls,
         url: str,
-        path: str = "downloads",
+        dir: str = "downloads",
         message_to_edit: "Message" = None,
         custom_file_name: str | None = None,
     ) -> "Download":
@@ -95,7 +96,7 @@ class Download:
         headers = file_session.headers
         cls_object = cls(
             url=url,
-            path=path,
+            dir=dir,
             file_session=file_session,
             session=session,
             headers=headers,
@@ -107,25 +108,25 @@ class Download:
         )
         return cls_object
 
-    async def check_disk_space(self):
-        if shutil.disk_usage(self.path).free < self.raw_size:
+    async def check_disk_space(self) -> None:
+        if shutil.disk_usage(self.dir).free < self.raw_size:
             await self.close()
-            raise MemoryError(
-                f"Not enough space in {self.path} to download {self.size}mb."
+            raise OverflowError(
+                f"Not enough space in {self.dir} to download {self.size} mb."
             )
 
-    async def check_duplicates(self):
+    async def check_duplicates(self) -> None:
         if os.path.isfile(self.file_path):
             await self.close()
-            raise self.DuplicateDownload(self.file_path)
+            raise FileExistsError(f"{self.file_path} already exists!!!")
 
     @property
-    def completed_size(self):
+    def completed_size(self) -> int:
         """Size in MB"""
         return bytes_to_mb(self.raw_completed_size)
 
     @cached_property
-    def file_name(self):
+    def file_name(self) -> str:
         if self.custom_file_name:
             return self.custom_file_name
         return get_filename_from_headers(self.headers) or get_filename_from_url(
@@ -133,50 +134,66 @@ class Download:
         )
 
     @cached_property
-    def file_path(self):
-        return os.path.join(self.path, self.file_name)
+    def file_path(self) -> str:
+        return os.path.join(self.dir, self.file_name)
 
     @cached_property
-    def raw_size(self):
+    def raw_size(self) -> int:
         # File Size in Bytes
         return int(self.headers.get("Content-Length", 0))
 
     @cached_property
-    def size(self):
+    def size(self) -> int:
         """File size in MBs"""
         return bytes_to_mb(self.raw_size)
 
-    async def close(self):
+    async def close(self) -> None:
         if not self.session.closed:
             await self.session.close()
+
         if not self.file_session.closed:
             self.file_session.close()
 
-    async def download(self) -> DownloadedFile | None:
-        if self.session.closed:
+        if not self.progress_task.done():
+            self.progress_task.cancel()
+
+    async def download(self) -> DownloadedFile | Exception | None:
+        if self.session.closed or self.file_session.closed:
             return
+
+        self.has_started = True
+        self.progress_task = asyncio.create_task(self.edit_progress())
+
+        exc = None
+        try:
+            await self.write_file()
+        except Exception as e:
+            exc = e
+        finally:
+            self.is_done = True
+            await self.close()
+
+        return exc or self.return_file()
+
+    async def write_file(self) -> None:
         async with aiofiles.open(self.file_path, "wb") as async_file:
-            self.has_started = True
-            while file_chunk := (await self.file_session.content.read(1024)):  # NOQA
-                await async_file.write(file_chunk)
-                self.raw_completed_size += 1024
-                await progress(
-                    current=self.raw_completed_size,
-                    total=self.raw_size,
-                    response=self.message_to_edit,
-                    action="Downloading...",
-                    file_name=self.file_name,
-                    file_path=self.file_path,
-                )
-        self.is_done = True
-        await self.close()
-        return self.return_file()
+            async for file_chunk in self.file_session.content.iter_chunked(5120):
+                await async_file.write(file_chunk)  # NOQA
+                self.raw_completed_size += 5120
+
+    async def edit_progress(self) -> None:
+        while not self.is_done:
+            await progress(
+                current_size=self.raw_completed_size,
+                total_size=self.raw_size or 1,
+                response=self.message_to_edit,
+                action_str="Downloading...",
+                file_path=self.file_path,
+            )
+            await asyncio.sleep(8)
 
     def return_file(self) -> DownloadedFile:
-        if os.path.isfile(self.file_path):
-            return DownloadedFile(
-                name=self.file_name,
-                path=self.path,
-                file_path=self.file_path,
-                size=self.size,
-            )
+        if not os.path.isfile(self.file_path):
+            raise FileNotFoundError(self.file_path)
+
+        return DownloadedFile(name=self.file_name, dir=self.dir, size=self.size)

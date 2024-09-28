@@ -1,6 +1,8 @@
-import logging
+﻿import logging
 import time
+from collections import defaultdict
 
+from pyrogram.enums import ParseMode
 from pyrogram.types import Chat, Message, User
 from telegraph.aio import Telegraph
 
@@ -9,7 +11,10 @@ from ..config import Config
 
 TELEGRAPH: None | Telegraph = None
 
-PROGRESS_DICT = {}
+
+PROGRESS_DICT: dict[str, dict[str, float]] = defaultdict(
+    lambda: {"start_time": (t := time.time()), "progress_time": t}
+)
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -50,31 +55,67 @@ def extract_user_data(user: User) -> dict:
     return dict(name=get_name(user), username=user.username, mention=user.mention)
 
 
+def format_time(seconds):
+    minutes = int(seconds // 60)
+    seconds = int(seconds % 60)
+    return f"{minutes}m {seconds}s"
+
+
 async def progress(
-    current: int,
-    total: int,
-    response: Message | None = None,
-    action: str = "",
-    file_name: str = "",
+    current_size: int,
+    total_size: int,
+    response: Message = None,
+    action_str: str = "",
     file_path: str = "",
 ):
     if not response:
         return
-    if current == total:
-        PROGRESS_DICT.pop(file_path, "")
+
+    if current_size == total_size:
+        PROGRESS_DICT.pop(file_path)
         return
+
+    # start and progress time
+    progress_info = PROGRESS_DICT[file_path]
+
     current_time = time.time()
-    if file_path not in PROGRESS_DICT or (current_time - PROGRESS_DICT[file_path]) > 5:
-        PROGRESS_DICT[file_path] = current_time
-        if total:
-            percentage = round((current * 100 / total), 1)
-        else:
-            percentage = 0
-        await response.edit(
-            f"<b>{action}</b>"
-            f"\n<pre language=bash>"
-            f"\nfile={file_name}"
-            f"\npath={file_path}"
-            f"\nsize={bytes_to_mb(total)}mb"
-            f"\ncompleted={bytes_to_mb(current)}mb | {percentage}%</pre>"
-        )
+
+    # if it has not been 8 sec since the last edit don't show progress.
+    edit_time_diff = current_time - progress_info["progress_time"]
+    if edit_time_diff < 8:
+        return
+
+    # Update progress time to current time
+    progress_info["progress_time"] = current_time
+
+    # Time Since Download/Upload started
+    elapsed_time = current_time - progress_info["start_time"]
+
+    # Progress %
+    percentage = (current_size / total_size) * 100
+
+    # Speed
+    speed = current_size / elapsed_time
+
+    # Remaining time till task completes.
+    remaining_time = 0
+    if speed:
+        remaining_time = format_time((total_size - current_size) / speed)
+
+    # Indicator [#---]
+    bar_length = 15
+    fill_length = (current_size / total_size) * bar_length
+    progress_bar = "[" + ("#" * int(fill_length)).ljust(bar_length, "-") + "]"
+
+    await response.edit(
+        text=f"""
+<b>{action_str.capitalize()}</b> <code>{percentage:.2f}%</code>
+
+📁 <code>{file_path}</code>
+
+<code>{progress_bar}</code> | <code>{bytes_to_mb(current_size)}</code>/<code>{bytes_to_mb(total_size)}</code> mb
+
+⏱️Time remaining: <code>{remaining_time}</code>
+""",
+        parse_mode=ParseMode.HTML,
+    )
