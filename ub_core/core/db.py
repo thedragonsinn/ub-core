@@ -7,8 +7,7 @@ from motor.core import AgnosticClient, AgnosticCollection, AgnosticDatabase
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
-from ub_core import Config
-from ub_core.core import Str
+from ..config import Config
 
 dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
 dns.resolver.default_resolver.nameservers = ["8.8.8.8"]
@@ -23,7 +22,7 @@ else:
     DB_CLIENT = DB = None
 
 
-class CustomDB(AsyncIOMotorCollection, Str):
+class CustomDB(AsyncIOMotorCollection):
     """A Custom Class with a few Extra Methods for ease of access"""
 
     def __init__(self, collection_name: str):
@@ -40,9 +39,9 @@ class CustomDB(AsyncIOMotorCollection, Str):
 
         Raises: KeyError if _id is not present in data.
         """
-        unique_id_key = data.pop("_id", 0)
+        unique_id_key = data.get("_id")
 
-        if not unique_id_key:
+        if unique_id_key is None:
             # Thanks @kakashi_htk [TG] | @ashwinstr [GitHub] for raising error
             # suggestion.
             raise KeyError(
@@ -56,7 +55,7 @@ class CustomDB(AsyncIOMotorCollection, Str):
             return entry.inserted_id
         else:
             entry: UpdateResult = await self.update_one(
-                {"_id": unique_id_key}, {"$set": data}
+                {"_id": data.pop("_id")}, {"$set": data}
             )
             return entry.modified_count
 
