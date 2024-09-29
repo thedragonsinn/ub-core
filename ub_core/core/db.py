@@ -39,9 +39,9 @@ class CustomDB(AsyncIOMotorCollection):
 
         Raises: KeyError if _id is not present in data.
         """
-        unique_id_key = data.pop("_id", 0)
+        unique_id_key = data.get("_id")
 
-        if not unique_id_key:
+        if unique_id_key is None:
             # Thanks @kakashi_htk [TG] | @ashwinstr [GitHub] for raising error
             # suggestion.
             raise KeyError(
@@ -55,7 +55,7 @@ class CustomDB(AsyncIOMotorCollection):
             return entry.inserted_id
         else:
             entry: UpdateResult = await self.update_one(
-                {"_id": unique_id_key}, {"$set": data}
+                {"_id": data.pop("_id")}, {"$set": data}
             )
             return entry.modified_count
 
