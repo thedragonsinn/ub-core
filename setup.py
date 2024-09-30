@@ -3,14 +3,13 @@ import os
 
 from setuptools import find_packages, setup
 
+__version__: str | None = None
+
 with open("requirements.txt", mode="r", encoding="utf-8") as req_file:
     requires: list[str] = req_file.readlines()
 
 with open("ub_core/version.py", mode="r", encoding="utf-8") as version_file:
     exec(version_file.read())
-
-
-__version__ = ""
 
 
 def clean_up():
