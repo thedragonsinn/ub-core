@@ -11,18 +11,29 @@ async def cmd_info(bot: BOT, message: Message):
     USAGE: .ci ci
     """
     cmd = message.filtered_input
-    if not cmd or cmd not in Config.CMD_DICT.keys():
+    cmd_obj = Config.CMD_DICT.get("cmd")
+
+    if cmd_obj is None:
         await message.reply("Give a valid cmd.", del_in=5)
         return
-    cmd_path = Config.CMD_DICT[cmd].cmd_path
-    plugin_path = os.path.relpath(cmd_path, os.curdir)
-    repo = Config.REPO.remotes.origin.url
-    branch = Config.REPO.active_branch
-    remote_url = os.path.join(str(repo), "blob", str(branch), plugin_path)
+
+    if cmd_obj.is_from_core:
+        plugin_path = cmd_obj.cmd_path.split("site-packages/")[1]
+        repo = Config.UPDATE_REPO
+        branch = "main"
+    else:
+        plugin_path = os.path.relpath(cmd_obj.cmd_path, os.curdir)
+        repo = Config.REPO.remotes.origin.url
+        branch = Config.REPO.active_branch
+
+    to_join = [str(item).strip("/") for item in (repo, "blob", branch, plugin_path)]
+
+    remote_url = os.path.join(*to_join)
+
     resp_str = (
-        f"<pre language=css>Command: {cmd}"
-        f"\nPath: {cmd_path}</pre>"
-        f"\nLink: <a href='{remote_url}'>Github</a>"
+        f"<b>Command</b>: <code>{cmd}</code>"
+        f"\n<b>Path</b>: <code>{plugin_path}</code>"
+        f"\n\n<b>Link</b>: <a href='{remote_url}'>Github</a>"
     )
     await message.reply(resp_str, disable_web_page_preview=True)
 
@@ -32,7 +43,7 @@ async def search(bot: BOT, message: Message):
     search_str = message.input
 
     if not search_str:
-        await message.reply("Give some input to search commands.")
+        await message.reply("Give some input to search in commands.")
         return
 
     cmds = [cmd for cmd in Config.CMD_DICT.keys() if search_str in cmd]
