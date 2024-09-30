@@ -5,14 +5,19 @@ import logging
 import os
 import sys
 from functools import cached_property
+from inspect import iscoroutinefunction
+from signal import SIGINT, raise_signal
 
 from pyrogram import Client, idle
-from pyrogram.enums import ParseMode
 
-from ub_core import DB_CLIENT, Config, Convo, ub_core_dirname
-from ub_core.core.decorators import CustomDecorators
-from ub_core.core.methods import Methods
-from ub_core.utils import aio
+from ub_core import ub_core_dir_name
+
+from .conversation import Conversation as Convo
+from .db import DB_CLIENT
+from .decorators import CustomDecorators
+from .methods import Methods
+from ..config import Config
+from ..utils import aio
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -22,7 +27,7 @@ def import_modules(dir_name):
     plugins_dir = os.path.join(dir_name, "**/[!^_]*.py")
     modules = glob.glob(pathname=plugins_dir, recursive=True)
 
-    if dir_name == ub_core_dirname:
+    if dir_name == ub_core_dir_name:
         modules = [m.split("site-packages/")[1] for m in modules]
 
     for py_module in modules:
@@ -44,43 +49,28 @@ class BOT(CustomDecorators, Methods, Client):
             api_hash=os.environ.get("API_HASH"),
             bot_token=os.environ.get("BOT_TOKEN"),
             session_string=os.environ.get("SESSION_STRING"),
-            parse_mode=ParseMode.DEFAULT,
             sleep_threshold=30,
             max_concurrent_transmissions=2,
         )
+
         self.is_idling = False
         self.log = LOGGER
         self.Convo = Convo
+        self.exit_code = 0
 
     @cached_property
-    def is_bot(self):
+    def is_bot(self) -> bool:
         return self.me.is_bot
 
     @cached_property
-    def is_user(self):
+    def is_user(self) -> bool:
         return not self.me.is_bot
 
     @staticmethod
-    def _import():
+    def _import() -> None:
         """Import Inbuilt and external Modules"""
-        import_modules(ub_core_dirname)
+        import_modules(ub_core_dir_name)
         import_modules(Config.WORKING_DIR)
-
-    @staticmethod
-    async def shut_down():
-        """Gracefully ShutDown all Processes"""
-        await aio.close()
-
-        for task in Config.BACKGROUND_TASKS:
-            if not task.done():
-                task.cancel()
-
-        if DB_CLIENT is not None:
-            LOGGER.info("DB Closed.")
-            DB_CLIENT.close()
-
-        if Config.REPO:
-            Config.REPO.close()
 
     async def boot(self) -> None:
         await super().start()
@@ -100,13 +90,26 @@ class BOT(CustomDecorators, Methods, Client):
         await idle()
 
         await self.shut_down()
+        sys.exit(self.exit_code)
 
-    async def restart(self, hard=False) -> None:
-        await self.shut_down()
-        await super().stop(block=False)
+    def raise_sigint(self) -> None:
+        self.exit_code = 69
+        raise_signal(SIGINT)
 
-        if hard:
-            sys.exit(69)
+    async def shut_down(self) -> None:
+        """Gracefully ShutDown all Processes"""
+        await super().stop()
 
-        LOGGER.info("Restarting...")
-        os.execl(sys.executable, sys.executable, "-m", Config.WORKING_DIR)
+        for task in Config.BACKGROUND_TASKS:
+            if not task.done():
+                task.cancel()
+
+        for resource in (DB_CLIENT, Config.REPO, aio):
+            if resource is None:
+                continue
+            if iscoroutinefunction(resource.close):
+                await resource.close()
+            else:
+                resource.close()
+
+        LOGGER.info("Database, Git-Repository, and Aiohttp-Client connections closed.")

@@ -31,7 +31,8 @@ class TgErrorHandler(Handler):
         except Exception as e:
             print(e)
 
-    def log_to_tg(self, log_record):
+    @staticmethod
+    def log_to_tg(log_record):
         if not (bot.is_connected and bot.is_idling):
             return
 
@@ -74,7 +75,7 @@ class NetworkAndPyroHandlerIssuesHandler(Handler):
 
         if re.search(self.CLOSED_HANDLER_REGEX, warning):
             LOGGER.info("Network Issues Detected, Restarting client(s)")
-            asyncio.run_coroutine_threadsafe(coro=bot.restart(hard=True), loop=bot.loop)
+            bot.raise_sigint()
 
 
 custom_error_handler = TgErrorHandler()
