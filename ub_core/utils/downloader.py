@@ -2,10 +2,10 @@ import asyncio
 import os
 import shutil
 from functools import cached_property
-from typing import TYPE_CHECKING
 
 import aiofiles
 import aiohttp
+from pyrogram.types import Message
 
 from .helpers import progress
 from .media_helper import (
@@ -14,9 +14,6 @@ from .media_helper import (
     get_filename_from_url,
     get_type,
 )
-
-if TYPE_CHECKING:
-    from ub_core import Message
 
 
 class DownloadedFile:
@@ -67,11 +64,13 @@ class Download:
         message_to_edit: "Message" = None,
     ):
         self.custom_file_name: str = custom_file_name
+
         self.dir: str = dir
         os.makedirs(name=dir, exist_ok=True)
 
         self.file_session: aiohttp.ClientResponse = file_session
         self.session: aiohttp.ClientSession = session
+
         self.url: str = url
         self.headers: aiohttp.ClientResponse.headers = headers
 
@@ -182,6 +181,9 @@ class Download:
                 self.raw_completed_size += 5120
 
     async def edit_progress(self) -> None:
+        if not isinstance(self.message_to_edit, Message):
+            return
+
         while not self.is_done:
             await progress(
                 current_size=self.raw_completed_size,

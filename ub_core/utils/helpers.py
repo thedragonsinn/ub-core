@@ -64,13 +64,10 @@ def format_time(seconds):
 async def progress(
     current_size: int,
     total_size: int,
-    response: Message = None,
+    response: Message,
     action_str: str = "",
     file_path: str = "",
 ):
-    if not response:
-        return
-
     if current_size == total_size:
         PROGRESS_DICT.pop(file_path)
         return

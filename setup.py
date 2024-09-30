@@ -10,6 +10,9 @@ with open("ub_core/version.py", mode="r", encoding="utf-8") as version_file:
     exec(version_file.read())
 
 
+__version__ = ""
+
+
 def clean_up():
     cache = [item for item in ("./build", "./*egg-info", "./dist") if glob.glob(item)]
     os.system(" ".join(["rm -r", *cache]))

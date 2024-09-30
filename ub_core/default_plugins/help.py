@@ -29,7 +29,7 @@ async def cmd_list(bot: BOT, message: Message) -> None:
 def get_cmds() -> str:
     dir_dict = defaultdict(list)
     for cmd in Config.CMD_DICT.values():
-        dir_dict[cmd.dirname].append(cmd.cmd)
+        dir_dict[cmd.dir_name].append(cmd.cmd)
     sorted_keys = sorted(dir_dict.keys())
     help_str = ""
     for key in sorted_keys:
