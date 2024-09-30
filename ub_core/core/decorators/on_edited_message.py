@@ -14,14 +14,14 @@ class OnEditedMessage(Client):
         check_for_reactions: bool = False,
         is_command: bool = False,
     ):
-        from ub_core.core.handlers import cmd_dispatcher
+        from ..handlers import cmd_dispatcher
 
         def decorator(func: Callable) -> Callable:
 
             async def dispatch_wrapper(client, message):
                 await cmd_dispatcher(
                     client=client,
-                    message=message,
+                    update=message,
                     func=func,
                     check_for_reactions=check_for_reactions,
                     mode_sensitive=mode_sensitive,

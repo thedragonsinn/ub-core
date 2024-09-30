@@ -27,7 +27,7 @@ class MediaExts:
 
 def bytes_to_mb(size: int):
     """Returns Size in MegaBytes"""
-    return round(size / 1048576, 1)
+    return size // 1048576
 
 
 def get_filename_from_url(url: str, tg_safe: bool = False) -> str:

@@ -1,25 +1,28 @@
 import asyncio
 from functools import cached_property
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from pyrogram.enums import MessageEntityType
 from pyrogram.errors import MessageDeleteForbidden
 from pyrogram.filters import Filter
-from pyrogram.types import Message as Msg
+from pyrogram.types import Message as MessageUpdate
 from pyrogram.types import User
 
-from ub_core import Config
-from ub_core.core.conversation import Conversation
+from .. import Convo
+from ...config import Config
+
+if TYPE_CHECKING:
+    from ..client import BOT
 
 
 def del_task_cleaner(del_task):
     Config.BACKGROUND_TASKS.remove(del_task)
 
 
-async def async_deleter(del_in, task, block) -> Msg | None:
+async def async_deleter(del_in, task, block) -> MessageUpdate | None:
     """Delete Message w/wo blocking code execution."""
     if block:
-        task_result: Msg = await task
+        task_result: MessageUpdate = await task
         await asyncio.sleep(del_in)
         await task_result.delete()
         return task_result
@@ -31,10 +34,12 @@ async def async_deleter(del_in, task, block) -> Msg | None:
         del_task.add_done_callback(del_task_cleaner)
 
 
-class Message(Msg):
+class Message(MessageUpdate):
     """A Custom Message Class with ease of access methods"""
 
-    def __init__(self, message: Msg | Self) -> None:
+    _client: "BOT"
+
+    def __init__(self, message: MessageUpdate | Self) -> None:
         kwargs = self.sanitize_message(message)
         super().__init__(**kwargs)
 
@@ -183,7 +188,7 @@ class Message(Msg):
 
     async def get_response(self, filters: Filter = None, timeout: int = 8):
         """Get a Future Incoming message in chat where message was sent."""
-        response: Message | None = await Conversation.get_resp(
+        response: Message | None = await Convo.get_resp(
             client=self._client, chat_id=self.chat.id, filters=filters, timeout=timeout
         )
         return response
@@ -212,10 +217,10 @@ class Message(Msg):
         for arg in dir(Message):
             if isinstance(
                 getattr(Message, arg, 0), (cached_property, property)
-            ) and not hasattr(Msg, arg):
+            ) and not hasattr(MessageUpdate, arg):
                 kwargs.pop(arg, 0)
         return kwargs
 
     @classmethod
-    def parse(cls, message: Msg) -> "Message":
+    def parse(cls, message: MessageUpdate) -> "Message":
         return cls(message)

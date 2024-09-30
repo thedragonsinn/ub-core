@@ -1,26 +1,26 @@
 import asyncio
 import os
 from asyncio.subprocess import Process
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyrogram.enums import ParseMode
 
-from ub_core import Message
+if TYPE_CHECKING:
+    from ..core.types.message import Message
 
 
 async def run_shell_cmd(
     cmd: str, timeout: int = 300, ret_val: Any | None = None
 ) -> str:
     """Runs a Shell Command and Returns Output"""
-    process: asyncio.create_subprocess_shell = await asyncio.create_subprocess_shell(
-        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+    process = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
     )
-
     try:
-        async with asyncio.timeout(timeout):
-            stdout, _ = await process.communicate()
-            return stdout.decode("utf-8")
-
+        stdout, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
+        return stdout.decode("utf-8")
     except (asyncio.CancelledError, TimeoutError):
         process.kill()
         if ret_val is not None:
@@ -72,7 +72,7 @@ class AsyncShell:
             self.last_line = decoded_line
         self.is_done = True
 
-    async def send_output(self, message: Message) -> None:
+    async def send_output(self, message: "Message") -> None:
         sleep_duration: int = 1
         old_output: str = ""
 
@@ -141,7 +141,7 @@ class InteractiveShell:
 
         self.is_running = False
 
-    async def send_output(self, message: Message) -> None:
+    async def send_output(self, message: "Message") -> None:
         sleep_duration: int = 1
         old_output: str = ""
 

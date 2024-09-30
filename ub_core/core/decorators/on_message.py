@@ -20,7 +20,7 @@ class OnMessage(Client):
         check_for_reactions: bool = False,
         filters_edited: bool = False,
     ):
-        from ub_core.core.handlers import UnifiedHandler, cmd_dispatcher
+        from ..handlers import UnifiedHandler, cmd_dispatcher
 
         handler = UnifiedHandler if filters_edited else MessageHandler
 
@@ -29,7 +29,7 @@ class OnMessage(Client):
             async def dispatch_wrapper(client, message):
                 await cmd_dispatcher(
                     client=client,
-                    message=message,
+                    update=message,
                     func=func,
                     check_for_reactions=check_for_reactions,
                     mode_sensitive=mode_sensitive,

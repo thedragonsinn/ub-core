@@ -4,14 +4,16 @@ from datetime import datetime, timedelta
 from typing import Callable
 
 from pyrogram import ContinuePropagation, StopPropagation
-from pyrogram.types import Message
+from pyrogram.types import Message as MessageUpdate
 
-from ub_core import BOT, Config, Message
+from ..types import Message
+from ... import BOT
+from ...config import Config
 
 MESSAGE_TEXT_CACHE = defaultdict(str)
 
 
-def anti_reaction(message: Message):
+def anti_reaction(message: MessageUpdate):
     """Check if Message.text is same as before or if message is older than 6 hours and stop execution"""
     unique_id = f"{message.chat.id}-{message.id}"
 
@@ -28,40 +30,41 @@ def anti_reaction(message: Message):
 
 async def cmd_dispatcher(
     client: BOT,
-    message: Message,
+    update: MessageUpdate,
     func: Callable = None,
     check_for_reactions: bool = True,
-    mode_sensitive: bool = False,
+    mode_sensitive: bool = True,
     is_command: bool = True,
+    use_custom_object: bool = True,
 ) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
-    if check_for_reactions and anti_reaction(message):
-        message.stop_propagation()
+    if check_for_reactions and anti_reaction(update):
+        update.stop_propagation()
 
-    message = Message.parse(message)
+    if use_custom_object:
+        update = Message.parse(update)
 
     if not func:
-        cmd_object = Config.CMD_DICT.get(message.cmd)
+        cmd_object = Config.CMD_DICT.get(update.cmd)
 
         if not cmd_object:
             return
         func = cmd_object.func
 
-    task = asyncio.create_task(func(client, message), name=message.task_id)
-
     try:
+        task = asyncio.create_task(func(client, update), name=update.task_id)
         await task
-        if is_command and message.is_from_owner:
-            await message.delete()
+        if is_command and update.is_from_owner:
+            await update.delete()
 
     except asyncio.exceptions.CancelledError:
-        await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{message.text}</code>")
+        await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{update.text}</code>")
 
     except (StopPropagation, ContinuePropagation):
         raise
 
     except Exception as e:
-        client.log.error(e, exc_info=True, extra={"tg_message": message})
+        client.log.error(e, exc_info=True, extra={"tg_message": update})
 
     if is_command:
-        message.stop_propagation()
+        update.stop_propagation()

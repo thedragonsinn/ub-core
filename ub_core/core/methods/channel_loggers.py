@@ -1,24 +1,28 @@
 import logging
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 
-from ub_core import Config
-from ub_core.core.types.message import Message
+from ...config import Config
+
+if TYPE_CHECKING:
+    from ..client import BOT
+    from ..types.message import Message
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
 class ChannelLogger(Client):
     async def log_text(
-        self,
+        self: "BOT",
         text,
         name="log.txt",
         disable_web_page_preview=True,
         parse_mode=ParseMode.HTML,
         type: str = "",
-    ) -> Message:
+    ) -> "Message":
         """Log Text to Channel and to Stream/File if type matches logging method."""
 
         if type:
@@ -40,7 +44,7 @@ class ChannelLogger(Client):
             disable_notification=False,
         ))  # fmt:skip
 
-    async def log_message(self, message: Message):
+    async def log_message(self, message: "Message") -> "Message":
         """Log a Message to Log Channel"""
         schedule_date = None
         if not self.me.is_bot:

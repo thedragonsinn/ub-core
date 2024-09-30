@@ -1,11 +1,11 @@
-from pyrogram.types import Message as Msg
+from pyrogram.types import Message as MessageUpdate
 
-from ub_core import BOT, Convo, bot
-from ub_core.core.conversation import Conversation
-from ub_core.core.handlers import create
+from ub_core import BOT, bot
+
+from . import create
+from ..conversation import Conversation
 
 # Conversation Filter to check for incoming messages.
-
 CONVO_FILTER = create(
     lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
     and (not message.reactions)
@@ -13,9 +13,9 @@ CONVO_FILTER = create(
 
 
 @bot.on_message(CONVO_FILTER, group=0, filters_edited=True)
-async def convo_handler(bot: BOT, message: Msg):
+async def convo_handler(bot: BOT, message: MessageUpdate):
     """Check for convo filter and update convo future accordingly"""
-    conv_objects: list[Convo] = Convo.CONVO_DICT[message.chat.id]
+    conv_objects: list[Conversation] = Conversation.CONVO_DICT[message.chat.id]
 
     for conv_object in conv_objects:
         if conv_object._client != bot:
