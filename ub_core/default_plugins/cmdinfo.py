@@ -11,7 +11,7 @@ async def cmd_info(bot: BOT, message: Message):
     USAGE: .ci ci
     """
     cmd = message.filtered_input
-    cmd_obj = Config.CMD_DICT.get("cmd")
+    cmd_obj = Config.CMD_DICT.get(cmd)
 
     if cmd_obj is None:
         await message.reply("Give a valid cmd.", del_in=5)
