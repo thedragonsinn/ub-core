@@ -10,6 +10,8 @@ it expands on core's initial features and transforms them into usable modules li
 
 ## Table of Contents
 
+- [Installation](https://github.com/thedragonsinn/ub-core/tree/main#Installation) 
+
 - [Standalone Usage](https://github.com/thedragonsinn/ub-core/tree/main#Standalone_Usage)
 
 - Core:
@@ -20,9 +22,11 @@ it expands on core's initial features and transforms them into usable modules li
      - [Handlers](https://github.com/thedragonsinn/ub-core/tree/main#Handlers) 
      - [UnifiedMessageHandler](https://github.com/thedragonsinn/ub-core/tree/main#UnifiedMessageHandler) 
      - [Dispatcher](https://github.com/thedragonsinn/ub-core/tree/main#Dispatcher) 
-     - [[Logging](https://github.com/thedragonsinn/ub-core/tree/main#Logging)
+     - [Logging](https://github.com/thedragonsinn/ub-core/tree/main#Logging)
      
 - [Default Plugins](https://github.com/thedragonsinn/ub-core/tree/main#DefaultPlugins)
+
+- [Updater](https://github.com/thedragonsinn/ub-core/tree/main#Updater)
 
 - Utils:
      - [Download](https://github.com/thedragonsinn/ub-core/tree/main#Utils)
@@ -34,6 +38,21 @@ it expands on core's initial features and transforms them into usable modules li
 ## Documentation 
 
 
+### Installation
+
+- Single Client:
+    ```bash
+      pip install git+https://github.com/thedragonsinn/ub-core
+    ```
+
+- Dual Client:
+    ```bash
+      pip install git+https://github.com/thedragonsinn/ub-core@dual_mode
+    ```
+
+> Difference between Single and Dual clients: [here](https://github.com/thedragonsinn/ub-core/tree/main#Comparing_Branches)
+
+
 ### Client
 A custom [Client](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/client.py#L44) with a few [Extra methods](https://github.com/thedragonsinn/ub-core/tree/main/ub_core/core/methods) and [Decorators](https://github.com/thedragonsinn/ub-core/tree/main/ub_core/core/decorators).
 
@@ -43,10 +62,10 @@ A custom [Client](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088f
   - **[channel_logger](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/methods/channel_loggers.py)**: _Logs texts/message to your log channel, StdOut/StdError and log file. The type argument can be used to log at different logging levels like info, error warning etc._
     
 
-  - **[@add_cmd](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/add_cmd.py#L10)**: _Uses a custom command manager instead of pyrogram's. Useful when you wanna add sudo or multi user mode. This decorator will negate the need to add handlers for each type of user._
+  - **[@add_cmd](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/add_cmd.py#L10)**: _Uses a custom command manager instead of pyrogram's. Useful when you wanna add sudo or multi user mode or run [dual_mode](https://github.com/thedragonsinn/ub-core/tree/main#Comparing_Branches). This decorator will negate the need to add handlers for each type of user/clients._
     
 
-   - **[@on_message](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/on_message.py#L14)**: _adds back edited support as a keyword argument "filters_edited" and uses a built in dispatcher._
+   - **[@on_message](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/on_message.py#L14)**: _adds back edited support as a keyword argument "filters_edited" and uses a custom dispatcher._
     
 
   - **[@on_edited_message](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/on_edited_message.py#L9)**: _use a [custom dispatcher](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/handlers/dispatcher.py#L31)._
@@ -60,6 +79,8 @@ A custom [Client](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088f
 
 ### Database 
 Core relies on a MongoDB database and uses a [Custom Collection class.](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/db.py#L25)
+> Optional for main branch, Required for dual_mode
+
 ```python
     from ub_core import CustomDB
     
@@ -98,7 +119,7 @@ A custom [Conversation](https://github.com/thedragonsinn/ub-core/blob/main/ub_co
 ### Handlers 
 By default core registers some handlers automatically on groups 0 and 1.
 
-**_It is strongly recommended to not register your handlers in group 0 and 1._**
+**_It is strongly recommended to not register your handlers in groups 0 and 1._**
 
 - **Group 0:** 
 
@@ -137,7 +158,7 @@ Ub-core comes with a logging handler that automatically logs any errors to the l
 
 It also automatically restarts your python interpreter when it detects network issues happening in pyrogram.
 
-_**Both of these start automatically and work in background, you don't have to manage them.**_
+> Both of these start automatically and work in background, you don't have to manage them.
 
 
 ### Message
@@ -149,7 +170,7 @@ Check the class for in depth details.
 ### DefaultPlugins 
 Core comes with a few basic quality of life [plugins](https://github.com/thedragonsinn/ub-core/tree/main/ub_core/default_plugins) already added to it.
 
-`py, sh, shell, ish, load`  commands are only accessible by the owner/super users and are only available when `DEV_MODE` is set to 1 in env.
+> py, sh, shell, ish, load  commands are only accessible by the owner/super users and are only available when DEV_MODE is set to 1 in env.
 
 
 ### Utils
@@ -168,13 +189,32 @@ Core comes with a few basic quality of life [plugins](https://github.com/thedrag
     ```    
 
 
+### Updater 
+The [built in Updater](https://github.com/thedragonsinn/ub-core/blob/992a6e8fcdd1925b7a94025ad1ef1822fbb73759/ub_core/default_plugins/update.py#L82) is made to work directly with the bot repo that integrates the core as well as updating the core.
+
+So running `.update ` will check updates for the current workdir's .git repository i.e your integrated bot's working dir.
+
+To update core run `.update -c`
+
+
+## Comparing_Branches
+The default main branch only has a single client and can be run either as an User or a Bot at a time.
+
+The [dual_mode](https://github.com/thedragonsinn/ub-core/tree/dual_mode) branch on the other hand has a [DualClient](https://github.com/thedragonsinn/ub-core/blob/7bbace81453af7db99c300f3f189c2c6941fa643/ub_core/core/client.py#L71) that can run both an User and a Bot at the same time.
+
+It also unlocks the possibility of running some commands inline for sudo/supers in their saved messages or DMs where the bot/user is not present to respond on normal text based commands.
+
+> Note: unlike main branch, dual_mode requires database access to save mode data.
+
 ## Standalone_Usage
 Core can be ran as standalone bot with only the inbuilt modules on owner's access.
 
-Core accepts either a BOT_TOKEN or a SESSION_STRING. if you pass in both, only one will be used so only use one.
+Core accepts either a BOT_TOKEN or a SESSION_STRING.
+> if you pass in both, only one will be used if the installed branch is main.
 
 For required variables check [sample-config.env](https://github.com/thedragonsinn/ub-core/blob/main/sample-config.env)
 
-rename it to config.env or export those vars to environment along with `ENV_VARS` set as 1 to instruct core to fetch vars from environment.
+Create a config.env or export those vars to environment along with `ENV_VARS` set as 1 to instruct core to fetch vars from environment.
 
 type `run-ub-core` command to start core.
+> script is automatically installed when you install core using pip
