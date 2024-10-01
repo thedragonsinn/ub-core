@@ -111,7 +111,7 @@ class DualClient(Bot):
 
     @property
     def client(self) -> "DualClient":
-        return self if Config.MODE == "dual" else self.bot
+        return self.user if Config.MODE == "dual" else self.bot
 
     @property
     def client_type(self) -> str:
