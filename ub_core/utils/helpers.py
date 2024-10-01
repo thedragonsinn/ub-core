@@ -69,7 +69,7 @@ async def progress(
     file_path: str = "",
 ):
     if current_size == total_size:
-        PROGRESS_DICT.pop(file_path)
+        PROGRESS_DICT.pop(file_path, 0)
         return
 
     # start and progress time
