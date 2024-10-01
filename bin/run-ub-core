@@ -1,19 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env bash
 
-import os
-import sys
+if [[ ! -f "config.env" && -z "${ENV_VARS}" ]]; then
+  echo "Config.env not found, call from a dir that contains it."
+  echo "Or Export vars to Env with the var 'ENV_VARS=1' set."
+  exit 1
+fi
 
-if not os.path.isfile("config.env") and not os.environ.get("ENV_VARS"):
-    print(
-        "Config.env not found, call from a dir that contains it.",
-        "Or Export vars to Env with the var 'ENV_VARS=1' set.",
-    )
-    sys.exit(0)
-
-# fmt:off
-
-from ub_core import bot
-
-bot.run(bot.boot())
-
-# fmt: on
+while true; do
+    python3 -m "ub_core"
+    exit_code=$?
+    [ $exit_code -ne 69 ] && break
+done
