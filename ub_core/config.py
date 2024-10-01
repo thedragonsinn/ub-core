@@ -29,6 +29,7 @@ class Cmd:
         self.dir_name: str = path.basename(path.dirname(cmd_path))
         self.doc: str = func.__doc__ or "Not Documented."
         self.func: Callable = func
+        self.is_from_core: bool = "ub_core" in cmd_path
         self.loaded = False
         self.sudo: bool = sudo
 
