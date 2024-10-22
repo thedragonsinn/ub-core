@@ -4,7 +4,7 @@ import shutil
 from functools import cached_property
 
 import aiofiles
-import aiohttp
+from aiohttp import ClientResponse, ClientSession
 from pyrogram.types import Message
 
 from .helpers import progress
@@ -17,12 +17,17 @@ from .media_helper import (
 
 
 class DownloadedFile:
-    def __init__(self, name: str, dir: str, size: int | float):
-        self.dir = dir
-        self.name = name
-        self.path = os.path.join(dir, name)
-        self.size = size
-        self.type = get_type(path=name)
+    def __init__(self, file: str, size: int = 0):
+        # Folder
+        self.dir = os.path.dirname(file)
+        # Name
+        self.name = os.path.basename(file)
+        # Folder + Name
+        self.path = os.path.join(self.dir, self.name)
+        # Size in MB
+        self.size = bytes_to_mb(size or os.path.getsize(self.path))
+        # Media Type
+        self.type = get_type(path=self.name)
 
     def __str__(self):
         return self.path
@@ -45,9 +50,16 @@ class Download:
         ON success a DownloadedFile object is returned.
 
     Methods:
+        # New cleaner method
+        async with Download(url, dir, response) as downloader:
+            file = await downloader.download()
+
+        OR
+
+        # Legacy method, kept for backwards compatibility.
         dl_obj = await Download.setup(
             url="https....",
-            path="downloads",
+            dir="downloads",
             message_to_edit=response,
         )
         file = await dl_obj.download()
@@ -57,30 +69,39 @@ class Download:
         self,
         url: str,
         dir: str,
-        file_session: aiohttp.ClientResponse,
-        session: aiohttp.client,
-        headers: aiohttp.ClientResponse.headers,
         custom_file_name: str | None = None,
         message_to_edit: "Message" = None,
     ):
+        self.url: str = url
         self.custom_file_name: str = custom_file_name
+        self.message_to_edit: "Message" = message_to_edit
 
         self.dir: str = dir
         os.makedirs(name=dir, exist_ok=True)
 
-        self.file_session: aiohttp.ClientResponse = file_session
-        self.session: aiohttp.ClientSession = session
+        # noinspection PyTypeChecker
+        self.client_session: "ClientSession" = None
+        # noinspection PyTypeChecker
+        self.file_response_session: "ClientResponse" = None
+        self.headers: "ClientResponse.headers" = None
 
-        self.url: str = url
-        self.headers: aiohttp.ClientResponse.headers = headers
-
-        self.raw_completed_size: int = 0
-
-        self.has_started: bool = False
+        self.completed_size_bytes: int = 0
         self.is_done: bool = False
-
-        self.message_to_edit: "Message" = message_to_edit
         self.progress_task: asyncio.Task | None = None
+
+    async def set_sessions(self):
+        self.client_session = ClientSession()
+        self.file_response_session = await self.client_session.get(url=self.url)
+        self.headers = self.file_response_session.headers
+
+    async def __aenter__(self) -> "Download":
+        await self.set_sessions()
+        self.check_duplicates()
+        self.check_disk_space()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
     @classmethod
     async def setup(
@@ -90,39 +111,28 @@ class Download:
         message_to_edit: "Message" = None,
         custom_file_name: str | None = None,
     ) -> "Download":
-        session = aiohttp.ClientSession()
-        file_session = await session.get(url=url)
-        headers = file_session.headers
+
         cls_object = cls(
             url=url,
             dir=dir,
-            file_session=file_session,
-            session=session,
-            headers=headers,
             message_to_edit=message_to_edit,
             custom_file_name=custom_file_name,
         )
-        await asyncio.gather(
-            cls_object.check_disk_space(), cls_object.check_duplicates()
-        )
+        await cls_object.set_sessions()
         return cls_object
 
-    async def check_disk_space(self) -> None:
-        if shutil.disk_usage(self.dir).free < self.raw_size:
-            await self.close()
-            raise OverflowError(
-                f"Not enough space in {self.dir} to download {self.size} mb."
-            )
+    def check_disk_space(self) -> None:
+        if shutil.disk_usage(self.dir).free < self.size_bytes:
+            raise OSError(f"Not enough space in {self.dir} to download {self.size} mb.")
 
-    async def check_duplicates(self) -> None:
+    def check_duplicates(self) -> None:
         if os.path.isfile(self.file_path):
-            await self.close()
             raise FileExistsError(f"{self.file_path} already exists!!!")
 
     @property
     def completed_size(self) -> int:
         """Size in MB"""
-        return bytes_to_mb(self.raw_completed_size)
+        return bytes_to_mb(self.completed_size_bytes)
 
     @cached_property
     def file_name(self) -> str:
@@ -137,27 +147,27 @@ class Download:
         return os.path.join(self.dir, self.file_name)
 
     @cached_property
-    def raw_size(self) -> int:
+    def size_bytes(self) -> int:
         # File Size in Bytes
         return int(self.headers.get("Content-Length", 0))
 
     @cached_property
     def size(self) -> int:
         """File size in MBs"""
-        return bytes_to_mb(self.raw_size)
+        return bytes_to_mb(self.size_bytes)
 
     async def close(self) -> None:
-        if not self.session.closed:
-            await self.session.close()
+        if not self.client_session.closed:
+            await self.client_session.close()
 
-        if not self.file_session.closed:
-            self.file_session.close()
+        if not self.file_response_session.closed:
+            self.file_response_session.close()
 
         if not self.progress_task.done():
             self.progress_task.cancel()
 
     async def download(self) -> DownloadedFile | Exception | None:
-        if self.session.closed or self.file_session.closed:
+        if self.client_session.closed or self.file_response_session.closed:
             return
 
         self.has_started = True
@@ -176,9 +186,11 @@ class Download:
 
     async def write_file(self) -> None:
         async with aiofiles.open(self.file_path, "wb") as async_file:
-            async for file_chunk in self.file_session.content.iter_chunked(5120):
+            async for file_chunk in self.file_response_session.content.iter_chunked(
+                5120
+            ):
                 await async_file.write(file_chunk)  # NOQA
-                self.raw_completed_size += 5120
+                self.completed_size_bytes += 5120
 
     async def edit_progress(self) -> None:
         if not isinstance(self.message_to_edit, Message):
@@ -186,8 +198,8 @@ class Download:
 
         while not self.is_done:
             await progress(
-                current_size=self.raw_completed_size,
-                total_size=self.raw_size or 1,
+                current_size=self.completed_size_bytes,
+                total_size=self.size_bytes or 1,
                 response=self.message_to_edit,
                 action_str="Downloading...",
                 file_path=self.file_path,
@@ -198,4 +210,4 @@ class Download:
         if not os.path.isfile(self.file_path):
             raise FileNotFoundError(self.file_path)
 
-        return DownloadedFile(name=self.file_name, dir=self.dir, size=self.size)
+        return DownloadedFile(os.path.join(self.dir, self.file_name))
