@@ -1,9 +1,9 @@
 from collections import defaultdict
 
-from ub_core import BOT, Config, Message, bot
+from ub_core import BOT, Config, Message
 
 
-@bot.add_cmd(cmd="help")
+@BOT.add_cmd(cmd="help")
 async def cmd_list(bot: BOT, message: Message) -> None:
     """
     CMD: HELP

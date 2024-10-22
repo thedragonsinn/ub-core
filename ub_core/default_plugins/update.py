@@ -1,6 +1,6 @@
 import asyncio
 
-from ub_core import BOT, Config, Message, __version__, bot
+from ub_core import BOT, Config, Message, __version__
 from ub_core.utils import aio, run_shell_cmd
 
 REPO = Config.REPO
@@ -78,7 +78,7 @@ async def handle_core_update(bot: BOT, message: Message, reply: Message):
         )
 
 
-@bot.add_cmd(cmd="update")
+@BOT.add_cmd(cmd="update")
 async def updater(bot: BOT, message: Message) -> None | Message:
     """
     CMD: UPDATE
