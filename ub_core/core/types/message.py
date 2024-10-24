@@ -157,7 +157,8 @@ class Message(MessageUpdate):
                 reply = await async_deleter(task=task, del_in=del_in, block=block)
             else:
                 reply = Message.parse((await task))  # fmt:skip
-            self.text = reply.text
+            if reply is not None:
+                self.text = reply.text
         else:
             _, reply = await asyncio.gather(
                 super().delete(), self.reply(text, name=name, **kwargs)
