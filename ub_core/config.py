@@ -38,7 +38,7 @@ class Cmd:
 
 
 class Config:
-    BOT_NAME = "BOT"
+    BOT_NAME = environ.get("BOT_NAME", "BOT")
 
     BACKGROUND_TASKS: list[asyncio.Task] = []
 
