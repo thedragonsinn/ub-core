@@ -195,4 +195,4 @@ class DualClient(Bot):
 
         await self.stop_clients()
 
-        LOGGER.info("Database, Git-Repository, and Aiohttp-Client connections closed.")
+        LOGGER.info("Exit Tasks Completed... Exiting...")

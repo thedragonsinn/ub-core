@@ -1,3 +1,4 @@
+from functools import wraps
 from typing import Callable
 
 from pyrogram import Client
@@ -14,10 +15,10 @@ class OnEditedMessage(Client):
         check_for_reactions: bool = False,
         is_command: bool = False,
     ):
-        from ub_core.core.handlers import cmd_dispatcher
+        from ..handlers import cmd_dispatcher
 
         def decorator(func: Callable) -> Callable:
-
+            @wraps(func)
             async def dispatch_wrapper(client, message):
                 await cmd_dispatcher(
                     client=client,
