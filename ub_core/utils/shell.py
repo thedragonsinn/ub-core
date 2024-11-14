@@ -31,7 +31,7 @@ async def run_shell_cmd(
 
 async def take_ss(video: str, path: str, timestamp: int | float = 0.1) -> None | str:
     """Returns First Frame [if time stamp is none] of Video for Thumbnails"""
-    thumb = f"{path}/i.png"
+    thumb = os.path.join(path, "i.png")
     await run_shell_cmd(
         f'''ffmpeg -hide_banner -loglevel error -ss {timestamp} -i "{video.strip()}" -vframes 1 "{thumb}"'''
     )

@@ -21,7 +21,9 @@ class Aio:
         self.runner = None
         if self.port:
             Config.INIT_TASKS.append(self.set_site())
+
         Config.INIT_TASKS.append(self.set_session())
+        Config.EXIT_TASKS.append(self.close)
 
     async def close(self):
         """Gracefully Shutdown Clients"""
@@ -32,6 +34,7 @@ class Aio:
 
     async def set_session(self):
         """Setup ClientSession on boot."""
+        LOGGER.info("AioHttp Session Created.")
         self.session = ClientSession()
 
     async def set_site(self):
@@ -132,7 +135,7 @@ class Aio:
         file.name = get_filename_from_url(url, tg_safe=True)
         return file
 
-    async def thumb_dl(self, thumb) -> BytesIO | str | None:
+    async def thumb_dl(self, thumb, encoded: bool = False) -> BytesIO | str | None:
         if not thumb or not thumb.startswith("http"):
             return thumb
-        return (await self.in_memory_dl(thumb))  # fmt:skip
+        return await self.in_memory_dl(url=thumb, encoded=encoded)
