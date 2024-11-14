@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from pyrogram import Client
@@ -32,7 +32,7 @@ class ChannelLogger(Client):
 
         schedule_date = None
         if not self.me.is_bot:
-            schedule_date = datetime.utcnow() + timedelta(seconds=10)
+            schedule_date = datetime.now(UTC) + timedelta(seconds=10)
 
         return (await self.send_message(
             chat_id=Config.LOG_CHAT,
@@ -48,7 +48,7 @@ class ChannelLogger(Client):
         """Log a Message to Log Channel"""
         schedule_date = None
         if not self.me.is_bot:
-            schedule_date = datetime.utcnow() + timedelta(seconds=10)
+            schedule_date = datetime.now(UTC) + timedelta(seconds=10)
         return (await message.copy(
             chat_id=Config.LOG_CHAT,
             schedule_date=schedule_date,

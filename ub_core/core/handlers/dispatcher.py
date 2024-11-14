@@ -1,6 +1,6 @@
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Callable
 
 from pyrogram import ContinuePropagation, StopPropagation
@@ -20,7 +20,7 @@ def anti_reaction(message: MessageUpdate):
     if MESSAGE_TEXT_CACHE[unique_id] == message.text:
         return True
 
-    time_diff = datetime.utcnow() - message.date
+    time_diff =  datetime.now(UTC) - message.date
     if time_diff >= timedelta(hours=6):
         return True
 
