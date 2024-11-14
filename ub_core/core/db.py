@@ -16,8 +16,10 @@ DB_URI: str = os.environ.get("DB_URL", "").strip()
 
 if DB_URI:
     DB_CLIENT: AgnosticClient | None = AsyncIOMotorClient(DB_URI)
+    Config.EXIT_TASKS.append(DB_CLIENT.close)
     db_name = Config.BOT_NAME.lower().replace("-", "_")
     DB: AgnosticDatabase | None = DB_CLIENT[db_name]
+
 else:
     DB_CLIENT = DB = None
 

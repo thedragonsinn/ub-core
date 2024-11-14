@@ -2,7 +2,7 @@ import asyncio
 import importlib
 import json
 import logging
-from os import environ, path
+from os import environ, path, sep
 from typing import Callable, Coroutine
 
 from git import InvalidGitRepositoryError, Repo
@@ -14,7 +14,8 @@ def update_extra_config():
     """Update Config Attrs from the custom extra_config"""
     extra_config_path = Config.WORKING_DIR + ".extra_config"
 
-    if not path.isfile(extra_config_path):
+    exc_name = extra_config_path.replace(".", sep) + ".py"
+    if not path.isfile(exc_name):
         return
 
     extra_config = importlib.import_module(extra_config_path)
@@ -52,6 +53,8 @@ class Config:
 
     DISABLED_SUPERUSERS: list[int] = []
 
+    EXIT_TASKS: list[Callable] = []
+
     INIT_TASKS: list[Coroutine] = []
 
     LOG_CHAT: int = int(environ.get("LOG_CHAT", 0))
@@ -62,6 +65,7 @@ class Config:
 
     try:
         REPO: Repo = Repo(".")
+        EXIT_TASKS.append(REPO.close)
     except InvalidGitRepositoryError:
         REPO = None
 
