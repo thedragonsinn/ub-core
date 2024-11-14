@@ -59,7 +59,7 @@ class TgErrorHandler(Handler):
         )
 
 
-class NetworkAndPyroHandlerIssuesHandler(Handler):
+class OnNetworkIssueHandler(Handler):
     CLOSED_HANDLER_REGEX = (
         r"\[WARNING\] \[\d{2}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M\]"
         r" \[pyrogram\.session\.session\] \[session\]: \[\d+\] "
@@ -81,7 +81,7 @@ class NetworkAndPyroHandlerIssuesHandler(Handler):
 custom_error_handler = TgErrorHandler()
 custom_error_handler.setLevel(ERROR)
 
-custom_network_error_handler = NetworkAndPyroHandlerIssuesHandler()
+custom_network_error_handler = OnNetworkIssueHandler()
 custom_network_error_handler.setLevel(WARNING)
 
 basicConfig(
@@ -93,7 +93,7 @@ basicConfig(
             filename="logs/app_logs.txt",
             mode="a",
             maxBytes=5 * 1024 * 1024,
-            backupCount=2,
+            backupCount=1,
             encoding=None,
             delay=False,
         ),

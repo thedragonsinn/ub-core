@@ -13,11 +13,9 @@ from pyrogram import Client, idle
 from ub_core import ub_core_dir_name
 
 from .conversation import Conversation as Convo
-from .db import DB_CLIENT
 from .decorators import CustomDecorators
 from .methods import Methods
 from ..config import Config
-from ..utils import aio
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -98,18 +96,20 @@ class BOT(CustomDecorators, Methods, Client):
 
     async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
-        await super().stop()
+        LOGGER.info("Stopping all processes and running Exit Tasks.")
 
         for task in Config.BACKGROUND_TASKS:
             if not task.done():
                 task.cancel()
 
-        for resource in (DB_CLIENT, Config.REPO, aio):
+        for resource in Config.EXIT_TASKS:
             if resource is None:
                 continue
-            if iscoroutinefunction(resource.close):
-                await resource.close()
+            if iscoroutinefunction(resource):
+                await resource()
             else:
-                resource.close()
+                resource()
 
-        LOGGER.info("Database, Git-Repository, and Aiohttp-Client connections closed.")
+        await super().stop()
+
+        LOGGER.info("Exit Tasks Completed. Exiting...")
