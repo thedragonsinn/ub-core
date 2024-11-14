@@ -32,6 +32,7 @@ def generate_locals(message: Message) -> tuple:
 
     return r, c, cid, u, uid, ru, ruid
 
+
 # fmt: on
 
 
@@ -40,13 +41,24 @@ async def executor(bot: BOT, message: Message) -> None:
     CMD: PY
     INFO: Run Python Code.
     FLAGS: -s to only show output.
+
+    SHORT_ATTRS:
+        r: Replied message Object
+        c: Chat Object
+        cid: chat_id
+        u: User Object
+        uid: user_id
+        ru: Replied User Object
+        ruid: Replied user_id
+
     USAGE:
         .py [-s] return 1
     """
     code: str = message.filtered_input.strip()
 
     if not code:
-        return await message.reply("exec Jo mama?")
+        await message.reply("exec Jo mama?")
+        return
 
     reply: Message = await message.reply("executing")
 
