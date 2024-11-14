@@ -15,11 +15,10 @@ from pyrogram.enums import ParseMode
 from ub_core import ub_core_dirname
 
 from .conversation import Conversation
-from .db import DB_CLIENT, CustomDB
+from .db import CustomDB
 from .decorators import CustomDecorators
 from .methods import Methods
 from ..config import Config
-from ..utils import aio
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -179,18 +178,21 @@ class DualClient(Bot):
 
     async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
-        await self.stop_clients()
+
+        LOGGER.info("Stopping all processes and running Exit Tasks.")
 
         for task in Config.BACKGROUND_TASKS:
             if not task.done():
                 task.cancel()
 
-        for resource in (DB_CLIENT, Config.REPO, aio):
+        for resource in Config.EXIT_TASKS:
             if resource is None:
                 continue
-            if iscoroutinefunction(resource.close):
-                await resource.close()
+            if iscoroutinefunction(resource):
+                await resource()
             else:
-                resource.close()
+                resource()
+
+        await self.stop_clients()
 
         LOGGER.info("Database, Git-Repository, and Aiohttp-Client connections closed.")

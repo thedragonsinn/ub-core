@@ -18,6 +18,7 @@ if DB_URI:
     DB_CLIENT: AgnosticClient | None = AsyncIOMotorClient(DB_URI)
     db_name = Config.BOT_NAME.lower().replace("-", "_")
     DB: AgnosticDatabase | None = DB_CLIENT[db_name]
+    Config.EXIT_TASKS.append(DB_CLIENT.close)
 else:
     DB_CLIENT = DB = None
 

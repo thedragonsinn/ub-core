@@ -2,7 +2,7 @@ import asyncio
 import importlib
 import json
 import logging
-from os import environ, path
+from os import environ, path, sep
 from typing import Callable, Coroutine
 
 from git import InvalidGitRepositoryError, Repo
@@ -12,14 +12,17 @@ LOGGER = logging.getLogger("Config")
 
 def update_extra_config():
     """Update Config Attrs from the custom extra_config"""
-    try:
-        extra_config_path = Config.WORKING_DIR + ".extra_config"
-        extra_config = importlib.import_module(extra_config_path)
-        for key, val in vars(extra_config).items():
-            if not key.startswith("_"):
-                setattr(Config, key, val)
-    except (ImportError, ModuleNotFoundError) as e:
-        LOGGER.error(e)
+    extra_config_path = Config.WORKING_DIR + ".extra_config"
+
+    exc_name = extra_config_path.replace(".", sep) + ".py"
+    if not path.isfile(exc_name):
+        return
+
+    extra_config = importlib.import_module(extra_config_path)
+
+    for key, val in vars(extra_config).items():
+        if not key.startswith("_"):
+            setattr(Config, key, val)
 
 
 class Cmd:
@@ -50,6 +53,8 @@ class Config:
 
     DISABLED_SUPERUSERS: list[int] = []
 
+    EXIT_TASKS: list[Callable] = []
+
     INIT_TASKS: list[Coroutine] = []
 
     INLINE_QUERY_CACHE: dict[str | int, dict] = {}
@@ -64,6 +69,7 @@ class Config:
 
     try:
         REPO: Repo = Repo(".")
+        EXIT_TASKS.append(REPO.close)
     except InvalidGitRepositoryError:
         REPO = None
 
@@ -75,7 +81,7 @@ class Config:
 
     SUPERUSERS: list[int] = []
 
-    UPSTREAM_REPO: str = ""
+    UPSTREAM_REPO: str = environ.get("UPSTREAM_REPO", "")
 
     UPDATE_REPO = "https://github.com/thedragonsinn/ub-core"
 
