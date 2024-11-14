@@ -12,14 +12,16 @@ LOGGER = logging.getLogger("Config")
 
 def update_extra_config():
     """Update Config Attrs from the custom extra_config"""
-    try:
-        extra_config_path = Config.WORKING_DIR + ".extra_config"
-        extra_config = importlib.import_module(extra_config_path)
-        for key, val in vars(extra_config).items():
-            if not key.startswith("_"):
-                setattr(Config, key, val)
-    except (ImportError, ModuleNotFoundError) as e:
-        LOGGER.error(e)
+    extra_config_path = Config.WORKING_DIR + ".extra_config"
+
+    if not path.isfile(extra_config_path):
+        return
+
+    extra_config = importlib.import_module(extra_config_path)
+
+    for key, val in vars(extra_config).items():
+        if not key.startswith("_"):
+            setattr(Config, key, val)
 
 
 class Cmd:
@@ -71,7 +73,7 @@ class Config:
 
     SUPERUSERS: list[int] = []
 
-    UPSTREAM_REPO: str = ""
+    UPSTREAM_REPO: str = environ.get("UPSTREAM_REPO", "")
 
     UPDATE_REPO = "https://github.com/thedragonsinn/ub-core"
 
