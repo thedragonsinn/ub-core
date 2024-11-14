@@ -6,6 +6,7 @@ from functools import cached_property
 import aiofiles
 from aiohttp import ClientResponse, ClientSession
 from pyrogram.types import Message
+from yarl import URL
 
 from .helpers import progress
 from .media_helper import (
@@ -41,6 +42,8 @@ class Download:
             file url.
         dir (str):
             download path without file name.
+        is_encoded_url (bool):
+            pass True if the url is already encoded and is sensitive.
         message_to_edit(Message):
             response message to edit for progress.
         custom_file_name(str):
@@ -69,10 +72,12 @@ class Download:
         self,
         url: str,
         dir: str,
+        is_encoded_url: bool = False,
         custom_file_name: str | None = None,
         message_to_edit: "Message" = None,
     ):
         self.url: str = url
+        self.is_encoded_url = is_encoded_url
         self.custom_file_name: str = custom_file_name
         self.message_to_edit: "Message" = message_to_edit
 
@@ -91,7 +96,9 @@ class Download:
 
     async def set_sessions(self):
         self.client_session = ClientSession()
-        self.file_response_session = await self.client_session.get(url=self.url)
+        self.file_response_session = await self.client_session.get(
+            url=URL(self.url, encoded=self.is_encoded_url)
+        )
         self.headers = self.file_response_session.headers
 
     async def __aenter__(self) -> "Download":
@@ -170,7 +177,6 @@ class Download:
         if self.client_session.closed or self.file_response_session.closed:
             return
 
-        self.has_started = True
         self.progress_task = asyncio.create_task(self.edit_progress())
 
         exc = None
@@ -185,7 +191,7 @@ class Download:
         return exc or self.return_file()
 
     async def write_file(self) -> None:
-        async with aiofiles.open(self.file_path, "wb") as async_file:
+        async with aiofiles.open(file=self.file_path, mode="wb") as async_file:
             async for file_chunk in self.file_response_session.content.iter_chunked(
                 5120
             ):
