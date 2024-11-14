@@ -1,3 +1,4 @@
+from functools import wraps
 from typing import Callable
 
 from pyrogram import Client
@@ -17,7 +18,7 @@ class OnEditedMessage(Client):
         from ..handlers import cmd_dispatcher
 
         def decorator(func: Callable) -> Callable:
-
+            @wraps(func)
             async def dispatch_wrapper(client, message):
                 await cmd_dispatcher(
                     client=client,

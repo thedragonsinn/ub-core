@@ -1,3 +1,4 @@
+from functools import wraps
 from typing import Callable
 
 from pyrogram import Client
@@ -25,7 +26,7 @@ class OnMessage(Client):
         handler = UnifiedHandler if filters_edited else MessageHandler
 
         def decorator(func: Callable) -> Callable:
-
+            @wraps(func)
             async def dispatch_wrapper(client, message):
                 await cmd_dispatcher(
                     client=client,
