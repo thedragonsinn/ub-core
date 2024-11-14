@@ -1,0 +1,25 @@
+name: Auto-Release Tags
+
+on:
+
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'ub_core/version.py'
+
+jobs:
+
+  release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Run a multi-line script
+        run: |
+          tag_name=$(grep -Eo '[0-9]+' ub_core/version.py | tr '\n' '.' | sed 's/\.$//')
+          git tag ${tag_name}
+          git push --tags
