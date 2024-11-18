@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ..client import DualClient
 
 
-def construct_properties(inline_query_id: str) -> tuple[str, list, str, str]:
+def construct_properties(inline_query_id: str) -> tuple[str, list[str], str, str]:
     cmd, text = (Config.INLINE_QUERY_CACHE.pop(inline_query_id)).values()
     flags = [i for i in text.split() if i.startswith("-")]
     input = text
@@ -38,7 +38,12 @@ class CallbackQuery(CallbackQueryUpdate):
         self.cmd, self.flags, self.input, self.filtered_input = construct_properties(
             self.data
         )
+
         self.replied = self.reply_id = self.replied_task_id = None
+
+        self.edit = self.edit_text = self.reply = self.reply_text = (
+            self.edit_message_text
+        )
 
     @cached_property
     def message(self):
@@ -81,10 +86,12 @@ class CallbackQuery(CallbackQueryUpdate):
     ):
         if not isinstance(text, str):
             text = str(text)
+
         if len(text) < 4096:
             await super().edit_message_text(
                 text, parse_mode, disable_web_page_preview, reply_markup
             )
+
         else:
             doc = BytesIO(bytes(text, encoding="utf-8"))
             doc.name = name
@@ -92,8 +99,6 @@ class CallbackQuery(CallbackQueryUpdate):
                 chat_id=self.from_user.id, document=doc, **kwargs
             )
         return self
-
-    edit = reply = edit_message_text
 
     @staticmethod
     def sanitize_cq(callback_query):

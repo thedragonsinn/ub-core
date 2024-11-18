@@ -46,10 +46,7 @@ INLINE_FILTER = create(inline_check)
 async def inline_handler(bot: BOT, inline_query: InlineQuery):
     query_list: list = inline_query.query.split(maxsplit=1)
     cmd = query_list[0]
-    text = ""
-
-    if len(query_list) >= 2:
-        text = query_list[1]
+    text = query_list[1] if len(query_list) >= 2 else ""
 
     Config.INLINE_QUERY_CACHE[inline_query.id] = {"cmd": cmd, "text": text}
 

@@ -99,7 +99,7 @@ class Message(MessageUpdate):
     @cached_property
     def reply_id(self) -> int | None:
         """Returns message.reply_to_message.id if message.reply_to_message"""
-        return self.replied.id if self.replied else None
+        return self.reply_to_message_id
 
     @cached_property
     def replied_task_id(self) -> str | None:
@@ -168,24 +168,30 @@ class Message(MessageUpdate):
     async def extract_user_n_reason(self) -> tuple[User | str | Exception, str | None]:
         if self.replied:
             return self.replied.from_user, self.filtered_input
+
         input_text_list = self.filtered_input.split(maxsplit=1)
+
         if not input_text_list:
             return (
                 "Unable to Extract User info.\nReply to a user or input @ | id.",
                 None,
             )
+
         user = input_text_list[0]
         reason = None
+
         if len(input_text_list) >= 2:
             reason = input_text_list[1]
         if self.entities:
             for entity in self.entities:
                 if entity == MessageEntityType.MENTION:
                     return entity.user, reason
+
         if user.isdigit():
             user = int(user)
         elif user.startswith("@"):
             user = user.strip("@")
+
         try:
             return (await self._client.get_users(user_ids=user)), reason
         except Exception:

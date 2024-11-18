@@ -110,6 +110,16 @@ class Download:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
+    async def close(self) -> None:
+        if not self.client_session.closed:
+            await self.client_session.close()
+
+        if not self.file_response_session.closed:
+            self.file_response_session.close()
+
+        if self.progress_task and not self.progress_task.done():
+            self.progress_task.cancel()
+
     @classmethod
     async def setup(
         cls,
@@ -162,16 +172,6 @@ class Download:
     def size(self) -> int:
         """File size in MBs"""
         return bytes_to_mb(self.size_bytes)
-
-    async def close(self) -> None:
-        if not self.client_session.closed:
-            await self.client_session.close()
-
-        if not self.file_response_session.closed:
-            self.file_response_session.close()
-
-        if not self.progress_task.done():
-            self.progress_task.cancel()
 
     async def download(self) -> DownloadedFile | Exception | None:
         if self.client_session.closed or self.file_response_session.closed:
