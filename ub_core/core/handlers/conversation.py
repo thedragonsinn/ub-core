@@ -2,7 +2,7 @@ from pyrogram.types import Message as MessageUpdate
 
 from ub_core import BOT, bot
 
-from ..handlers import UnifiedHandler, create, valid_chat_filter
+from ..handlers import create, valid_chat_filter
 from ...core.conversation import Conversation
 
 CONVO_FILTER = valid_chat_filter & create(
@@ -11,7 +11,13 @@ CONVO_FILTER = valid_chat_filter & create(
 )
 
 
-@bot.on_message(CONVO_FILTER, group=0, is_command=False, filters_edited=True)
+@bot.on_message(
+    filters=CONVO_FILTER,
+    group=0,
+    is_command=False,
+    filters_edited=True,
+    register_on_bot_too=True,
+)
 async def convo_handler(bot: BOT, message: MessageUpdate):
     """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Conversation] = Conversation.CONVO_DICT[message.chat.id]
@@ -26,9 +32,3 @@ async def convo_handler(bot: BOT, message: MessageUpdate):
         conv_object.response_future.set_result(message)
 
     message.continue_propagation()
-
-
-if bot.has_bot:
-    bot.bot.add_handler(
-        UnifiedHandler(callback=convo_handler, filters=CONVO_FILTER), group=0
-    )

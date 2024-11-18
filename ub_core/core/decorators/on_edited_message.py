@@ -1,22 +1,27 @@
 from functools import wraps
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from pyrogram import Client
 from pyrogram.filters import Filter
 from pyrogram.handlers import EditedMessageHandler
 
+if TYPE_CHECKING:
+    from ..client import DualClient
+
 
 class OnEditedMessage(Client):
     def on_edited_message(
-        self=None,
+        self: "DualClient" = None,
         filters=None,
         group: int = 2,
         mode_sensitive: bool = False,
         check_for_reactions: bool = False,
         is_command: bool = False,
+        register_on_bot_too: bool = False,
     ):
         from ..handlers import cmd_dispatcher
 
+        # noinspection PyUnresolvedReferences
         def decorator(func: Callable) -> Callable:
             @wraps(func)
             async def dispatch_wrapper(client, message):
@@ -31,6 +36,11 @@ class OnEditedMessage(Client):
 
             if isinstance(self, Client):
                 self.add_handler(EditedMessageHandler(dispatch_wrapper, filters), group)
+
+                if register_on_bot_too and self.has_bot:
+                    self.bot.add_handler(
+                        EditedMessageHandler(dispatch_wrapper, filters), group
+                    )
 
             elif isinstance(self, Filter) or self is None:
                 if not hasattr(func, "handlers"):
