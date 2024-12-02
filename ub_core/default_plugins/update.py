@@ -40,6 +40,7 @@ async def pull_commits() -> None | bool:
 
 async def get_core_update():
     return -1, ""
+    # noinspection PyUnreachableCode
     tag_info = await aio.get_json(
         "https://api.github.com/repos/thedragonsinn/ub-core/tags"
     )
@@ -106,7 +107,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
 
     if "-pull" not in message.flags:
         await reply.edit(
-            text=f"<b>Update Available:</b>\n{commits}", disable_web_page_preview=True
+            text=f"<b>Update Available:</b>\n{commits}", disable_preview=True
         )
         return
 
@@ -115,9 +116,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
         return
 
     await asyncio.gather(
-        bot.log_text(
-            text=f"#Updater\nPulled:\n{commits}", disable_web_page_preview=True
-        ),
+        bot.log_text(text=f"#Updater\nPulled:\n{commits}", disable_preview=True),
         reply.edit("<b>Update Found</b>\n<code>Pulling....</code>"),
         run_shell_cmd(
             f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"

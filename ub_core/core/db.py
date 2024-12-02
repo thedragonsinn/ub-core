@@ -46,7 +46,8 @@ class CustomDB(AsyncIOMotorCollection):
             # Thanks @kakashi_htk [TG] | @ashwinstr [GitHub] for raising error
             # suggestion.
             raise KeyError(
-                f"Unique identifier key '_id' not found in data:{json.dumps(data, indent=4, ensure_ascii=False, default=str)}"
+                f"Unique identifier key '_id' not found in "
+                f"data:{json.dumps(data, indent=4, ensure_ascii=False, default=str)}"
             )
 
         is_existing_entry = await self.find_one({"_id": unique_id_key})

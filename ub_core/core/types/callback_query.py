@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Self
 
 from pyrogram.types import CallbackQuery as CallbackQueryUpdate
+from pyrogram.types import LinkPreviewOptions
 
 from .message import Message
 from ...config import Config
@@ -48,7 +49,7 @@ class CallbackQuery(CallbackQueryUpdate):
     @cached_property
     def message(self):
         if super().message:
-            return Message.parse(super().message)
+            return Message(super().message)
 
     @cached_property
     def is_from_owner(self) -> bool:
@@ -73,11 +74,11 @@ class CallbackQuery(CallbackQueryUpdate):
     def unique_chat_user_id(self) -> int | str:
         return self.id
 
-    async def edit_message_text(
+    async def edit_message_teext(
         self,
         text: str,
         parse_mode=None,
-        disable_web_page_preview: bool = False,
+        link_preview_options: LinkPreviewOptions = None,
         reply_markup=None,
         name: str = "output.txt",
         del_in: int = 0,
@@ -89,7 +90,10 @@ class CallbackQuery(CallbackQueryUpdate):
 
         if len(text) < 4096:
             await super().edit_message_text(
-                text, parse_mode, disable_web_page_preview, reply_markup
+                text,
+                parse_mode=parse_mode,
+                link_preview_options=link_preview_options,
+                reply_markup=reply_markup,
             )
 
         else:
@@ -111,7 +115,3 @@ class CallbackQuery(CallbackQueryUpdate):
             ) and not hasattr(CallbackQueryUpdate, arg):
                 kwargs.pop(arg, 0)
         return kwargs
-
-    @classmethod
-    def parse(cls, callback_query: CallbackQueryUpdate) -> "CallbackQuery":
-        return cls(callback_query)

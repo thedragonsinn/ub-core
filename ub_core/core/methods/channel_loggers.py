@@ -18,7 +18,7 @@ class ChannelLogger(Client):
         self: "DualClient",
         text,
         name="log.txt",
-        disable_web_page_preview=True,
+        disable_preview=True,
         parse_mode=ParseMode.HTML,
         type: str = "",
     ) -> "Message":
@@ -38,7 +38,7 @@ class ChannelLogger(Client):
             chat_id=Config.LOG_CHAT,
             text=text,
             name=name,
-            disable_web_page_preview=disable_web_page_preview,
+            disable_preview=disable_preview,
             parse_mode=parse_mode,
             disable_notification=False,
         ))  # fmt:skip

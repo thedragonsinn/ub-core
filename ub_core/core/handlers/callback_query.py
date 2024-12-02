@@ -21,7 +21,7 @@ CALLBACK_FILTER = create(callback_check)
 
 
 async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate):
-    callback_query: CallbackQuery = CallbackQuery.parse(callback_query)
+    callback_query: CallbackQuery = CallbackQuery(callback_query)
 
     try:
         await client.send_message(

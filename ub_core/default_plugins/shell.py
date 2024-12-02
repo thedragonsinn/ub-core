@@ -24,7 +24,7 @@ async def run_cmd(bot: BOT, message: Message) -> None:
     await reply.edit(
         text=output,
         name="sh.txt",
-        disable_web_page_preview=True,
+        disable_preview=True,
         parse_mode=ParseMode.HTML,
     )
 
@@ -41,7 +41,7 @@ async def live_shell(bot: BOT, message: Message):
         await reply.edit(
             text=f"<pre language=shell>~$ {cmd}\n\n{sub_process.stdout}</pre>",
             name="shell.txt",
-            disable_web_page_preview=True,
+            disable_preview=True,
             parse_mode=ParseMode.HTML,
         )
     except asyncio.exceptions.CancelledError:
@@ -89,7 +89,7 @@ async def interactive_shell(bot: BOT, message: Message):
                 await stdout_message.edit(
                     text=f"<pre language=shell>~$ {input_text}\n\n{sub_process.stdout}</pre>",
                     name="shell.txt",
-                    disable_web_page_preview=True,
+                    disable_preview=True,
                     parse_mode=ParseMode.HTML,
                 )
                 sub_process.flush_stdout()

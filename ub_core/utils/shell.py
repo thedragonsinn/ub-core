@@ -90,7 +90,7 @@ class AsyncShell:
 
             await message.edit(
                 text=f"<pre language=shell>{new_output}</pre>",
-                disable_web_page_preview=True,
+                disable_preview=True,
                 parse_mode=ParseMode.HTML,
             )
             old_output = new_output
@@ -159,7 +159,7 @@ class InteractiveShell:
 
             await message.edit(
                 text=f"<pre language=shell>{new_output}</pre>",
-                disable_web_page_preview=True,
+                disable_preview=True,
                 parse_mode=ParseMode.HTML,
             )
             old_output = new_output

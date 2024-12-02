@@ -45,10 +45,10 @@ def make_custom_object(
     update: MessageUpdate | CallbackQueryUpdate,
 ) -> Message | CallbackQuery | None:
     if isinstance(update, MessageUpdate):
-        return Message.parse(update)
+        return Message(update)
 
     if isinstance(update, CallbackQueryUpdate):
-        return CallbackQuery.parse(update)
+        return CallbackQuery(update)
 
 
 async def cmd_dispatcher(

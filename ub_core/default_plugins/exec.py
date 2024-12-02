@@ -102,7 +102,7 @@ async def executor(bot: BOT, message: Message) -> None:
     await reply.edit(
         output,
         name="exec.txt",
-        disable_web_page_preview=True,
+        disable_preview=True,
         parse_mode=ParseMode.MARKDOWN,
     )
 
