@@ -42,10 +42,6 @@ class CallbackQuery(CallbackQueryUpdate):
 
         self.replied = self.reply_id = self.replied_task_id = None
 
-        self.edit = self.edit_text = self.reply = self.reply_text = (
-            self.edit_message_text
-        )
-
     @cached_property
     def message(self):
         if super().message:
@@ -74,7 +70,7 @@ class CallbackQuery(CallbackQueryUpdate):
     def unique_chat_user_id(self) -> int | str:
         return self.id
 
-    async def edit_message_teext(
+    async def edit_message_text(
         self,
         text: str,
         parse_mode=None,
@@ -84,7 +80,7 @@ class CallbackQuery(CallbackQueryUpdate):
         del_in: int = 0,
         block=True,
         **kwargs,
-    ):
+    ) -> Self:
         if not isinstance(text, str):
             text = str(text)
 
@@ -103,6 +99,8 @@ class CallbackQuery(CallbackQueryUpdate):
                 chat_id=self.from_user.id, document=doc, **kwargs
             )
         return self
+
+    edit = edit_text = reply = reply_text = edit_message_text
 
     @staticmethod
     def sanitize_cq(callback_query):
