@@ -1,6 +1,7 @@
 ﻿import logging
 import time
 from collections import defaultdict
+from typing import Any
 
 from pyrogram.enums import ParseMode
 from pyrogram.types import Chat, Message, User
@@ -108,11 +109,19 @@ async def progress(
         text=f"""
 <b>{action_str.capitalize()}</b> <code>{percentage:.2f}%</code>
 
-📁 <code>{file_path}</code>
+<code>{file_path}</code>
 
-<code>{progress_bar}</code> | <code>{bytes_to_mb(current_size)}</code>/<code>{bytes_to_mb(total_size)}</code> mb
+<code>{progress_bar}</code> | <code>{bytes_to_mb(current_size)}</code>/<code>{bytes_to_mb(total_size)}</code>MB
 
-⏱️Time remaining: <code>{remaining_time}</code>
+️Time remaining: <code>{remaining_time}</code>
 """,
         parse_mode=ParseMode.HTML,
     )
+
+
+def create_chunks(array: list[Any], chunk_size: int = 5) -> list[list[Any]]:
+    """
+    Split an Iterable into chunks.
+    Defaults to chunks of 5
+    """
+    return [array[idx : idx + chunk_size] for idx in range(0, len(array), chunk_size)]

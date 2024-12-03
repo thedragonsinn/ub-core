@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Self
 from pyrogram.enums import MessageEntityType
 from pyrogram.errors import MessageDeleteForbidden
 from pyrogram.filters import Filter
+from pyrogram.types import LinkPreviewOptions
 from pyrogram.types import Message as MessageUpdate
-from pyrogram.types import User
+from pyrogram.types import ReplyParameters, User
 
 from .. import Convo
 from ...config import Config
@@ -55,7 +56,7 @@ class Message(MessageUpdate):
     @cached_property
     def flags(self) -> list:
         """
-        Returns list of text that start with - i.e flags. \n
+        Returns list of text that start with - i.e. flags. \n
         text: .example -d -s something \n
         returns: [-d, -s]
         """
@@ -94,7 +95,7 @@ class Message(MessageUpdate):
     def replied(self) -> "Message":
         """Returns Custom Message object for message.reply_to_message"""
         if self.reply_to_message:
-            return Message.parse(self.reply_to_message)
+            return Message(self.reply_to_message)
 
     @cached_property
     def reply_id(self) -> int | None:
@@ -144,22 +145,40 @@ class Message(MessageUpdate):
             pass
 
     async def edit(
-        self, text, del_in: int = 0, block=True, name: str = "output.txt", **kwargs
+        self,
+        text,
+        del_in: int = 0,
+        block=True,
+        name: str = "output.txt",
+        disable_preview: bool = None,
+        **kwargs,
     ) -> "Message":
         """Edit Self.text or send a file with text if text length exceeds 4096 chars"""
+
+        if isinstance(disable_preview, bool):
+            kwargs["link_preview_options"] = LinkPreviewOptions(
+                is_disabled=disable_preview
+            )
+
         if len(str(text)) < 4096:
             task = super().edit_text(text=text, **kwargs)
+
             if del_in:
-                reply = await async_deleter(task=task, del_in=del_in, block=block)
+                edited_message = await async_deleter(
+                    task=task, del_in=del_in, block=block
+                )
             else:
-                reply = Message.parse((await task))  # fmt:skip
-            if reply is not None:
-                self.text = reply.text
+                edited_message = Message((await task))  # fmt:skip
+
+            if edited_message is not None:
+                self.text = edited_message.text
+
         else:
-            _, reply = await asyncio.gather(
-                super().delete(), self.reply(text, name=name, **kwargs)
+            _, edited_message = await asyncio.gather(
+                super().delete(),
+                self.reply(text, name=name, block=block, del_in=del_in, **kwargs),
             )
-        return reply
+        return edited_message
 
     async def extract_user_n_reason(self) -> tuple[User | str | Exception, str | None]:
         if self.replied:
@@ -178,7 +197,6 @@ class Message(MessageUpdate):
 
         if len(input_text_list) >= 2:
             reason = input_text_list[1]
-
         if self.entities:
             for entity in self.entities:
                 if entity == MessageEntityType.MENTION:
@@ -206,16 +224,26 @@ class Message(MessageUpdate):
         return (await self.copy(Config.LOG_CHAT))  # fmt:skip
 
     async def reply(
-        self, text, del_in: int = 0, block: bool = True, **kwargs
+        self,
+        text,
+        del_in: int = 0,
+        block: bool = True,
+        disable_preview: bool = False,
+        reply_parameters: ReplyParameters = None,
+        **kwargs,
     ) -> "Message":
         """reply text or send a file with text if text length exceeds 4096 chars"""
         task = self._client.send_message(
-            chat_id=self.chat.id, text=text, reply_to_message_id=self.id, **kwargs
+            chat_id=self.chat.id,
+            text=text,
+            disable_preview=disable_preview,
+            reply_parameters=reply_parameters or ReplyParameters(message_id=self.id),
+            **kwargs,
         )
         if del_in:
             await async_deleter(task=task, del_in=del_in, block=block)
         else:
-            return Message.parse((await task))  # fmt:skip
+            return Message((await task))  # fmt:skip
 
     @staticmethod
     def sanitize_message(message):
@@ -228,7 +256,3 @@ class Message(MessageUpdate):
             ) and not hasattr(MessageUpdate, arg):
                 kwargs.pop(arg, 0)
         return kwargs
-
-    @classmethod
-    def parse(cls, message: MessageUpdate) -> "Message":
-        return cls(message)

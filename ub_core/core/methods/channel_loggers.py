@@ -19,7 +19,7 @@ class ChannelLogger(Client):
         self: "BOT",
         text,
         name="log.txt",
-        disable_web_page_preview=True,
+        disable_preview=True,
         parse_mode=ParseMode.HTML,
         type: str = "",
     ) -> "Message":
@@ -38,19 +38,21 @@ class ChannelLogger(Client):
             chat_id=Config.LOG_CHAT,
             text=text,
             name=name,
-            disable_web_page_preview=disable_web_page_preview,
+            disable_preview=disable_preview,
             parse_mode=parse_mode,
-            schedule_date=schedule_date,
             disable_notification=False,
+            schedule_date=schedule_date
         ))  # fmt:skip
 
     async def log_message(self, message: "Message") -> "Message":
         """Log a Message to Log Channel"""
         schedule_date = None
+
         if not self.me.is_bot:
             schedule_date = datetime.now(UTC) + timedelta(seconds=10)
+
         return (await message.copy(
             chat_id=Config.LOG_CHAT,
-            schedule_date=schedule_date,
             disable_notification=False,
+            schedule_date=schedule_date
         ))  # fmt:skip

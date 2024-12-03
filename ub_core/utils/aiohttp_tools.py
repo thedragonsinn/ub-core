@@ -19,6 +19,7 @@ class Aio:
         self.app = None
         self.port = os.environ.get("API_PORT", 0)
         self.runner = None
+
         if self.port:
             Config.INIT_TASKS.append(self.set_site())
 

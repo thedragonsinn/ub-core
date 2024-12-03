@@ -107,7 +107,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
 
     if "-pull" not in message.flags:
         await reply.edit(
-            text=f"<b>Update Available:</b>\n{commits}", disable_web_page_preview=True
+            text=f"<b>Update Available:</b>\n{commits}", disable_preview=True
         )
         return
 
@@ -116,9 +116,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
         return
 
     await asyncio.gather(
-        bot.log_text(
-            text=f"#Updater\nPulled:\n{commits}", disable_web_page_preview=True
-        ),
+        bot.log_text(text=f"#Updater\nPulled:\n{commits}", disable_preview=True),
         reply.edit("<b>Update Found</b>\n<code>Pulling....</code>"),
         run_shell_cmd(f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}"),
     )

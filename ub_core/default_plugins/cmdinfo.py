@@ -35,7 +35,7 @@ async def cmd_info(bot: BOT, message: Message):
         f"\n<b>Path</b>: <code>{plugin_path}</code>"
         f"\n\n<b>Link</b>: <a href='{remote_url}'>Github</a>"
     )
-    await message.reply(resp_str, disable_web_page_preview=True)
+    await message.reply(resp_str, disable_preview=True)
 
 
 @BOT.add_cmd(cmd="s")

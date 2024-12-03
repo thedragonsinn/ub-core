@@ -13,14 +13,15 @@ async def run_shell_cmd(
     cmd: str, timeout: int = 300, ret_val: Any | None = None
 ) -> str:
     """Runs a Shell Command and Returns Output"""
-    process = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
+    process: asyncio.create_subprocess_shell = await asyncio.create_subprocess_shell(
+        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
     )
+
     try:
-        stdout, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
-        return stdout.decode("utf-8")
+        async with asyncio.timeout(timeout):
+            stdout, _ = await process.communicate()
+            return stdout.decode("utf-8")
+
     except (asyncio.CancelledError, TimeoutError):
         process.kill()
         if ret_val is not None:
@@ -89,7 +90,7 @@ class AsyncShell:
 
             await message.edit(
                 text=f"<pre language=shell>{new_output}</pre>",
-                disable_web_page_preview=True,
+                disable_preview=True,
                 parse_mode=ParseMode.HTML,
             )
             old_output = new_output
@@ -158,7 +159,7 @@ class InteractiveShell:
 
             await message.edit(
                 text=f"<pre language=shell>{new_output}</pre>",
-                disable_web_page_preview=True,
+                disable_preview=True,
                 parse_mode=ParseMode.HTML,
             )
             old_output = new_output

@@ -42,7 +42,7 @@ async def cmd_dispatcher(
         update.stop_propagation()
 
     if use_custom_object:
-        update = Message.parse(update)
+        update = Message(update)
 
     if not func:
         cmd_object = Config.CMD_DICT.get(update.cmd)

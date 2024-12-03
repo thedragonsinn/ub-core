@@ -7,5 +7,5 @@ async def sauce(bot: BOT, message: Message) -> None:
     core_repo = f"<a href='{Config.UPDATE_REPO}'>HERE</a>"
     await message.reply(
         text=f"{Config.BOT_NAME}: {bot_repo}\nUb-Core: {core_repo}",
-        disable_web_page_preview=True,
+        disable_preview=True,
     )
