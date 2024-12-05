@@ -45,6 +45,8 @@ class SendMessage(Client):
             )
             return Message(message=message)
 
+        kwargs.pop("link_preview_options", None)
+
         doc = BytesIO(bytes(text, encoding="utf-8"))
         doc.name = name
         return (await super().send_document(
