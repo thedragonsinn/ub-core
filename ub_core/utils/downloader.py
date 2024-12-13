@@ -12,6 +12,7 @@ from .helpers import progress
 from .media_helper import (
     bytes_to_mb,
     get_filename_from_headers,
+    get_filename_from_mime,
     get_filename_from_url,
     get_type,
 )
@@ -155,9 +156,22 @@ class Download:
     def file_name(self) -> str:
         if self.custom_file_name:
             return self.custom_file_name
-        return get_filename_from_headers(self.headers) or get_filename_from_url(
-            self.url
-        )
+
+        name_from_headers = get_filename_from_headers(self.headers)
+        if name_from_headers:
+            return name_from_headers
+
+        name_from_url = get_filename_from_url(self.url)
+
+        # if URL has a valid media type filename
+        if get_type(path=name_from_url, generic=False):
+            return name_from_url
+
+        # Try to guess from mime-header
+        name_from_mime = get_filename_from_mime(self.headers.get("Content-Type", ""))
+
+        # if mime fails fallback to whatever name is extracted from url
+        return name_from_mime or name_from_url
 
     @cached_property
     def file_path(self) -> str:
