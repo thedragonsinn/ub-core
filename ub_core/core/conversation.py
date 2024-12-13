@@ -113,7 +113,7 @@ class Conversation:
         caption: str = "",
         timeout: int = 0,
         get_response: bool = False,
-        force_document: bool = True,
+        disable_content_type_detection: bool = True,
         **kwargs,
     ) -> Message | tuple[Message, Message]:
         """
@@ -124,7 +124,7 @@ class Conversation:
             chat_id=self.chat_id,
             document=document,
             caption=caption,
-            force_document=force_document,
+            disable_content_type_detection=disable_content_type_detection,
             **kwargs,
         )
         if get_response:
