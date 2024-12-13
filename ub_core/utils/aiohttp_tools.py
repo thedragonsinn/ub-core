@@ -6,7 +6,12 @@ from io import BytesIO
 from aiohttp import ClientSession, ContentTypeError, web
 from yarl import URL
 
-from .media_helper import get_filename_from_url
+from .media_helper import (
+    get_filename_from_headers,
+    get_filename_from_mime,
+    get_filename_from_url,
+    get_type,
+)
 from ..config import Config
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
@@ -130,9 +135,33 @@ class Aio:
 
     async def in_memory_dl(self, url: str, encoded: bool = False) -> BytesIO:
         async with self.session.get(URL(url, encoded=encoded)) as remote_file:
+            headers = remote_file.headers
+            mime = headers.get("Content-Type", "")
             bytes_data = await remote_file.read()
-        file = BytesIO(bytes_data)
-        file.name = get_filename_from_url(url, tg_safe=True)
+            file = BytesIO(bytes_data)
+
+        name_from_url = get_filename_from_url(url)
+        name_from_mime = get_filename_from_mime(mime)
+        name_from_headers = get_filename_from_headers(headers)
+
+        media_type = get_type(path=name_from_url, generic=False)
+
+        # Set name from Headers
+        if name_from_headers:
+            file.name = name_from_headers
+
+        # URL has a valid media type filename
+        elif media_type:
+            file.name = name_from_url
+
+        # Try to guess from mime-header
+        elif name_from_mime:
+            file.name = name_from_mime
+
+        # Fallback to whatever name is extracted from url
+        else:
+            file.name = name_from_url
+
         return file
 
     async def thumb_dl(self, thumb, encoded: bool = False) -> BytesIO | str | None:

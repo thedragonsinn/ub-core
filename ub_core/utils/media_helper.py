@@ -1,8 +1,10 @@
 import re
 from enum import Enum, auto
+from mimetypes import guess_extension
 from os.path import basename, splitext
 from urllib.parse import unquote_plus, urlparse
 
+from multidict import CIMultiDictProxy
 from pyrogram.enums import MessageMediaType
 from pyrogram.types import Message
 
@@ -38,7 +40,9 @@ def get_filename_from_url(url: str, tg_safe: bool = False) -> str:
     return name
 
 
-def get_filename_from_headers(headers: dict, tg_safe: bool = False) -> str | None:
+def get_filename_from_headers(
+    headers: dict | CIMultiDictProxy, tg_safe: bool = False
+) -> str | None:
     content_disposition = headers.get("Content-Disposition", "")
     match = re.search(pattern=r"filename=(.+)", string=content_disposition)
     if not match:
@@ -46,6 +50,11 @@ def get_filename_from_headers(headers: dict, tg_safe: bool = False) -> str | Non
     if tg_safe:
         return make_file_name_tg_safe(file_name=match.group(1))
     return match.group(1)
+
+
+def get_filename_from_mime(mime_type: str) -> None | str:
+    extension = guess_extension(mime_type.strip())
+    return "file" + extension if extension else None
 
 
 def make_file_name_tg_safe(file_name: str) -> str:
@@ -56,7 +65,7 @@ def make_file_name_tg_safe(file_name: str) -> str:
     """
     if file_name.lower().endswith((".webp", ".heic")):
         file_name = file_name + ".jpg"
-    elif file_name.lower().endswith(".webm"):
+    elif file_name.lower().endswith((".webm", ".mkv")):
         file_name = file_name + ".mp4"
     return file_name
 
@@ -68,15 +77,21 @@ def get_type(
         media = get_filename_from_url(url)
     else:
         media = path
+
     name, ext = splitext(media)
+
     if ext in MediaExts.PHOTO:
         return MediaType.PHOTO
+
     if ext in MediaExts.VIDEO:
         return MediaType.VIDEO
+
     if ext in MediaExts.GIF:
         return MediaType.GIF
+
     if ext in MediaExts.AUDIO:
         return MediaType.AUDIO
+
     if generic:
         return MediaType.DOCUMENT
 
