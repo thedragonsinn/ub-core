@@ -140,9 +140,9 @@ class Aio:
             bytes_data = await remote_file.read()
             file = BytesIO(bytes_data)
 
-        name_from_url = get_filename_from_url(url)
-        name_from_mime = get_filename_from_mime(mime)
-        name_from_headers = get_filename_from_headers(headers)
+        name_from_url = get_filename_from_url(url=url, tg_safe=True)
+        name_from_mime = get_filename_from_mime(mime_type=mime, tg_safe=True)
+        name_from_headers = get_filename_from_headers(headers=headers, tg_safe=True)
 
         media_type = get_type(path=name_from_url, generic=False)
 

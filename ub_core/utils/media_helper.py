@@ -35,9 +35,7 @@ def bytes_to_mb(size: int):
 def get_filename_from_url(url: str, tg_safe: bool = False) -> str:
     parsed_url = urlparse(unquote_plus(url))
     name = basename(parsed_url.path.rstrip("/"))
-    if tg_safe:
-        return make_file_name_tg_safe(file_name=name)
-    return name
+    return make_file_name_tg_safe(file_name=name) if tg_safe else name
 
 
 def get_filename_from_headers(
@@ -45,16 +43,22 @@ def get_filename_from_headers(
 ) -> str | None:
     content_disposition = headers.get("Content-Disposition", "")
     match = re.search(pattern=r"filename=(.+)", string=content_disposition)
+
     if not match:
         return
-    if tg_safe:
-        return make_file_name_tg_safe(file_name=match.group(1))
-    return match.group(1)
+
+    file_name = match.group(1)
+    return make_file_name_tg_safe(file_name) if tg_safe else file_name
 
 
-def get_filename_from_mime(mime_type: str) -> None | str:
+def get_filename_from_mime(mime_type: str, tg_safe: bool = False) -> None | str:
     extension = guess_extension(mime_type.strip())
-    return "file" + extension if extension else None
+
+    if not extension:
+        return
+
+    name = "file" + extension
+    return make_file_name_tg_safe(name) if tg_safe else name
 
 
 def make_file_name_tg_safe(file_name: str) -> str:

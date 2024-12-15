@@ -76,10 +76,12 @@ class Download:
         is_encoded_url: bool = False,
         custom_file_name: str | None = None,
         message_to_edit: "Message" = None,
+        use_tg_safe_name: bool = False,
     ):
         self.url: str = url
         self.is_encoded_url = is_encoded_url
         self.custom_file_name: str = custom_file_name
+        self.use_tg_safe_name = use_tg_safe_name
         self.message_to_edit: "Message" = message_to_edit
 
         self.dir: str = dir
@@ -157,18 +159,22 @@ class Download:
         if self.custom_file_name:
             return self.custom_file_name
 
-        name_from_headers = get_filename_from_headers(self.headers)
+        name_from_headers = get_filename_from_headers(
+            self.headers, tg_safe=self.use_tg_safe_name
+        )
         if name_from_headers:
             return name_from_headers
 
-        name_from_url = get_filename_from_url(self.url)
+        name_from_url = get_filename_from_url(self.url, tg_safe=self.use_tg_safe_name)
 
         # if URL has a valid media type filename
         if get_type(path=name_from_url, generic=False):
             return name_from_url
 
         # Try to guess from mime-header
-        name_from_mime = get_filename_from_mime(self.headers.get("Content-Type", ""))
+        name_from_mime = get_filename_from_mime(
+            self.headers.get("Content-Type", ""), tg_safe=self.use_tg_safe_name
+        )
 
         # if mime fails fallback to whatever name is extracted from url
         return name_from_mime or name_from_url
