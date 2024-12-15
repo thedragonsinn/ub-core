@@ -6,6 +6,7 @@ from .media_helper import (
     MediaType,
     bytes_to_mb,
     get_filename_from_headers,
+    get_filename_from_mime,
     get_filename_from_url,
     get_tg_media_details,
     get_type,
