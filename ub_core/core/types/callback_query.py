@@ -79,6 +79,7 @@ class CallbackQuery(CallbackQueryUpdate):
         name: str = "output.txt",
         del_in: int = 0,
         block=True,
+        disable_preview=None,
         **kwargs,
     ) -> Self:
         if not isinstance(text, str):
