@@ -41,8 +41,17 @@ class Message(MessageUpdate):
     _client: "DualClient"
 
     def __init__(self, message: MessageUpdate | Self) -> None:
-        kwargs = self.sanitize_message(message)
-        super().__init__(**kwargs)
+        message_vars = vars(message).copy()
+        message_vars["client"] = message_vars.pop("_client", message._client)
+
+        self._replied = None
+        self._reply_to_message: MessageUpdate | None = message_vars.get(
+            "reply_to_message"
+        )
+        if self._reply_to_message:
+            self._replied = Message(self._reply_to_message)
+
+        super().__init__(**self.sanitize_message(message_vars))
 
     @cached_property
     def cmd(self) -> str | None:
@@ -92,21 +101,21 @@ class Message(MessageUpdate):
         return self.from_user and self.from_user.id == Config.OWNER_ID
 
     @cached_property
-    def _replied(self) -> Self | None:
-        """Returns Custom Message object for message.reply_to_message"""
-        if super().reply_to_message:
-            return Message(super().reply_to_message)
-
-    @cached_property
     def replied(self) -> Self | None:
-        """Returns Custom Message object for message.reply_to_message"""
+        """
+        Returns Custom Message object for message.reply_to_message
+        If replied isn't the Thread Origin Message.
+        """
         if self._replied and not self._replied.is_thread_origin:
             return self._replied
 
     @cached_property
     def reply_to_message(self) -> MessageUpdate | None:
+        """
+        Returns Pyrogram's Message object if replied isn't a Thread Origin Message.
+        """
         if self._replied and not self._replied.is_thread_origin:
-            return super().reply_to_message
+            return self._reply_to_message
 
     @cached_property
     def reply_id(self) -> int | None:
@@ -135,11 +144,14 @@ class Message(MessageUpdate):
 
     @cached_property
     def is_thread_origin(self) -> bool:
-        service = super().service
-        return service == MessageServiceType.FORUM_TOPIC_CREATED
+        return self.service == MessageServiceType.FORUM_TOPIC_CREATED
 
     @cached_property
     def thread_origin_message(self) -> Self | None:
+        """
+        Returns Custom Message object for message.reply_to_message
+        If replied is the Thread Origin Message.
+        """
         if self._replied and self._replied.is_thread_origin:
             return self._replied
 
@@ -270,13 +282,22 @@ class Message(MessageUpdate):
             return Message((await task))  # fmt:skip
 
     @staticmethod
-    def sanitize_message(message):
+    def sanitize_message(kwargs):
         """Remove Extra/Custom Attrs from Message Object"""
-        kwargs = vars(message).copy()
-        kwargs["client"] = kwargs.pop("_client", message._client)
+
+        # Pop Private Variables
+        for attr_name in list(kwargs.keys()):
+            if attr_name.startswith("_"):
+                kwargs.pop(attr_name)
+
+        # Pop Custom Properties
         for arg in dir(Message):
-            if isinstance(
+            is_property = isinstance(
                 getattr(Message, arg, 0), (cached_property, property)
-            ) and not hasattr(MessageUpdate, arg):
+            )
+            is_present_in_super = hasattr(MessageUpdate, arg)
+
+            if is_property and not is_present_in_super:
                 kwargs.pop(arg, 0)
+
         return kwargs
