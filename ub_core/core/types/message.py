@@ -43,15 +43,13 @@ class Message(MessageUpdate):
     def __init__(self, message: MessageUpdate | Self) -> None:
         message_vars = vars(message).copy()
         message_vars["client"] = message_vars.pop("_client", message._client)
+        super().__init__(**self.sanitize_message(message_vars))
 
         self._replied = None
-        self._reply_to_message: MessageUpdate | None = message_vars.get(
-            "reply_to_message"
-        )
+        self._reply_to_message: MessageUpdate | None = message.reply_to_message
+
         if self._reply_to_message:
             self._replied = Message(self._reply_to_message)
-
-        super().__init__(**self.sanitize_message(message_vars))
 
     @cached_property
     def cmd(self) -> str | None:
@@ -109,13 +107,17 @@ class Message(MessageUpdate):
         if self._replied and not self._replied.is_thread_origin:
             return self._replied
 
-    @cached_property
+    @property
     def reply_to_message(self) -> MessageUpdate | None:
         """
         Returns Pyrogram's Message object if replied isn't a Thread Origin Message.
         """
         if self._replied and not self._replied.is_thread_origin:
             return self._reply_to_message
+
+    @reply_to_message.setter
+    def reply_to_message(self, value) -> None:
+        pass
 
     @cached_property
     def reply_id(self) -> int | None:
