@@ -2,7 +2,7 @@ import asyncio
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from pyrogram.enums import MessageEntityType
+from pyrogram.enums import MessageEntityType, MessageServiceType
 from pyrogram.errors import MessageDeleteForbidden
 from pyrogram.filters import Filter
 from pyrogram.types import LinkPreviewOptions
@@ -92,10 +92,21 @@ class Message(MessageUpdate):
         return self.from_user and self.from_user.id == Config.OWNER_ID
 
     @cached_property
-    def replied(self) -> "Message":
+    def _replied(self) -> Self | None:
         """Returns Custom Message object for message.reply_to_message"""
-        if self.reply_to_message:
-            return Message(self.reply_to_message)
+        if super().reply_to_message:
+            return Message(super().reply_to_message)
+
+    @cached_property
+    def replied(self) -> Self | None:
+        """Returns Custom Message object for message.reply_to_message"""
+        if self._replied and not self._replied.is_thread_origin:
+            return self._replied
+
+    @cached_property
+    def reply_to_message(self) -> MessageUpdate | None:
+        if self._replied and not self._replied.is_thread_origin:
+            return super().reply_to_message
 
     @cached_property
     def reply_id(self) -> int | None:
@@ -123,17 +134,26 @@ class Message(MessageUpdate):
         return self.text.split() if self.text else []
 
     @cached_property
+    def is_thread_origin(self) -> bool:
+        service = super().service
+        return service == MessageServiceType.FORUM_TOPIC_CREATED
+
+    @cached_property
+    def thread_origin_message(self) -> Self | None:
+        if self._replied and self._replied.is_thread_origin:
+            return self._replied
+
+    @cached_property
     def trigger(self) -> str:
         """Returns Cmd or Sudo Trigger"""
         # Legacy w/o db and sudo support
         if hasattr(Config, "TRIGGER"):
             return Config.TRIGGER
 
-        return (
-            Config.CMD_TRIGGER
-            if self.is_from_owner and not self._client.is_bot
-            else Config.SUDO_TRIGGER
-        )
+        if self.is_from_owner and not self._client.is_bot:
+            return Config.CMD_TRIGGER
+        else:
+            return Config.SUDO_TRIGGER
 
     @cached_property
     def unique_chat_user_id(self) -> int | str:
@@ -157,7 +177,7 @@ class Message(MessageUpdate):
         disable_preview: bool = None,
         **kwargs,
     ) -> "Message":
-        """Edit Self.text or send a file with text if text length exceeds 4096 chars"""
+        """Edit self.text or send a file with text if text length exceeds 4096 chars"""
 
         if isinstance(disable_preview, bool):
             kwargs["link_preview_options"] = LinkPreviewOptions(
