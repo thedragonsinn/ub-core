@@ -101,7 +101,12 @@ class CallbackQuery(CallbackQueryUpdate):
             )
         return self
 
+    async def edit_message_media(self, *args, **kwargs) -> Self:
+        await super().edit_message_media(*args, **kwargs)
+        return self
+
     edit = edit_text = reply = reply_text = edit_message_text
+    edit_media = edit_message_media
 
     @staticmethod
     def sanitize_cq(callback_query):
