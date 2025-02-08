@@ -16,9 +16,8 @@ async def get_commits() -> str | None:
 
     for idx, commit in enumerate(REPO.iter_commits("HEAD..origin/main")):
         commits += (
-            f"<b>#{commit.count()}</b> "
-            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{commit.message}</a> "
-            f"\nBy <i>{commit.author}</i>\n\n"
+            f"<b>#{commit.count()}</b> By <i>{commit.author}</i>\n"
+            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{commit.message}</a>\n\n"
         )
 
         if idx >= 15:
