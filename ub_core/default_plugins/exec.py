@@ -95,7 +95,7 @@ async def executor(bot: BOT, message: Message) -> None:
         return
 
     if "-s" in message.flags:
-        output = f">> ```\n{output}```"
+        output = f"|>> ```\n{output}```"
     else:
         output = f"```python\n{code}```\n\n```\n{output}```"
 

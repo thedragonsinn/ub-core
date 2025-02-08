@@ -12,17 +12,17 @@ async def get_commits() -> str | None:
             await asyncio.to_thread(REPO.git.fetch)
     except TimeoutError:
         return
+
     commits: str = ""
-    limit: int = 0
-    for commit in REPO.iter_commits("HEAD..origin/main"):
+    for idx, commit in enumerate(REPO.iter_commits("HEAD..origin/main")):
         commits += (
-            f"<b>#{commit.count()}</b> "
-            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{commit.message}</a> "
-            f"By <i>{commit.author}</i>"
+            f"<b>#{commit.count()}</b> <i>{commit.author}</i>\n"
+            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{commit.message}</a>\n\n"
         )
-        limit += 1
-        if limit >= 15:
+
+        if idx >= 15:
             break
+
     return commits
 
 

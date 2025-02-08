@@ -172,9 +172,9 @@ class DualClient(Bot):
 
     async def stop_clients(self) -> None:
         if self.user:
-            await self.user.stop(block=True)
+            await self.user.stop(block=False)
         if self.bot:
-            await self.bot.stop(block=True)
+            await self.bot.stop(block=False)
 
     async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
