@@ -33,12 +33,14 @@ async def init_task():
         LOGGER.error("Failed to Create Telegraph Account.")
 
 
-async def post_to_telegraph(title: str, text: str) -> str:
+async def post_to_telegraph(
+    title: str, text: str, author_name=Config.BOT_NAME, author_url=Config.UPSTREAM_REPO,
+) -> str:
     telegraph = await TELEGRAPH.create_page(
         title=title,
         html_content=f"<p>{text}</p>",
-        author_name=Config.BOT_NAME,
-        author_url=Config.UPSTREAM_REPO,
+        author_name=author_name,
+        author_url=author_url,
     )
     return telegraph["url"]
 
