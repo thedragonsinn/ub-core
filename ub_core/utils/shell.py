@@ -13,17 +13,19 @@ async def run_shell_cmd(
     cmd: str, timeout: int = 300, ret_val: Any | None = None
 ) -> str:
     """Runs a Shell Command and Returns Output"""
-    process: asyncio.create_subprocess_shell = await asyncio.create_subprocess_shell(
-        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+    sub_process: asyncio.create_subprocess_shell = (
+        await asyncio.create_subprocess_shell(
+            cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+        )
     )
 
     try:
-        async with asyncio.timeout(timeout):
-            stdout, _ = await process.communicate()
-            return stdout.decode("utf-8")
-
+        stdout, _ = await asyncio.wait_for(
+            fut=sub_process.communicate(), timeout=timeout
+        )
+        return stdout.decode("utf-8")
     except (asyncio.CancelledError, TimeoutError):
-        process.kill()
+        sub_process.kill()
         if ret_val is not None:
             return ret_val
         raise
