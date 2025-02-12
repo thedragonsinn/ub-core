@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import sys
 import traceback
 from io import StringIO
@@ -108,6 +107,4 @@ async def executor(bot: BOT, message: Message) -> None:
 
 
 if Config.DEV_MODE:
-    Config.CMD_DICT["py"] = Cmd(
-        cmd="py", func=executor, cmd_path=inspect.stack()[0][1], sudo=False
-    )
+    BOT.add_cmd(cmd="py", allow_sudo=False)(executor)
