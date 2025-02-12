@@ -9,7 +9,7 @@ from pyrogram.types import (
 
 from ..handlers import create
 from ..handlers.command import check_sudo_access
-from ... import BOT, bot
+from ... import bot
 from ...config import Config
 
 
@@ -43,7 +43,7 @@ def inline_check(_, __, inline_query: InlineQuery):
 INLINE_FILTER = create(inline_check)
 
 
-async def inline_handler(bot: BOT, inline_query: InlineQuery):
+async def inline_handler(_, inline_query: InlineQuery):
     query_list: list = inline_query.query.split(maxsplit=1)
     cmd = query_list[0]
     text = query_list[1] if len(query_list) >= 2 else ""

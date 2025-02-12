@@ -12,6 +12,7 @@ async def cmd_list(bot: BOT, message: Message) -> None:
         .help help | .help
     """
     cmd = message.input.strip()
+
     if not cmd:
         await message.reply(text=get_cmds(), del_in=30, block=True)
     elif cmd not in Config.CMD_DICT.keys():

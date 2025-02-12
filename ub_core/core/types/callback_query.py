@@ -14,13 +14,18 @@ if TYPE_CHECKING:
 
 def construct_properties(inline_query_id: str) -> tuple[str, list[str], str, str]:
     cmd, text = (Config.INLINE_QUERY_CACHE.pop(inline_query_id)).values()
+
     flags = [i for i in text.split() if i.startswith("-")]
+
     input = text
+
     split_lines = input.split(sep="\n", maxsplit=1)
+
     split_lines[0] = " ".join(
         [word for word in split_lines[0].split(" ") if word not in flags]
     )
     filtered_input = "\n".join(split_lines)
+
     return cmd, flags, input, filtered_input
 
 
