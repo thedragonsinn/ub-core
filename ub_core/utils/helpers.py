@@ -34,7 +34,10 @@ async def init_task():
 
 
 async def post_to_telegraph(
-    title: str, text: str, author_name=Config.BOT_NAME, author_url=Config.UPSTREAM_REPO,
+    title: str,
+    text: str,
+    author_name: str = Config.BOT_NAME,
+    author_url: str = Config.UPSTREAM_REPO,
 ) -> str:
     telegraph = await TELEGRAPH.create_page(
         title=title,
