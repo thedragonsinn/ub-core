@@ -2,6 +2,7 @@ import asyncio
 import os
 import shutil
 from functools import cached_property
+from pathlib import Path
 
 import aiofiles
 from aiohttp import ClientResponse, ClientSession
@@ -19,13 +20,15 @@ from .media_helper import (
 
 
 class DownloadedFile:
-    def __init__(self, file: str, size: int = 0):
+    def __init__(self, file: str | Path, size: int = 0):
+        file_path = Path(file)
+
         # Folder
-        self.dir = os.path.dirname(file)
+        self.dir = file_path.parent
         # Name
-        self.name = os.path.basename(file)
+        self.name = file_path.name
         # Folder + Name
-        self.path = os.path.join(self.dir, self.name)
+        self.path = str(file_path)
         # Size in MB
         self.size = bytes_to_mb(size or os.path.getsize(self.path))
         # Media Type
@@ -41,7 +44,7 @@ class Download:
     Parameters:
         url (str):
             file url.
-        dir (str):
+        dir (str | Path):
             download path without file name.
         is_encoded_url (bool):
             pass True if the url is already encoded and is sensitive.
@@ -72,7 +75,7 @@ class Download:
     def __init__(
         self,
         url: str,
-        dir: str,
+        dir: str | Path,
         is_encoded_url: bool = False,
         custom_file_name: str | None = None,
         message_to_edit: "Message" = None,
@@ -84,8 +87,8 @@ class Download:
         self.use_tg_safe_name = use_tg_safe_name
         self.message_to_edit: "Message" = message_to_edit
 
-        self.dir: str = dir
-        os.makedirs(name=dir, exist_ok=True)
+        self.dir: Path = Path(dir)
+        self.dir.mkdir(exist_ok=True)
 
         # noinspection PyTypeChecker
         self.client_session: "ClientSession" = None
@@ -146,7 +149,7 @@ class Download:
             raise OSError(f"Not enough space in {self.dir} to download {self.size} mb.")
 
     def check_duplicates(self) -> None:
-        if os.path.isfile(self.file_path):
+        if self.file_path.exists():
             raise FileExistsError(f"{self.file_path} already exists!!!")
 
     @property
@@ -180,8 +183,8 @@ class Download:
         return name_from_mime or name_from_url
 
     @cached_property
-    def file_path(self) -> str:
-        return os.path.join(self.dir, self.file_name)
+    def file_path(self) -> Path:
+        return self.dir / self.file_name
 
     @cached_property
     def size_bytes(self) -> int:
@@ -228,12 +231,12 @@ class Download:
                 total_size=self.size_bytes or 1,
                 response=self.message_to_edit,
                 action_str="Downloading...",
-                file_path=self.file_path,
+                file_path=str(self.file_path),
             )
             await asyncio.sleep(8)
 
     def return_file(self) -> DownloadedFile:
-        if not os.path.isfile(self.file_path):
+        if self.file_path.is_file():
             raise FileNotFoundError(self.file_path)
 
-        return DownloadedFile(os.path.join(self.dir, self.file_name))
+        return DownloadedFile(self.file_path)
