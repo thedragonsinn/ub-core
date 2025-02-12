@@ -3,10 +3,14 @@ from typing import TYPE_CHECKING
 
 from pyrogram import Client
 from pyrogram.types import LinkPreviewOptions, ReplyParameters
+from pyrogram.utils import parse_text_entities
 
 from ..types.message import Message
 
 if TYPE_CHECKING:
+    from pyrogram.enums import ParseMode
+    from pyrogram.types import MessageEntity
+
     from ..client import DualClient
 
 
@@ -17,6 +21,8 @@ class SendMessage(Client):
         self: "DualClient",
         chat_id: int | str,
         text: str,
+        parse_mode: "ParseMode" = None,
+        entities: list["MessageEntity"] = None,
         name: str = "output.txt",
         disable_preview: bool = None,
         reply_to_id: int = 0,
@@ -33,7 +39,14 @@ class SendMessage(Client):
         if not isinstance(text, str):
             text = str(text)
 
-        if len(text) < 4096:
+        text_and_entities = await parse_text_entities(
+            client=self,
+            text=text,
+            parse_mode=parse_mode or self.parse_mode,
+            entities=entities,
+        )
+
+        if len(text_and_entities["message"]) <= 4096:
             if isinstance(disable_preview, bool):
                 kwargs["link_preview_options"] = LinkPreviewOptions(
                     is_disabled=disable_preview
@@ -41,6 +54,11 @@ class SendMessage(Client):
             message = await super().send_message(
                 chat_id=chat_id,
                 text=text,
+                # Pyrogram Shenanigans for not accepting parsed values.
+                # text=text_and_entities["message"],
+                # entities=text_and_entities["entities"],
+                entities=entities,
+                parse_mode=parse_mode,
                 **kwargs,
             )
             return Message(message=message)

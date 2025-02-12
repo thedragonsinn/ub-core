@@ -8,11 +8,15 @@ from pyrogram.filters import Filter
 from pyrogram.types import LinkPreviewOptions
 from pyrogram.types import Message as MessageUpdate
 from pyrogram.types import ReplyParameters, User
+from pyrogram.utils import parse_text_entities
 
 from .. import Convo
 from ...config import Config
 
 if TYPE_CHECKING:
+    from pyrogram.enums import ParseMode
+    from pyrogram.types import MessageEntity
+
     from ..client import DualClient
 
 
@@ -43,6 +47,7 @@ class Message(MessageUpdate):
     def __init__(self, message: MessageUpdate | Self) -> None:
         message_vars = vars(message).copy()
         message_vars["client"] = message_vars.pop("_client", message._client)
+
         super().__init__(**self.sanitize_message(message_vars))
 
         self._replied = None
@@ -51,13 +56,17 @@ class Message(MessageUpdate):
         if self._reply_to_message:
             self._replied = Message(self._reply_to_message)
 
+        self._raw = message._raw
+
     @cached_property
     def cmd(self) -> str | None:
         """Returns First Word of text if it's a valid command."""
         if not self.text_list:
             return
+
         raw_cmd = self.text_list[0]
         cmd = raw_cmd.replace(self.trigger, "", 1)
+
         return cmd if cmd in Config.CMD_DICT.keys() else None
 
     @cached_property
@@ -189,6 +198,8 @@ class Message(MessageUpdate):
         block=True,
         name: str = "output.txt",
         disable_preview: bool = None,
+        parse_mode: "ParseMode" = None,
+        entities: list["MessageEntity"] = None,
         **kwargs,
     ) -> "Message":
         """Edit self.text or send a file with text if text length exceeds 4096 chars"""
@@ -198,8 +209,21 @@ class Message(MessageUpdate):
                 is_disabled=disable_preview
             )
 
-        if len(str(text)) < 4096:
-            task = super().edit_text(text=text, **kwargs)
+        parse_mode = parse_mode or self._client.parse_mode
+
+        text_and_entities = await parse_text_entities(
+            client=self._client,
+            text=text,
+            parse_mode=parse_mode,
+            entities=entities,
+        )
+
+        # text, entities = text_and_entities.values()
+
+        if len(text_and_entities["message"]) <= 4096:
+            task = super().edit_text(
+                text=text, parse_mode=parse_mode, entities=entities, **kwargs
+            )
 
             if del_in:
                 edited_message = await async_deleter(
@@ -214,7 +238,16 @@ class Message(MessageUpdate):
         else:
             _, edited_message = await asyncio.gather(
                 super().delete(),
-                self.reply(text, name=name, block=block, del_in=del_in, **kwargs),
+                self.reply(
+                    text=text,
+                    name=name,
+                    block=block,
+                    del_in=del_in,
+                    disable_preview=disable_preview,
+                    parse_mode=parse_mode,
+                    entities=entities,
+                    **kwargs,
+                ),
             )
         return edited_message
 
