@@ -45,6 +45,7 @@ class CallbackQuery(CallbackQueryUpdate):
             self.data
         )
 
+        self.reply_text_list = []
         self.replied = self.reply_id = self.replied_task_id = None
 
     @cached_property
