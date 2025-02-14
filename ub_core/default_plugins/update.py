@@ -18,7 +18,7 @@ async def get_commits() -> str | None:
         commits += (
             f"<a href='https://github.com/{commit.author}'>{commit.author}</a>"
             " pushed "
-            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{commit[0:6]]}</a>: "
+            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{commit[0:6]}</a>: "
             f"{commit.message}\n"
         )
 
