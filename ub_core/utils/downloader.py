@@ -236,7 +236,7 @@ class Download:
             await asyncio.sleep(8)
 
     def return_file(self) -> DownloadedFile:
-        if self.file_path.is_file():
+        if not self.file_path.is_file():
             raise FileNotFoundError(self.file_path)
 
         return DownloadedFile(self.file_path)
