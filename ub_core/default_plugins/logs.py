@@ -1,9 +1,9 @@
 import aiofiles
 
-from ub_core import BOT, Message, bot
+from ub_core import BOT, Message
 
 
-@bot.add_cmd(cmd="logs")
+@BOT.add_cmd(cmd="logs")
 async def read_logs(bot: BOT, message: Message):
     async with aiofiles.open("logs/app_logs.txt", "r") as aio_file:
         text = await aio_file.read()

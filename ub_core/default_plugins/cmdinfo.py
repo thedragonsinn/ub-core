@@ -1,9 +1,9 @@
 import os
 
-from ub_core import BOT, Config, Message, bot
+from ub_core import BOT, Config, Message
 
 
-@bot.add_cmd(cmd="ci")
+@BOT.add_cmd(cmd="ci")
 async def cmd_info(bot: BOT, message: Message):
     """
     CMD: CI (CMD INFO)
@@ -40,7 +40,7 @@ async def cmd_info(bot: BOT, message: Message):
     await message.reply(resp_str, disable_preview=True)
 
 
-@bot.add_cmd(cmd="s")
+@BOT.add_cmd(cmd="s")
 async def search(bot: BOT, message: Message):
     search_str = message.input
 

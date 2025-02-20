@@ -1,6 +1,6 @@
 import asyncio
 
-from ub_core import BOT, Config, Message, __version__, bot
+from ub_core import BOT, Config, Message, __version__
 from ub_core.utils import aio, run_shell_cmd
 
 REPO = Config.REPO
@@ -8,12 +8,12 @@ REPO = Config.REPO
 
 async def get_commits() -> str | None:
     try:
-        async with asyncio.timeout(10):
-            await asyncio.to_thread(REPO.git.fetch)
+        await asyncio.wait_for(asyncio.to_thread(REPO.git.fetch), timeout=10)
     except TimeoutError:
         return
 
     commits: str = ""
+
     for idx, commit in enumerate(REPO.iter_commits("HEAD..origin/main")):
         commits += (
             f"<a href='https://github.com/{commit.author}'>{commit.author}</a>"
@@ -28,16 +28,16 @@ async def get_commits() -> str | None:
     return commits
 
 
-async def pull_commits() -> None | bool:
+async def pull_commits() -> bool:
     REPO.git.reset("--hard")
     try:
-        async with asyncio.timeout(10):
-            await asyncio.to_thread(
-                REPO.git.pull, Config.UPSTREAM_REPO, "--rebase=true"
-            )
-            return True
+        await asyncio.wait_for(
+            asyncio.to_thread(REPO.git.pull, Config.UPSTREAM_REPO, "--rebase=true"),
+            timeout=10,
+        )
+        return True
     except TimeoutError:
-        return
+        return False
 
 
 async def get_core_update():
@@ -60,7 +60,30 @@ async def get_core_update():
     return 0, name  # No update
 
 
-@bot.add_cmd(cmd="update")
+async def handle_core_update(bot: BOT, message: Message, reply: Message):
+    update_status, version = await get_core_update()
+
+    if update_status == -1:
+        await asyncio.gather(
+            run_shell_cmd(
+                f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"
+            ),
+            reply.edit(
+                f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"
+            ),
+        )
+        bot.raise_sigint()
+
+    elif update_status == 0:
+        await reply.edit(f"Already on latest version: {__version__}")
+
+    else:
+        await reply.edit(
+            f"Currently on a test version: {__version__} ahead of {version}"
+        )
+
+
+@BOT.add_cmd(cmd="update")
 async def updater(bot: BOT, message: Message) -> None | Message:
     """
     CMD: UPDATE
@@ -74,27 +97,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
     reply: Message = await message.reply("Checking for Updates....")
 
     if "-c" in message.flags:
-        update_status, version = await get_core_update()
-
-        if update_status == -1:
-            await asyncio.gather(
-                run_shell_cmd(
-                    f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"
-                ),
-                reply.edit(
-                    f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"
-                ),
-            )
-            bot.raise_sigint()
-
-        elif update_status == 0:
-            await reply.edit(f"Already on latest version: {__version__}")
-
-        else:
-            await reply.edit(
-                f"Currently on a test version: {__version__} ahead of {version}"
-            )
-
+        await handle_core_update(bot=bot, message=message, reply=reply)
         return
 
     commits: str = await get_commits()

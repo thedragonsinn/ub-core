@@ -73,7 +73,7 @@ async def interactive_shell(bot: BOT, message: Message):
 
                 input_prompt, input_cmd = await convo.send_message(
                     text="__Reply to this message to pass in the command.__",
-                    reply_to_message_id=reply_to_id,
+                    reply_to_id=reply_to_id,
                     get_response=True,
                 )
                 input_text = input_cmd.text

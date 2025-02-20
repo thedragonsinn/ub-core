@@ -1,10 +1,10 @@
 import os
 import shutil
 
-from ub_core import BOT, Message, bot
+from ub_core import BOT, Message
 
 
-@bot.add_cmd(cmd="restart")
+@BOT.add_cmd(cmd="restart")
 async def restart(bot: BOT, message: Message) -> None:
     """
     CMD: RESTART
