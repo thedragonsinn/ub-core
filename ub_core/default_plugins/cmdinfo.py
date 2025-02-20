@@ -31,9 +31,11 @@ async def cmd_info(bot: BOT, message: Message):
     remote_url = os.path.join(*to_join)
 
     resp_str = (
+        "<blockquote>"
         f"<b>Command</b>: <code>{cmd}</code>"
         f"\n<b>Path</b>: <code>{plugin_path}</code>"
         f"\n\n<b>Link</b>: <a href='{remote_url}'>Github</a>"
+        "</blockquote>"
     )
     await message.reply(resp_str, disable_preview=True)
 

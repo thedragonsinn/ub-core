@@ -1,10 +1,9 @@
 import asyncio
-import inspect
 
 from pyrogram import filters
 from pyrogram.enums import ParseMode
 
-from ub_core import BOT, Cmd, Config, Message
+from ub_core import BOT, Config, Message
 from ub_core.utils import shell
 
 
@@ -54,6 +53,13 @@ async def live_shell(bot: BOT, message: Message):
 
 # Interactive Shell with Live Output
 async def interactive_shell(bot: BOT, message: Message):
+    """
+    CMD: Interactive Shell
+    INFO: Spawns an interactive shell that you can continuously pass multiple commands into.
+    USAGE:
+        .ish
+        then keep replying to the bot's messages with shell commands.
+    """
     sub_process: shell.InteractiveShell = await shell.InteractiveShell.spawn_shell()
     reply_to_id = message.id
     try:
@@ -123,12 +129,6 @@ def generate_filter(message: Message):
 
 
 if Config.DEV_MODE:
-    Config.CMD_DICT["shell"] = Cmd(
-        cmd="shell", func=live_shell, cmd_path=inspect.stack()[0][1], sudo=False
-    )
-    Config.CMD_DICT["sh"] = Cmd(
-        cmd="sh", func=run_cmd, cmd_path=inspect.stack()[0][1], sudo=False
-    )
-    Config.CMD_DICT["ish"] = Cmd(
-        cmd="ish", func=interactive_shell, cmd_path=inspect.stack()[0][1], sudo=False
-    )
+    BOT.add_cmd(cmd="shell", allow_sudo=False)(live_shell)
+    BOT.add_cmd(cmd="sh", allow_sudo=False)(run_cmd)
+    BOT.add_cmd(cmd="ish", allow_sudo=False)(interactive_shell)

@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import sys
 import traceback
 from io import StringIO
@@ -31,7 +30,6 @@ def generate_locals(message: Message) -> tuple:
         ruid = message.replied.from_user.id
 
     return r, c, cid, u, uid, ru, ruid
-
 
 # fmt: on
 
@@ -109,6 +107,4 @@ async def executor(bot: BOT, message: Message) -> None:
 
 
 if Config.DEV_MODE:
-    Config.CMD_DICT["py"] = Cmd(
-        cmd="py", func=executor, cmd_path=inspect.stack()[0][1], sudo=False
-    )
+    BOT.add_cmd(cmd="py", allow_sudo=False)(executor)

@@ -1,10 +1,9 @@
 import importlib
-import inspect
 import os
 import sys
 import traceback
 
-from ub_core import BOT, Cmd, Config, Message
+from ub_core import BOT, Config, Message
 
 
 async def loader(bot: BOT, message: Message) -> Message | None:
@@ -51,6 +50,4 @@ async def loader(bot: BOT, message: Message) -> Message | None:
 
 
 if Config.DEV_MODE:
-    Config.CMD_DICT["load"] = Cmd(
-        cmd="load", func=loader, cmd_path=inspect.stack()[0][1], sudo=False
-    )
+    BOT.add_cmd(cmd="load", allow_sudo=False)(loader)
