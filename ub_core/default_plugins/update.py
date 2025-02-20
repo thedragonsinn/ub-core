@@ -16,8 +16,10 @@ async def get_commits() -> str | None:
 
     for idx, commit in enumerate(REPO.iter_commits("HEAD..origin/main")):
         commits += (
-            f"<b>#{commit.count()}</b> By <i>{commit.author}</i>\n"
-            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{commit.message}</a>\n\n"
+            f"<a href='https://github.com/{commit.author}'>{commit.author}</a>"
+            " pushed "
+            f"<a href='{Config.UPSTREAM_REPO}/commit/{commit}'>{str(commit)[0:6]}</a>: "
+            f"{commit.message}\n"
         )
 
         if idx >= 15:
@@ -61,7 +63,9 @@ async def handle_core_update(bot: BOT, message: Message, reply: Message):
 
     if update_status == -1:
         await asyncio.gather(
-            run_shell_cmd(f"pip install -q --no-cache-dir git+{Config.UPDATE_REPO}"),
+            run_shell_cmd(
+                f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}"
+            ),
             reply.edit(
                 f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"
             ),
