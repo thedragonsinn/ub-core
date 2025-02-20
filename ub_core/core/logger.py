@@ -95,13 +95,13 @@ custom_network_error_handler.setLevel(WARNING)
 
 basicConfig(
     level=INFO,
-    format="[%(levelname)s] [%(asctime)s] [%(name)s] [%(module)s]: %(message)s",
+    format="%(asctime)s | %(levelname)s %(name)s %(module)s: %(message)s",
     datefmt="%d-%m-%y %I:%M:%S %p",
     handlers={
         handlers.RotatingFileHandler(
             filename="logs/app_logs.txt",
             mode="a",
-            maxBytes=5 * 1024 * 1024,
+            maxBytes=1024 * 1024,
             backupCount=1,
             encoding=None,
             delay=False,
