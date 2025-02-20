@@ -149,15 +149,12 @@ class Aio:
         # Set name from Headers
         if name_from_headers:
             file.name = name_from_headers
-
         # URL has a valid media type filename
         elif media_type:
             file.name = name_from_url
-
         # Try to guess from mime-header
         elif name_from_mime:
             file.name = name_from_mime
-
         # Fallback to whatever name is extracted from url
         else:
             file.name = name_from_url

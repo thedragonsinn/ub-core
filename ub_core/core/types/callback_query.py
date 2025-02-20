@@ -1,14 +1,18 @@
 from functools import cached_property
 from io import BytesIO
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from pyrogram.types import CallbackQuery as CallbackQueryUpdate
 from pyrogram.types import LinkPreviewOptions
+from pyrogram.utils import parse_text_entities
 
 from .message import Message
 from ...config import Config
 
 if TYPE_CHECKING:
+    from pyrogram.enums import ParseMode
+    from pyrogram.types import InlineKeyboardMarkup, MessageEntity
+
     from ..client import DualClient
 
 
@@ -78,22 +82,34 @@ class CallbackQuery(CallbackQueryUpdate):
 
     async def edit_message_text(
         self,
-        text: str,
-        parse_mode=None,
-        link_preview_options: LinkPreviewOptions = None,
-        reply_markup=None,
+        text: str | Any,
         name: str = "output.txt",
         del_in: int = 0,
-        block=True,
-        disable_preview=None,
+        block: bool = True,
+        disable_preview: bool = None,
+        entities: list["MessageEntity"] = None,
+        parse_mode: "ParseMode" = None,
+        link_preview_options: LinkPreviewOptions = None,
+        reply_markup: "InlineKeyboardMarkup" = None,
         **kwargs,
     ) -> Self:
+
         if not isinstance(text, str):
             text = str(text)
 
-        if len(text) < 4096:
+        text_and_entities = await parse_text_entities(
+            client=self._client,
+            text=text,
+            parse_mode=parse_mode or self._client.parse_mode,
+            entities=entities,
+        )
+
+        if len(text_and_entities["message"]) <= 4096:
+            if isinstance(disable_preview, bool):
+                link_preview_options = LinkPreviewOptions(is_disabled=disable_preview)
+
             await super().edit_message_text(
-                text,
+                text=text,
                 parse_mode=parse_mode,
                 link_preview_options=link_preview_options,
                 reply_markup=reply_markup,

@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from functools import cached_property
-from inspect import iscoroutinefunction
+from inspect import iscoroutine, iscoroutinefunction
 from signal import SIGINT, raise_signal
 from typing import Self
 
@@ -142,28 +142,43 @@ class DualClient(Bot):
         import_modules(ub_core_dirname)
         import_modules(Config.WORKING_DIR)
 
+        LOGGER.info("Plugins Imported.")
+
+    @staticmethod
+    async def _run_init_tasks():
+        results = await asyncio.gather(*Config.INIT_TASKS, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, BaseException):
+                LOGGER.exception(result)
+
+        Config.INIT_TASKS.clear()
+        LOGGER.info("Init Tasks Completed.")
+
     async def boot(self) -> None:
         await super().start()
+
         LOGGER.info(f"[{self.client_type}] Connected to TG.")
+
         if self._bot:
             await self._bot.start()
             LOGGER.info(f"[BOT] Connected  to TG.")
 
         await asyncio.to_thread(self._import)
-        LOGGER.info("Plugins Imported.")
 
         await self.set_mode(force_bot=self.is_bot)
 
-        await asyncio.gather(*Config.INIT_TASKS)
-        Config.INIT_TASKS.clear()
-        LOGGER.info("Init Tasks Completed.")
+        await self._run_init_tasks()
 
         await self.log_text(text="<i>Started</i>")
+
         LOGGER.info(f"Idling on [{Config.MODE.upper()}] Mode...")
+
         self.is_idling = True
         await idle()
 
         await self.shut_down()
+
         sys.exit(self.exit_code)
 
     def raise_sigint(self):
@@ -188,8 +203,10 @@ class DualClient(Bot):
         for resource in Config.EXIT_TASKS:
             if resource is None:
                 continue
-            if iscoroutinefunction(resource):
+            elif iscoroutinefunction(resource):
                 await resource()
+            elif iscoroutine(resource):
+                await resource
             else:
                 resource()
 
