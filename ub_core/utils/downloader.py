@@ -88,7 +88,7 @@ class Download:
         self.message_to_edit: "Message" = message_to_edit
 
         self.dir: Path = Path(dir)
-        self.dir.mkdir(exist_ok=True)
+        self.dir.mkdir(parents=True, exist_ok=True)
 
         # noinspection PyTypeChecker
         self.client_session: "ClientSession" = None
