@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from functools import cached_property
-from inspect import iscoroutinefunction
+from inspect import iscoroutine, iscoroutinefunction
 from signal import SIGINT, raise_signal
 
 from pyrogram import Client, idle
@@ -69,22 +69,33 @@ class BOT(CustomDecorators, Methods, Client):
         """Import Inbuilt and external Modules"""
         import_modules(ub_core_dir_name)
         import_modules(Config.WORKING_DIR)
-
-    async def boot(self) -> None:
-        await super().start()
-        LOGGER.info("Connected to TG.")
-
-        await asyncio.to_thread(self._import)
         LOGGER.info("Plugins Imported.")
 
-        await asyncio.gather(*Config.INIT_TASKS)
+    @staticmethod
+    async def _run_init_tasks():
+        results = await asyncio.gather(*Config.INIT_TASKS, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, BaseException):
+                LOGGER.exception(result)
+
         Config.INIT_TASKS.clear()
         LOGGER.info("Init Tasks Completed.")
 
-        await self.log_text(text="<i>Started</i>")
-        LOGGER.info("Idling...")
+    async def boot(self) -> None:
+        await super().start()
 
+        LOGGER.info("Connected to TG.")
+
+        await asyncio.to_thread(self._import)
+
+        await self._run_init_tasks()
+
+        await self.log_text(text="<i>Started</i>")
+
+        LOGGER.info("Idling...")
         self.is_idling = True
+
         await idle()
 
         await self.shut_down()
@@ -105,8 +116,10 @@ class BOT(CustomDecorators, Methods, Client):
         for resource in Config.EXIT_TASKS:
             if resource is None:
                 continue
-            if iscoroutinefunction(resource):
+            elif iscoroutinefunction(resource):
                 await resource()
+            elif iscoroutine(resource):
+                await resource
             else:
                 resource()
 
