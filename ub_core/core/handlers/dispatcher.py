@@ -44,10 +44,10 @@ async def client_check(client: BOT, message: Message):
 def make_custom_object(
     update: MessageUpdate | CallbackQueryUpdate,
 ) -> Message | CallbackQuery | None:
-    if isinstance(update, MessageUpdate):
+    if isinstance(update, (MessageUpdate, Message)):
         return Message(update)
 
-    if isinstance(update, CallbackQueryUpdate):
+    if isinstance(update, (CallbackQueryUpdate, CallbackQuery)):
         return CallbackQuery(update)
 
 
@@ -58,7 +58,6 @@ async def cmd_dispatcher(
     check_for_reactions: bool = True,
     mode_sensitive: bool = True,
     is_command: bool = True,
-    use_custom_object: bool = True,
 ) -> None:
     """Custom Command Dispatcher to Gracefully Handle Errors and Cancellation"""
 
@@ -68,8 +67,7 @@ async def cmd_dispatcher(
     if check_for_reactions and anti_reaction(update):
         update.stop_propagation()
 
-    if use_custom_object:
-        update = make_custom_object(update)
+    update = make_custom_object(update)
 
     if not func:
         cmd_object = Config.CMD_DICT.get(update.cmd)

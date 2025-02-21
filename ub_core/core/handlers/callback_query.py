@@ -44,7 +44,6 @@ async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate):
         is_command=False,
         check_for_reactions=False,
         mode_sensitive=False,
-        use_custom_object=False,
     )
     await callback_query.stop_propagation()
 

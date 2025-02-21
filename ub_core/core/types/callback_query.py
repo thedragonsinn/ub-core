@@ -17,6 +17,10 @@ if TYPE_CHECKING:
 
 
 def construct_properties(inline_query_id: str) -> tuple[str, list[str], str, str]:
+
+    if inline_query_id not in Config.INLINE_QUERY_CACHE:
+        return "", [], "", ""
+
     cmd, text = (Config.INLINE_QUERY_CACHE.pop(inline_query_id)).values()
 
     flags = [i for i in text.split() if i.startswith("-")]
@@ -28,6 +32,7 @@ def construct_properties(inline_query_id: str) -> tuple[str, list[str], str, str
     split_lines[0] = " ".join(
         [word for word in split_lines[0].split(" ") if word not in flags]
     )
+
     filtered_input = "\n".join(split_lines)
 
     return cmd, flags, input, filtered_input
@@ -37,6 +42,16 @@ class CallbackQuery(CallbackQueryUpdate):
     """A Custom CallbackQuery Class with ease of access methods"""
 
     _client: "DualClient"
+    _fake_properties = (
+        "cmd",
+        "flags",
+        "input",
+        "filtered_input",
+        "reply_text_list",
+        "replied",
+        "reply_id",
+        "replied_task_id",
+    )
 
     def __init__(self, callback_query: CallbackQueryUpdate | Self) -> None:
         kwargs = self.sanitize_cq(callback_query)
@@ -45,17 +60,19 @@ class CallbackQuery(CallbackQueryUpdate):
         if isinstance(self.data, bytes):
             self.data = self.data.decode("utf-8")
 
+        if isinstance(callback_query, CallbackQuery):
+            for attr in self._fake_properties:
+                old_attr = getattr(callback_query, attr)
+                setattr(self, attr, old_attr)
+
+            return
+
         self.cmd, self.flags, self.input, self.filtered_input = construct_properties(
             self.data
         )
 
         self.reply_text_list = []
         self.replied = self.reply_id = self.replied_task_id = None
-
-    @cached_property
-    def message(self):
-        if super().message:
-            return Message(super().message)
 
     @cached_property
     def is_from_owner(self) -> bool:
@@ -135,9 +152,19 @@ class CallbackQuery(CallbackQueryUpdate):
         """Remove Extra/Custom Attrs from Message Object"""
         kwargs = vars(callback_query).copy()
         kwargs["client"] = kwargs.pop("_client", callback_query._client)
+
+        if callback_query.message:
+            kwargs["message"] = Message(kwargs.pop("message"))
+
         for arg in dir(CallbackQuery):
-            if isinstance(
+            is_property = isinstance(
                 getattr(CallbackQuery, arg, 0), (cached_property, property)
-            ) and not hasattr(CallbackQueryUpdate, arg):
+            )
+            is_present_in_super = hasattr(CallbackQueryUpdate, arg)
+
+            if is_property and not is_present_in_super:
                 kwargs.pop(arg, 0)
+
+        [kwargs.pop(_property, 0) for _property in CallbackQuery._fake_properties]
+
         return kwargs
