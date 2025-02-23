@@ -16,10 +16,11 @@ if TYPE_CHECKING:
     from ..client import DualClient
 
 
-def construct_properties(inline_query_id: str) -> tuple[str, list[str], str, str]:
-
+def construct_properties(
+    inline_query_id: str,
+) -> tuple[str, list[str], str, str, list[str]]:
     if inline_query_id not in Config.INLINE_QUERY_CACHE:
-        return "", [], "", ""
+        return "", [], "", "", []
 
     cmd, text = (Config.INLINE_QUERY_CACHE.pop(inline_query_id)).values()
 
@@ -35,7 +36,7 @@ def construct_properties(inline_query_id: str) -> tuple[str, list[str], str, str
 
     filtered_input = "\n".join(split_lines)
 
-    return cmd, flags, input, filtered_input
+    return cmd, flags, input, filtered_input, input.split()
 
 
 class CallbackQuery(CallbackQueryUpdate):
@@ -51,6 +52,7 @@ class CallbackQuery(CallbackQueryUpdate):
         "replied",
         "reply_id",
         "replied_task_id",
+        "text_list",
     )
 
     def __init__(self, callback_query: CallbackQueryUpdate | Self) -> None:
@@ -67,8 +69,8 @@ class CallbackQuery(CallbackQueryUpdate):
 
             return
 
-        self.cmd, self.flags, self.input, self.filtered_input = construct_properties(
-            self.data
+        self.cmd, self.flags, self.input, self.filtered_input, self.text_list = (
+            construct_properties(self.data)
         )
 
         self.reply_text_list = []
