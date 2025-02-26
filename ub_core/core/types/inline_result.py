@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class InlineResult(Properties, InlineResultUpdate):
     _client: "DualClient"
     text: str
-    id:str
+    id: str
 
     def __init__(self, inline_result: InlineResultUpdate | Self) -> None:
         kwargs = self.sanitize_inline_result(inline_result)

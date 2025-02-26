@@ -1,4 +1,4 @@
-from functools import cached_property
+from functools import cached_property, wraps
 from typing import TYPE_CHECKING
 
 from pyrogram.enums import MessageServiceType
@@ -13,6 +13,17 @@ if TYPE_CHECKING:
     type Supers = Message | CallbackQuery | InlineResult
 
     ...
+
+
+def handle_attribute_error(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except AttributeError:
+            return None
+
+    return wrapper
 
 
 class Properties:
@@ -66,6 +77,7 @@ class Properties:
         return self.from_user and self.from_user.id == Config.OWNER_ID
 
     @cached_property
+    @handle_attribute_error
     def replied(self: "Supers") -> "Message":
         """
         Returns Custom Message object for message.reply_to_message
@@ -75,6 +87,7 @@ class Properties:
             return self._replied
 
     @property
+    @handle_attribute_error
     def reply_to_message(self: "Supers") -> MessageUpdate | None:
         """
         Returns Pyrogram's Message object if replied isn't a Thread Origin Message.
@@ -87,6 +100,7 @@ class Properties:
         pass
 
     @cached_property
+    @handle_attribute_error
     def reply_id(self: "Supers") -> int | None:
         """Returns message.reply_to_message.id if message.reply_to_message"""
         return self.reply_to_message_id
@@ -113,10 +127,12 @@ class Properties:
         return self.text.split() if self.text else []
 
     @cached_property
+    @handle_attribute_error
     def is_thread_origin(self: "Supers") -> bool:
         return self.service == MessageServiceType.FORUM_TOPIC_CREATED
 
     @cached_property
+    @handle_attribute_error
     def thread_origin_message(self: "Supers") -> "Message":
         """
         Returns Custom Message object for message.reply_to_message
