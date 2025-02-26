@@ -6,6 +6,7 @@ from pyrogram.types import CallbackQuery as CallbackQueryUpdate
 from pyrogram.types import LinkPreviewOptions
 from pyrogram.utils import parse_text_entities
 
+from .extra_properties import Properties
 from .message import Message
 from ...config import Config
 
@@ -16,88 +17,50 @@ if TYPE_CHECKING:
     from ..client import DualClient
 
 
-def construct_properties(
-    inline_query_id: str,
-) -> tuple[str, list[str], str, str, list[str]]:
-    if inline_query_id not in Config.INLINE_QUERY_CACHE:
-        return "", [], "", "", []
-
-    cmd, text = (Config.INLINE_QUERY_CACHE.pop(inline_query_id)).values()
-
-    flags = [i for i in text.split() if i.startswith("-")]
-
-    input = text
-
-    split_lines = input.split(sep="\n", maxsplit=1)
-
-    split_lines[0] = " ".join(
-        [word for word in split_lines[0].split(" ") if word not in flags]
-    )
-
-    filtered_input = "\n".join(split_lines)
-
-    return cmd, flags, input, filtered_input, input.split()
-
-
-class CallbackQuery(CallbackQueryUpdate):
+class CallbackQuery(Properties, CallbackQueryUpdate):
     """A Custom CallbackQuery Class with ease of access methods"""
 
     _client: "DualClient"
-    _fake_properties = (
-        "cmd",
-        "flags",
-        "input",
-        "filtered_input",
-        "reply_text_list",
-        "replied",
-        "reply_id",
-        "replied_task_id",
-        "text_list",
-    )
+    text: str
 
     def __init__(self, callback_query: CallbackQueryUpdate | Self) -> None:
-        kwargs = self.sanitize_cq(callback_query)
+        kwargs = self.sanitize_callback_query(callback_query)
         super().__init__(**kwargs)
 
         if isinstance(self.data, bytes):
             self.data = self.data.decode("utf-8")
 
         if isinstance(callback_query, CallbackQuery):
-            for attr in self._fake_properties:
-                old_attr = getattr(callback_query, attr)
-                setattr(self, attr, old_attr)
-
+            self.text = callback_query.text
             return
 
-        self.cmd, self.flags, self.input, self.filtered_input, self.text_list = (
-            construct_properties(self.data)
-        )
+        if inline_data := Config.INLINE_QUERY_CACHE.pop(self.data, {}):
+            self.text = inline_data["text"]
 
-        self.reply_text_list = []
-        self.replied = self.reply_id = self.replied_task_id = None
+    @staticmethod
+    def sanitize_callback_query(callback_query) -> dict:
+        """Remove Extra/Custom Attrs from Message Object"""
+        kwargs = vars(callback_query).copy()
+        kwargs["client"] = kwargs.pop("_client", callback_query._client)
+        kwargs.pop("text", 0)
 
-    @cached_property
-    def is_from_owner(self) -> bool:
-        """Returns True if message is from Owner of bot."""
-        return self.from_user and self.from_user.id == Config.OWNER_ID
+        if callback_query.message:
+            kwargs["message"] = Message(kwargs.pop("message"))
 
-    @cached_property
-    def task_id(self) -> str:
-        """Task ID to Cancel/Track Command Progress."""
-        return self.id
+        for arg in dir(CallbackQuery):
+            is_property = isinstance(
+                getattr(CallbackQuery, arg, 0), (cached_property, property)
+            )
+            is_present_in_super = hasattr(CallbackQueryUpdate, arg)
 
-    @cached_property
-    def trigger(self) -> str:
-        """Returns Cmd or Sudo Trigger"""
-        # Legacy w/o db and sudo support
-        if hasattr(Config, "TRIGGER"):
-            return Config.TRIGGER
+            if is_property and not is_present_in_super:
+                kwargs.pop(arg, 0)
 
-        return Config.CMD_TRIGGER if self.is_from_owner else Config.SUDO_TRIGGER
+        return kwargs
 
-    @cached_property
-    def unique_chat_user_id(self) -> int | str:
-        return self.id
+    @classmethod
+    def parse(cls, update) -> Self:
+        return update if isinstance(update, CallbackQuery) else cls(update)
 
     async def edit_message_text(
         self,
@@ -148,25 +111,3 @@ class CallbackQuery(CallbackQueryUpdate):
 
     edit = edit_text = reply = reply_text = edit_message_text
     edit_media = edit_message_media
-
-    @staticmethod
-    def sanitize_cq(callback_query):
-        """Remove Extra/Custom Attrs from Message Object"""
-        kwargs = vars(callback_query).copy()
-        kwargs["client"] = kwargs.pop("_client", callback_query._client)
-
-        if callback_query.message:
-            kwargs["message"] = Message(kwargs.pop("message"))
-
-        for arg in dir(CallbackQuery):
-            is_property = isinstance(
-                getattr(CallbackQuery, arg, 0), (cached_property, property)
-            )
-            is_present_in_super = hasattr(CallbackQueryUpdate, arg)
-
-            if is_property and not is_present_in_super:
-                kwargs.pop(arg, 0)
-
-        [kwargs.pop(_property, 0) for _property in CallbackQuery._fake_properties]
-
-        return kwargs

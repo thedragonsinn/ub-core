@@ -2,7 +2,7 @@ import asyncio
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from pyrogram.enums import MessageEntityType, MessageServiceType
+from pyrogram.enums import MessageEntityType
 from pyrogram.errors import MessageDeleteForbidden
 from pyrogram.filters import Filter
 from pyrogram.types import LinkPreviewOptions
@@ -10,6 +10,7 @@ from pyrogram.types import Message as MessageUpdate
 from pyrogram.types import ReplyParameters, User
 from pyrogram.utils import parse_text_entities
 
+from .extra_properties import Properties
 from .. import Convo
 from ...config import Config
 
@@ -39,148 +40,49 @@ async def async_deleter(del_in, task, block) -> MessageUpdate | None:
         del_task.add_done_callback(del_task_cleaner)
 
 
-class Message(MessageUpdate):
+class Message(Properties, MessageUpdate):
     """A Custom Message Class with ease of access methods"""
 
     _client: "DualClient"
 
     def __init__(self, message: MessageUpdate | Self) -> None:
-        message_vars = vars(message).copy()
-        message_vars["client"] = message_vars.pop("_client", message._client)
 
-        super().__init__(**self.sanitize_message(message_vars))
+        super().__init__(**self.sanitize_message(message))
 
         self._replied = None
         self._reply_to_message: MessageUpdate | None = message.reply_to_message
 
         if self._reply_to_message:
-            self._replied = Message(self._reply_to_message)
+            self._replied = Message.parse(self._reply_to_message)
 
         self._raw = message._raw
 
-    @cached_property
-    def cmd(self) -> str | None:
-        """Returns First Word of text if it's a valid command."""
-        if not self.text_list:
-            return
+    @staticmethod
+    def sanitize_message(message) -> dict:
+        """Remove Extra/Custom Attrs from Message Object"""
+        kwargs = vars(message).copy()
+        kwargs["client"] = kwargs.pop("_client", message._client)
 
-        raw_cmd = self.text_list[0]
-        cmd = raw_cmd.replace(self.trigger, "", 1)
+        # Pop Private Variables
+        for attr_name in list(kwargs.keys()):
+            if attr_name.startswith("_"):
+                kwargs.pop(attr_name)
 
-        return cmd if cmd in Config.CMD_DICT.keys() else None
+        # Pop Custom Properties
+        for arg in dir(Message):
+            is_property = isinstance(
+                getattr(Message, arg, 0), (cached_property, property)
+            )
+            is_present_in_super = hasattr(MessageUpdate, arg)
 
-    @cached_property
-    def flags(self) -> list:
-        """
-        Returns list of text that start with - i.e. flags. \n
-        text: .example -d -s something \n
-        returns: [-d, -s]
-        """
-        return [i for i in self.text_list if i.startswith("-")]
+            if is_property and not is_present_in_super:
+                kwargs.pop(arg, 0)
 
-    @cached_property
-    def filtered_input(self) -> str:
-        """
-        Returns all text except command and flags. \n
-        text: .example -d -s do something here \n
-        returns: do something here
-        """
-        split_lines = self.input.split(sep="\n", maxsplit=1)
-        split_lines[0] = " ".join(
-            [word for word in split_lines[0].split(" ") if word not in self.flags]
-        )
-        return "\n".join(split_lines)
+        return kwargs
 
-    @cached_property
-    def input(self) -> str:
-        """
-        Returns raw text except command. \n
-        text: .example -d -s do something here \n
-        returns: -d -s do something here
-        """
-        if len(self.text_list) > 1:
-            return self.text.split(maxsplit=1)[-1]
-        return ""
-
-    @cached_property
-    def is_from_owner(self) -> bool:
-        """Returns True if message is from Owner of bot."""
-        return self.from_user and self.from_user.id == Config.OWNER_ID
-
-    @cached_property
-    def replied(self) -> Self | None:
-        """
-        Returns Custom Message object for message.reply_to_message
-        If replied isn't the Thread Origin Message.
-        """
-        if self._replied and not self._replied.is_thread_origin:
-            return self._replied
-
-    @property
-    def reply_to_message(self) -> MessageUpdate | None:
-        """
-        Returns Pyrogram's Message object if replied isn't a Thread Origin Message.
-        """
-        if self._replied and not self._replied.is_thread_origin:
-            return self._reply_to_message
-
-    @reply_to_message.setter
-    def reply_to_message(self, value) -> None:
-        pass
-
-    @cached_property
-    def reply_id(self) -> int | None:
-        """Returns message.reply_to_message.id if message.reply_to_message"""
-        return self.reply_to_message_id
-
-    @cached_property
-    def replied_task_id(self) -> str | None:
-        """Returns message.reply_to_message.task_id if message.reply_to_message"""
-        return self.replied.task_id if self.replied else None
-
-    @cached_property
-    def reply_text_list(self) -> list:
-        """Returns list of message.reply_to_message.text.split()"""
-        return self.replied.text_list if self.replied else []
-
-    @cached_property
-    def task_id(self) -> str:
-        """Task ID to Cancel/Track Command Progress."""
-        return f"{self.chat.id}-{self.id}"
-
-    @cached_property
-    def text_list(self) -> list:
-        """Returns list of message.text.split()"""
-        return self.text.split() if self.text else []
-
-    @cached_property
-    def is_thread_origin(self) -> bool:
-        return self.service == MessageServiceType.FORUM_TOPIC_CREATED
-
-    @cached_property
-    def thread_origin_message(self) -> Self | None:
-        """
-        Returns Custom Message object for message.reply_to_message
-        If replied is the Thread Origin Message.
-        """
-        if self._replied and self._replied.is_thread_origin:
-            return self._replied
-
-    @cached_property
-    def trigger(self) -> str:
-        """Returns Cmd or Sudo Trigger"""
-        # Legacy w/o db and sudo support
-        if hasattr(Config, "TRIGGER"):
-            return Config.TRIGGER
-
-        if self.is_from_owner and not self._client.is_bot:
-            return Config.CMD_TRIGGER
-        else:
-            return Config.SUDO_TRIGGER
-
-    @cached_property
-    def unique_chat_user_id(self) -> int | str:
-        return f"{self.chat.id}-{self.from_user.id}" if self.from_user else 0
+    @classmethod
+    def parse(cls, update) -> Self:
+        return update if isinstance(update, Message) else cls(update)
 
     async def delete(self, reply: bool = False) -> None:
         """Delete Self and Replied if True"""
@@ -315,24 +217,3 @@ class Message(MessageUpdate):
             await async_deleter(task=task, del_in=del_in, block=block)
         else:
             return Message((await task))  # fmt:skip
-
-    @staticmethod
-    def sanitize_message(kwargs):
-        """Remove Extra/Custom Attrs from Message Object"""
-
-        # Pop Private Variables
-        for attr_name in list(kwargs.keys()):
-            if attr_name.startswith("_"):
-                kwargs.pop(attr_name)
-
-        # Pop Custom Properties
-        for arg in dir(Message):
-            is_property = isinstance(
-                getattr(Message, arg, 0), (cached_property, property)
-            )
-            is_present_in_super = hasattr(MessageUpdate, arg)
-
-            if is_property and not is_present_in_super:
-                kwargs.pop(arg, 0)
-
-        return kwargs
