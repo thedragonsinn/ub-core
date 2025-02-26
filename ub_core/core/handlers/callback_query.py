@@ -20,7 +20,7 @@ def callback_check(_, __, callback_query: CallbackQueryUpdate):
 CALLBACK_FILTER = create(callback_check)
 
 
-async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate):
+async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate) -> None:
     callback_query: CallbackQuery = CallbackQuery(callback_query)
 
     try:
@@ -45,7 +45,7 @@ async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate):
         check_for_reactions=False,
         mode_sensitive=False,
     )
-    await callback_query.stop_propagation()
+    callback_query.stop_propagation()
 
 
 if bot.has_bot or bot.is_bot:

@@ -5,11 +5,12 @@ from typing import Callable
 
 from pyrogram import ContinuePropagation, StopPropagation
 from pyrogram.types import CallbackQuery as CallbackQueryUpdate
+from pyrogram.types import ChosenInlineResult as InlineResultUpdate
 from pyrogram.types import Message as MessageUpdate
 
 from ub_core import BOT, Config
 
-from ..types import CallbackQuery, Message
+from ..types import CallbackQuery, InlineResult, Message
 
 USER_IS_PROCESSING_MESSAGE: list[int] = []
 
@@ -42,18 +43,21 @@ async def client_check(client: BOT, message: Message):
 
 
 def make_custom_object(
-    update: MessageUpdate | CallbackQueryUpdate,
-) -> Message | CallbackQuery | None:
+    update: MessageUpdate | CallbackQueryUpdate | InlineResultUpdate,
+) -> Message | CallbackQuery | InlineResult | None:
     if isinstance(update, (MessageUpdate, Message)):
-        return Message(update)
+        return Message.parse(update)
 
     if isinstance(update, (CallbackQueryUpdate, CallbackQuery)):
-        return CallbackQuery(update)
+        return CallbackQuery.parse(update)
+
+    if isinstance(update, (InlineResult, InlineResultUpdate)):
+        return InlineResult.parse(update)
 
 
 async def cmd_dispatcher(
     client: BOT,
-    update: MessageUpdate | CallbackQueryUpdate,
+    update: MessageUpdate | CallbackQueryUpdate | InlineResultUpdate,
     func: Callable = None,
     check_for_reactions: bool = True,
     mode_sensitive: bool = True,
@@ -74,6 +78,7 @@ async def cmd_dispatcher(
 
         if not cmd_object:
             return
+
         func = cmd_object.func
 
     task = asyncio.create_task(func(client, update), name=update.task_id)
