@@ -15,19 +15,19 @@ dns.resolver.default_resolver.nameservers = ["8.8.8.8"]
 DB_URI: str = os.environ.get("DB_URL", "").strip()
 
 if DB_URI:
-    DB_CLIENT: AgnosticClient | None = AsyncIOMotorClient(DB_URI)
+    DATABASE_CLIENT: AgnosticClient | None = AsyncIOMotorClient(DB_URI)
     db_name = Config.BOT_NAME.lower().replace("-", "_")
-    DB: AgnosticDatabase | None = DB_CLIENT[db_name]
-    Config.EXIT_TASKS.append(DB_CLIENT.close)
+    DATABASE: AgnosticDatabase | None = DATABASE_CLIENT[db_name]
+    Config.EXIT_TASKS.append(DATABASE_CLIENT.close)
 else:
-    DB_CLIENT = DB = None
+    DATABASE_CLIENT = DATABASE = None
 
 
 class CustomDB(AsyncIOMotorCollection):
     """A Custom Class with a few Extra Methods for ease of access"""
 
-    def __init__(self, collection_name: str):
-        super().__init__(database=DB, name=collection_name)
+    def __init__(self, collection_name: str, database: AgnosticClient = DATABASE):
+        super().__init__(database=database, name=collection_name)
 
     async def add_data(self: AgnosticCollection, data: dict) -> int | str:
         """
