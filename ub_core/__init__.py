@@ -19,7 +19,7 @@ ub_core_dir_name = os.path.dirname(__file__)
 
 from .config import Cmd, Config
 from .version import __version__
-from .core import DB, DB_CLIENT, Convo, CustomDB, Message
+from .core import DATABASE, DATABASE_CLIENT, Convo, CustomDB, Message
 from .core.client import BOT
 
 bot: BOT = BOT()
