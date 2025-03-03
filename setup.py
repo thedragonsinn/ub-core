@@ -12,7 +12,9 @@ with open("ub_core/version.py", mode="r", encoding="utf-8") as version_file:
 
 def get_platform_requirements() -> list[str]:
     with open("requirements.txt", mode="r", encoding="utf-8") as req_file:
-        packages: list[str] = req_file.readlines()
+        packages: list[str] = filter(
+            lambda l: not l.startswith("#"), req_file.readlines()
+        )
 
     if "termux" not in os.environ.get("HOME", ""):
         return packages
