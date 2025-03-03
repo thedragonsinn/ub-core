@@ -59,7 +59,7 @@ class Config:
 
     INLINE_QUERY_CACHE: dict[str | int, dict] = {}
 
-    INLINE_USER_RESULT_CACHE: set[int] = set()
+    INLINE_RESULT_CACHE: set[str] = set()
 
     LOG_CHAT: int = int(environ.get("LOG_CHAT", 0))
 

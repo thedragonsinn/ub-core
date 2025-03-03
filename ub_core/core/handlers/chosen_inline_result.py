@@ -13,18 +13,18 @@ from ...config import Config
 
 
 async def chosen_result_filter(_, __, result: ChosenInlineResult) -> bool:
-    return result.from_user.id in Config.INLINE_USER_RESULT_CACHE
+    return result.result_id in Config.INLINE_RESULT_CACHE
 
 
 RESULT_FILTER = create(chosen_result_filter)
 
 
 async def chosen_result_handler(client: BOT, result: ChosenInlineResult):
-    Config.INLINE_USER_RESULT_CACHE.remove(result.from_user.id)
+    Config.INLINE_RESULT_CACHE.remove(result.result_id)
 
     result = InlineResult.parse(result)
 
-    await result.edit(text="Auto Executing...")
+    await result.edit_reply_markup()
 
     try:
         await client.send_message(

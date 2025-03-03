@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any, Self
 
 from pyrogram.types import CallbackQuery as CallbackQueryUpdate
-from pyrogram.types import LinkPreviewOptions
+from pyrogram.types import InputMediaDocument, LinkPreviewOptions
 from pyrogram.utils import parse_text_entities
 
 from .extra_properties import Properties
@@ -100,8 +100,8 @@ class CallbackQuery(Properties, CallbackQueryUpdate):
         else:
             doc = BytesIO(bytes(text, encoding="utf-8"))
             doc.name = name
-            await self._client.send_document(
-                chat_id=self.from_user.id, document=doc, **kwargs
+            await self.edit_message_media(
+                media=InputMediaDocument(media=doc, file_name=doc.name)
             )
         return self
 
@@ -111,3 +111,4 @@ class CallbackQuery(Properties, CallbackQueryUpdate):
 
     edit = edit_text = reply = reply_text = edit_message_text
     edit_media = edit_message_media
+    edit_reply_markup = CallbackQueryUpdate.edit_message_reply_markup

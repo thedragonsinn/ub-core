@@ -38,6 +38,8 @@ async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate) -> 
         )
         return
 
+    await callback_query.edit_message_reply_markup()
+
     await cmd_dispatcher(
         client=client,
         update=callback_query,

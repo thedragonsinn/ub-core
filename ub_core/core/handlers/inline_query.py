@@ -1,5 +1,6 @@
 import asyncio
 from functools import partial
+from uuid import uuid4
 
 from pyrogram.handlers import InlineQueryHandler
 from pyrogram.types import (
@@ -46,41 +47,37 @@ def inline_check(_, __, inline_query: InlineQuery):
 INLINE_FILTER = create(inline_check)
 
 
-def clean_cache(task, key, u_id):
+def clean_cache(task, key, uuid_4):
     Config.INLINE_QUERY_CACHE.pop(key, 0)
-    Config.INLINE_USER_RESULT_CACHE.discard(u_id)
+    Config.INLINE_RESULT_CACHE.discard(uuid_4)
     Config.BACKGROUND_TASKS.remove(task)
 
 
 async def inline_handler(_, inline_query: InlineQuery):
     query_list: list = inline_query.query.split(maxsplit=1)
-
     cmd = query_list[0]
     text = query_list[1] if len(query_list) >= 2 else ""
 
-    Config.INLINE_QUERY_CACHE[inline_query.id] = {
-        "cmd": cmd,
-        "text": inline_query.query,
-    }
-
-    task = asyncio.create_task(asyncio.sleep(60))
-    task.add_done_callback(
-        partial(clean_cache, key=inline_query.id, u_id=inline_query.from_user.id)
-    )
-
-    Config.BACKGROUND_TASKS.append(task)
-
-    Config.INLINE_USER_RESULT_CACHE.add(inline_query.from_user.id)
-
     button = InlineKeyboardButton(text=f"run {cmd}", callback_data=inline_query.id)
-
     reply_markup = InlineKeyboardMarkup([[button]])
-
     result = InlineQueryResultArticle(
+        id=str(uuid4()),
         title=f"run {cmd}",
         input_message_content=InputTextMessageContent(text or "No Input."),
         reply_markup=reply_markup,
     )
+
+    cleaner_task = asyncio.create_task(asyncio.sleep(60))
+
+    cleaner_task.add_done_callback(
+        partial(clean_cache, key=inline_query.id, uuid_4=result.id)
+    )
+    Config.INLINE_QUERY_CACHE[inline_query.id] = {
+        "cmd": cmd,
+        "text": inline_query.query,
+    }
+    Config.BACKGROUND_TASKS.append(cleaner_task)
+    Config.INLINE_RESULT_CACHE.add(result.id)
 
     await inline_query.answer(results=[result], cache_time=0)
 

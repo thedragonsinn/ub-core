@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any, Self
 
 from pyrogram.types import ChosenInlineResult as InlineResultUpdate
-from pyrogram.types import InputMedia, LinkPreviewOptions
+from pyrogram.types import InputMedia, InputMediaDocument, LinkPreviewOptions
 from pyrogram.utils import parse_text_entities
 
 from .extra_properties import Properties
@@ -23,10 +23,6 @@ class InlineResult(Properties, InlineResultUpdate):
     def __init__(self, inline_result: InlineResultUpdate | Self) -> None:
         kwargs = self.sanitize_inline_result(inline_result)
         super().__init__(**kwargs)
-
-        from ub_core import bot
-
-        self._client = inline_result._client or getattr(bot, "bot", bot)
 
         if isinstance(inline_result, InlineResult):
             self.text = inline_result.text
@@ -73,7 +69,7 @@ class InlineResult(Properties, InlineResultUpdate):
         parse_mode: "ParseMode" = None,
         link_preview_options: LinkPreviewOptions = None,
         reply_markup: "InlineKeyboardMarkup" = None,
-        **kwargs,
+        **_,
     ):
         if not isinstance(text, str):
             text = str(text)
@@ -99,8 +95,8 @@ class InlineResult(Properties, InlineResultUpdate):
         else:
             doc = BytesIO(bytes(text, encoding="utf-8"))
             doc.name = name
-            await self._client.send_document(
-                chat_id=self.from_user.id, document=doc, **kwargs
+            await self.edit_media(
+                media=InputMediaDocument(media=doc, file_name=doc.name)
             )
 
         return self
@@ -116,7 +112,7 @@ class InlineResult(Properties, InlineResultUpdate):
             reply_markup=reply_markup,
         )
 
-    async def edit_reply_markup(self, reply_markup: "InlineKeyboardMarkup"):
+    async def edit_reply_markup(self, reply_markup: "InlineKeyboardMarkup" = None):
         return await self._client.edit_inline_reply_markup(
             inline_message_id=self.inline_message_id, reply_markup=reply_markup
         )

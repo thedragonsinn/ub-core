@@ -18,7 +18,14 @@ except (ImportError, ModuleNotFoundError):
 ub_core_dirname = os.path.dirname(__file__)
 
 from .config import Cmd, Config
-from .core import DB, DB_CLIENT, CallbackQuery, Convo, CustomDB, Message
+from .core import (
+    DATABASE,
+    DATABASE_CLIENT,
+    CallbackQuery,
+    Convo,
+    CustomDB,
+    Message,
+)
 from .core.client import DualClient
 from .version import __version__
 
