@@ -36,6 +36,8 @@ class CallbackQuery(Properties, CallbackQueryUpdate):
 
         if inline_data := Config.INLINE_QUERY_CACHE.pop(self.data, {}):
             self.text = inline_data["text"]
+        else:
+            self.text = ""
 
     @staticmethod
     def sanitize_callback_query(callback_query) -> dict:
