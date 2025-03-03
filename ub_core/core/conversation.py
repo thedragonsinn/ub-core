@@ -2,11 +2,10 @@ import asyncio
 from collections import defaultdict
 from typing import TYPE_CHECKING, Self
 
+from pyrogram import filters
 from pyrogram.types import Message
 
 if TYPE_CHECKING:
-    from pyrogram.filters import Filter
-
     from .client import BOT
 
 
@@ -25,13 +24,19 @@ class Conversation:
         client: "BOT",
         chat_id: int | str,
         check_for_duplicates: bool = True,
-        filters: "Filter" = None,
+        filters: filters.Filter | None = None,
+        from_user: int = None,
+        reply_to_message_id: int = None,
+        reply_to_user_id: int = None,
         timeout: int = 10,
     ):
         self.chat_id: int | str = chat_id
         self._client: "BOT" = client
         self.check_for_duplicates: bool = check_for_duplicates
-        self.filters: "Filter" = filters
+        self.filters: filters.Filter = filters
+        self.from_user: int = from_user
+        self.reply_to_message_id: int = reply_to_message_id
+        self.reply_to_user_id = reply_to_user_id
         self.response_future: asyncio.Future | None = None
         self.responses: list[Message] = []
         self.timeout: int = timeout
@@ -51,6 +56,8 @@ class Conversation:
 
         Conversation.CONVO_DICT[self.chat_id].append(self)
 
+        await self._create_default_filters()
+
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -68,6 +75,36 @@ class Conversation:
         future = asyncio.Future()
         future.add_done_callback(self.set_future)
         self.response_future = future
+
+    async def _create_default_filters(self):
+        async def extra_filter(_, __, message: Message):
+            try:
+                if self.from_user:
+                    assert message.from_user and message.from_user.id == self.from_user
+
+                if self.reply_to_message_id:
+                    assert message.reply_to_message_id == self.reply_to_message_id
+
+                if self.reply_to_user_id:
+                    replied = message.reply_to_message
+                    assert (
+                        replied
+                        and replied.from_user
+                        and replied.from_user.id == self.reply_to_user_id
+                    )
+                return True
+            except AssertionError:
+                return False
+
+        ext_filter = filters.create(extra_filter)
+
+        self.filters = self.filters & ext_filter if self.filters else ext_filter
+
+    async def match_filters(self, client: "BOT", message: "Message") -> bool:
+        if client != self._client:
+            return False
+
+        return await self.filters(client, message)
 
     @classmethod
     async def get_resp(cls, client, *args, **kwargs) -> Message | None:
@@ -87,7 +124,7 @@ class Conversation:
     async def get_response(self, timeout: int = 0) -> Message | None:
         """Returns Latest Message for Specified Filters."""
         try:
-            response: Message = await asyncio.wait_for(
+            response: asyncio.Future.result = await asyncio.wait_for(
                 fut=self.response_future, timeout=timeout or self.timeout
             )
             return response
@@ -98,16 +135,16 @@ class Conversation:
 
     async def send_message(
         self, text: str, timeout: int = 0, get_response: bool = False, **kwargs
-    ) -> tuple[Message, Message] | Message:
+    ) -> Message | tuple[Message, Message]:
         """
         Bound Method to Send Texts in Convo Chat.
         Returns Sent Message and Response if get_response is True.
         """
-        message: Message = await self._client.send_message(
+        message = await self._client.send_message(
             chat_id=self.chat_id, text=text, **kwargs
         )
         if get_response:
-            response: Message = await self.get_response(timeout=timeout)
+            response = await self.get_response(timeout=timeout)
             return message, response
         return message
 
@@ -132,6 +169,6 @@ class Conversation:
             **kwargs,
         )
         if get_response:
-            response: Message = await self.get_response(timeout=timeout)
+            response = await self.get_response(timeout=timeout)
             return message, response
         return message
