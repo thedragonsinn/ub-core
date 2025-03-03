@@ -23,12 +23,8 @@ async def convo_handler(client: BOT, message: MessageUpdate):
     conv_objects: list[Conversation] = Conversation.CONVO_DICT[message.chat.id]
 
     for conv_object in conv_objects:
-        if conv_object._client != client:
-            continue
-        if conv_object.filters and not (await conv_object.filters(client, message)):
-            continue
-
-        conv_object.responses.append(message)
-        conv_object.response_future.set_result(message)
+        if await conv_object.match_filters(client, message):
+            conv_object.responses.append(message)
+            conv_object.response_future.set_result(message)
 
     message.continue_propagation()

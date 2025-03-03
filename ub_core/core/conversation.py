@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 from typing import TYPE_CHECKING, Self
 
-from pyrogram.filters import Filter
+from pyrogram import filters
 from pyrogram.types import Message
 
 if TYPE_CHECKING:
@@ -24,13 +24,19 @@ class Conversation:
         client: "DualClient",
         chat_id: int | str,
         check_for_duplicates: bool = True,
-        filters: Filter | None = None,
+        filters: filters.Filter | None = None,
+        from_user: int = None,
+        reply_to_message_id: int = None,
+        reply_to_user_id: int = None,
         timeout: int = 10,
     ):
         self.chat_id: int | str = chat_id
         self._client: "DualClient" = client
         self.check_for_duplicates: bool = check_for_duplicates
-        self.filters: Filter = filters
+        self.filters: filters.Filter = filters
+        self.from_user: int = from_user
+        self.reply_to_message_id: int = reply_to_message_id
+        self.reply_to_user_id = reply_to_user_id
         self.response_future: asyncio.Future | None = None
         self.responses: list[Message] = []
         self.timeout: int = timeout
@@ -44,9 +50,14 @@ class Conversation:
         """
         if isinstance(self.chat_id, str):
             self.chat_id = (await self._client.get_chat(self.chat_id)).id
+
         if self.check_for_duplicates and self.chat_id in Conversation.CONVO_DICT.keys():
             raise self.DuplicateConvo(self.chat_id)
+
         Conversation.CONVO_DICT[self.chat_id].append(self)
+
+        await self._create_default_filters()
+
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -64,6 +75,36 @@ class Conversation:
         future = asyncio.Future()
         future.add_done_callback(self.set_future)
         self.response_future = future
+
+    async def _create_default_filters(self):
+        async def extra_filter(_, __, message: Message):
+            try:
+                if self.from_user:
+                    assert message.from_user and message.from_user.id == self.from_user
+
+                if self.reply_to_message_id:
+                    assert message.reply_to_message_id == self.reply_to_message_id
+
+                if self.reply_to_user_id:
+                    replied = message.reply_to_message
+                    assert (
+                        replied
+                        and replied.from_user
+                        and replied.from_user.id == self.reply_to_user_id
+                    )
+                return True
+            except AssertionError:
+                return False
+
+        ext_filter = filters.create(extra_filter)
+
+        self.filters = self.filters & ext_filter if self.filters else ext_filter
+
+    async def match_filters(self, client: "DualClient", message: "Message") -> bool:
+        if client != self._client:
+            return False
+
+        return await self.filters(client, message)
 
     @classmethod
     async def get_resp(cls, client, *args, **kwargs) -> Message | None:

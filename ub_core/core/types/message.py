@@ -185,10 +185,14 @@ class Message(Properties, MessageUpdate):
         except Exception:
             return user, reason
 
-    async def get_response(self, filters: Filter = None, timeout: int = 8):
+    async def get_response(self, filters: Filter = None, timeout: int = 8, **kwargs):
         """Get a Future Incoming message in chat where message was sent."""
         response: Message | None = await Convo.get_resp(
-            client=self._client, chat_id=self.chat.id, filters=filters, timeout=timeout
+            client=self._client,
+            chat_id=self.chat.id,
+            filters=filters,
+            timeout=timeout,
+            **kwargs,
         )
         return response
 
