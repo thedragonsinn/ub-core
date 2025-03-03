@@ -10,6 +10,7 @@ python-dotenv==0.21.0
 telegraph>=2.2.0,<2.3.0
 uvloop>=0.17.0,<1.0.0
 
-pyrotgfork @ https://github.com/TelegramPlayGround/pyrogram/archive/a9427b4d4c5e35e0e826a9e50345a0e61b61f561.zip
+#pyrotgfork @
+https://github.com/TelegramPlayGround/pyrogram/archive/a9427b4d4c5e35e0e826a9e50345a0e61b61f561.zip
 
 PyTgCrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto
