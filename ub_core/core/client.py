@@ -45,7 +45,7 @@ def import_modules(dir_name):
 class Bot(CustomDecorators, Methods, Client):
     def __init__(self, bot_token: str | None = None, session_string: str | None = None):
         super().__init__(
-            name=Config.BOT_NAME,
+            name=Config.BOT_NAME + "bot" if bot_token else "",
             api_id=int(os.environ.get("API_ID")),
             api_hash=os.environ.get("API_HASH"),
             bot_token=bot_token,
@@ -182,7 +182,10 @@ class DualClient(Bot):
         sys.exit(self.exit_code)
 
     def raise_sigint(self):
-        self.exit_code = 69
+        if self.user:
+            self.user.exit_code = 69
+        else:
+            self.exit_code = 69
         raise_signal(SIGINT)
 
     async def stop_clients(self) -> None:
