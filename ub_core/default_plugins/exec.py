@@ -5,33 +5,47 @@ from io import StringIO
 
 from pyrogram.enums import ParseMode
 
-import ub_core  # NOQA
-from ub_core import BOT, DB, DB_CLIENT, Cmd, Config, CustomDB, Message, bot  # NOQA
-from ub_core.utils import aio, shell  # NOQA
+# isort: off
+# noinspection PyUnresolvedReferences
+import ub_core
 
-# fmt: off
+# noinspection PyUnresolvedReferences
+from ub_core import (
+    BOT,
+    DATABASE,
+    DATABASE_CLIENT,
+    Cmd,
+    Config,
+    CustomDB,
+    Message,
+    bot,
+    core,
+    default_plugins,
+    utils,
+)
+
+# noinspection PyUnresolvedReferences
+from ub_core.utils import aio, shell
+
+# isort: on
+
 
 def generate_locals(message: Message) -> tuple:
-    r = c = cid = u = uid = ru = ruid = None
+    cid = uid = ru = ruid = None
 
-    c = getattr(message, "chat", None)
-    if c:
+    if c := getattr(message, "chat", None):
         cid = message.chat.id
 
-    u = getattr(message, "from_user", None)
-    if u:
+    if u := getattr(message, "from_user", None):
         uid = message.from_user.id
 
-    r = getattr(message, "replied", None)
-    if r:
+    if r := getattr(message, "replied", None):
         ru = r.from_user
 
     if ru:
         ruid = message.replied.from_user.id
 
     return r, c, cid, u, uid, ru, ruid
-
-# fmt: on
 
 
 async def executor(bot: BOT, message: Message) -> None:
