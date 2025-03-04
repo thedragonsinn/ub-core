@@ -1,3 +1,3 @@
 from .conversation import Conversation as Convo
-from .db import DB, DB_CLIENT, CustomDB
+from .db import DATABASE, DATABASE_CLIENT, CustomDB
 from .types import Message

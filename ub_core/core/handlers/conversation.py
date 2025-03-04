@@ -11,12 +11,7 @@ CONVO_FILTER = valid_chat_filter & create(
 )
 
 
-@bot.on_message(
-    filters=CONVO_FILTER,
-    group=0,
-    is_command=False,
-    filters_edited=True
-)
+@bot.on_message(filters=CONVO_FILTER, group=0, is_command=False, filters_edited=True)
 async def convo_handler(client: BOT, message: MessageUpdate):
     """Check for convo filter and update convo future accordingly"""
     conv_objects: list[Conversation] = Conversation.CONVO_DICT[message.chat.id]
