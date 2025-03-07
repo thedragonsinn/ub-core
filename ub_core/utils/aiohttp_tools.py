@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -24,6 +25,9 @@ class Aio:
         self.app = None
         self.port = os.environ.get("API_PORT", 0)
         self.runner = None
+        self.ping_interval = int(os.environ.get("PING_INTERVAL", 240))
+        self.ping_url = os.environ.get("PING_URL")
+
         if self.port:
             Config.INIT_TASKS.append(self.set_site())
 
@@ -57,6 +61,26 @@ class Aio:
             reuse_port=True,
         )
         await site.start()
+
+        if self.ping_url:
+            LOGGER.info(
+                f"Starting Auto-Ping Task at {self.ping_url} with the interval of {self.ping_interval} seconds."
+            )
+            Config.BACKGROUND_TASKS.append(asyncio.create_task(self.ping_website()))
+
+    async def ping_website(self):
+        total_seconds = 0
+        while 1:
+            total_seconds += self.ping_interval
+            await asyncio.sleep(self.ping_interval)
+            status = (
+                "Successful"
+                if await self.get_text(url=self.ping_url)
+                else "Unsuccessful"
+            )
+            LOGGER.info(
+                f"{status} ping task wake-up at {total_seconds/60} minutes after boot."
+            )
 
     @staticmethod
     async def handle_request(_):
