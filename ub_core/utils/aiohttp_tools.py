@@ -63,10 +63,9 @@ class Aio:
         await site.start()
 
         if self.ping_url:
-            LOGGER.INFO(
-                f"Starting Auto-Ping Task at {self.ping_url} with the interval of {self.ping_interval} seconds."
-            )
+            LOGGER.info(f"Starting Auto-Ping Task at {self.ping_url} with the interval of {self.ping_interval} seconds.")
             Config.BACKGROUND_TASKS.append(asyncio.create_task(self.ping_website()))
+
 
     async def ping_website(self):
         total_seconds = 0
