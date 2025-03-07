@@ -31,9 +31,6 @@ class Aio:
         if self.port:
             Config.INIT_TASKS.append(self.set_site())
 
-            if self.ping_url:
-                Config.BACKGROUND_TASKS.append(asyncio.create_task(self.ping_website()))
-
         Config.INIT_TASKS.append(self.set_session())
         Config.EXIT_TASKS.append(self.close)
 
@@ -65,13 +62,16 @@ class Aio:
         )
         await site.start()
 
+        if self.ping_url:
+            LOGGER.INFO(
+                f"Starting Auto-Ping Task at {self.ping_url} with the interval of {self.ping_interval} seconds."
+            )
+            Config.BACKGROUND_TASKS.append(asyncio.create_task(self.ping_website()))
+
     async def ping_website(self):
-        # Sleep to let site start on init task execution.
-        await asyncio.sleep(15)
-        # Record ping sleep cycles
-        seconds = 0
+        total_seconds = 0
         while 1:
-            seconds += self.ping_interval
+            total_seconds += self.ping_interval
             await asyncio.sleep(self.ping_interval)
             status = (
                 "Successful"
@@ -79,7 +79,7 @@ class Aio:
                 else "Unsuccessful"
             )
             LOGGER.info(
-                f"{status} ping task wake-up at {seconds/60} minutes after boot."
+                f"{status} ping task wake-up at {total_seconds/60} minutes after boot."
             )
 
     @staticmethod
