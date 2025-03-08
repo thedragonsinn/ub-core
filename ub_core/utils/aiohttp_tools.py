@@ -64,23 +64,22 @@ class Aio:
 
         if self.ping_url:
             LOGGER.info(
-                f"Starting Auto-Ping Task at {self.ping_url} with the interval of {self.ping_interval} seconds."
+                f"Starting Auto-Ping Task at {self.ping_url} with {self.ping_interval} seconds interval."
             )
             Config.BACKGROUND_TASKS.append(asyncio.create_task(self.ping_website()))
 
     async def ping_website(self):
+        await asyncio.sleep(30)
+        await self.get_text(url=self.ping_url)
+
         total_seconds = 0
         while 1:
             total_seconds += self.ping_interval
             await asyncio.sleep(self.ping_interval)
-            status = (
-                "Successful"
-                if await self.get_text(url=self.ping_url)
-                else "Unsuccessful"
-            )
-            LOGGER.info(
-                f"{status} ping task wake-up at {total_seconds/60} minutes after boot."
-            )
+            if await self.get_text(url=self.ping_url):
+                LOGGER.info(
+                    f"Unsuccessful ping task wake-up at {total_seconds//60} hours after boot."
+                )
 
     @staticmethod
     async def handle_request(_):
