@@ -76,9 +76,9 @@ class Aio:
         while 1:
             total_seconds += self.ping_interval
             await asyncio.sleep(self.ping_interval)
-            if await self.get_text(url=self.ping_url):
+            if not await self.get_text(url=self.ping_url):
                 LOGGER.info(
-                    f"Unsuccessful ping task wake-up at {total_seconds//60} hours after boot."
+                    f"Unsuccessful ping task wake-up at {total_seconds//3600} hours after boot."
                 )
 
     @staticmethod
