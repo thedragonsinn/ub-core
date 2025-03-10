@@ -1,11 +1,11 @@
 import asyncio
-import glob
 import importlib
 import logging
-import os
 import sys
 from functools import cached_property
 from inspect import iscoroutine, iscoroutinefunction
+from os import getenv, path
+from pathlib import Path
 from signal import SIGINT, raise_signal
 from typing import Self
 
@@ -14,10 +14,11 @@ from pyrogram.enums import ParseMode
 
 from ub_core import ub_core_dirname
 
+from . import CustomDB
 from .conversation import Conversation
-from .db import CustomDB
 from .decorators import CustomDecorators
 from .methods import Methods
+from .storage import FileStorage
 from ..config import Config
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
@@ -25,14 +26,15 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 def import_modules(dir_name):
     """Import Plugins and Append init_task to Config.INIT_TASK"""
-    plugins_dir = os.path.join(dir_name, "**/[!^_]*.py")
-    modules = glob.glob(pathname=plugins_dir, recursive=True)
+    plugins_dir = Path(dir_name)
+
+    modules = plugins_dir.rglob("**/[!^_]*.py")
 
     if dir_name == ub_core_dirname:
-        modules = [m.split("site-packages/")[1] for m in modules]
+        modules = [str(m).split("site-packages/")[1] for m in modules]
 
     for py_module in modules:
-        name = os.path.splitext(py_module)[0]
+        name = path.splitext(py_module)[0]
         py_name = name.replace("/", ".")
         try:
             mod = importlib.import_module(py_name)
@@ -44,14 +46,15 @@ def import_modules(dir_name):
 
 class Bot(CustomDecorators, Methods, Client):
     def __init__(self, bot_token: str | None = None, session_string: str | None = None):
+        name = Config.BOT_NAME + ("-bot" if bot_token else "")
         super().__init__(
-            name=Config.BOT_NAME + "bot" if bot_token else "",
-            api_id=int(os.environ.get("API_ID")),
-            api_hash=os.environ.get("API_HASH"),
+            name=name,
+            api_id=int(getenv("API_ID")),
+            api_hash=getenv("API_HASH"),
             bot_token=bot_token,
-            session_string=session_string,
             parse_mode=ParseMode.DEFAULT,
             sleep_threshold=30,
+            storage_engine=FileStorage(name=name, session_string=session_string),
             max_concurrent_transmissions=2,
         )
         self.log = LOGGER
@@ -80,8 +83,8 @@ class DualClient(Bot):
         self._user = _user
         self.is_idling = False
 
-        session_string = os.environ.get("SESSION_STRING")
-        bot_token = os.environ.get("BOT_TOKEN")
+        session_string = getenv("SESSION_STRING")
+        bot_token = getenv("BOT_TOKEN")
 
         if force_bot:
             # BOT INIT WHEN DUAL MODE
@@ -131,7 +134,7 @@ class DualClient(Bot):
             Config.MODE = "bot"
             return
 
-        db = CustomDB("COMMON_SETTINGS")
+        db = CustomDB["COMMON_SETTINGS"]
         mode_data = await db.find_one({"_id": "client_mode"})
         if isinstance(mode_data, dict):
             Config.MODE = mode_data.get("value")
