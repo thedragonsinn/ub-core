@@ -12,8 +12,6 @@ import ub_core
 # noinspection PyUnresolvedReferences
 from ub_core import (
     BOT,
-    DATABASE,
-    DATABASE_CLIENT,
     Cmd,
     Config,
     CustomDB,

@@ -15,11 +15,11 @@ try:
 except (ImportError, ModuleNotFoundError):
     ...
 
-ub_core_dir_name = os.path.dirname(__file__)
+ub_core_dirname = os.path.dirname(__file__)
 
 from .config import Cmd, Config
 from .version import __version__
-from .core import DATABASE, DATABASE_CLIENT, Convo, CustomDB, Message
+from .core import CustomCollection, CustomDatabase, Convo, CustomDB, Message
 from .core.client import BOT
 
 bot: BOT = BOT()

@@ -78,18 +78,30 @@ A custom [Client](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088f
 
 
 ### Database 
-Core relies on a MongoDB database and uses a [Custom Collection class.](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/db.py#L25)
+Core relies on a MongoDB database and uses a [Custom Collection class.](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/db.py#L19)
 > Optional for main branch, Required for dual_mode
 
+  * Inbuilt using DB_URL
 ```python
     from ub_core import CustomDB
-    
+
     # Create a CustomDB instance instead of DB_CLIENT["collection_name"]
-    coll = CustomDB("test_collection")
+    coll = CustomDB["test_collection"]
     
     # Now you can use the extra methods as well as the original mongo db methods available in the original collection class.
 ```
 
+  * Using a Separate DB_URL using a [CustomDatabase](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/db.py#L100)
+
+```python
+    from ub_core import CustomDatabase
+
+    # Create a Database Class with a new URI that returns CustomCollection
+    db = CustomDatabase(db_uri=DB_URI, db_name=DATABASE_NAME)
+
+    coll=db[collection_name]
+    # Now you can use the extra methods as well as the original mongo db methods available in the original collection class.
+```
 
 ### Conversation
 A custom [Conversation](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/conversation.py) module to programitcally interact with incoming and outgoing messages.
@@ -100,7 +112,18 @@ A custom [Conversation](https://github.com/thedragonsinn/ub-core/blob/main/ub_co
     async with Convo(
             client=bot, 
             chat_id=1234, 
-            filters=filters.text, 
+
+             # Optional ease of access filters can be used with/without each others
+
+            # custom filters 
+            filters=filters.text,
+            # only accept message from a specific user 
+            from_user=12345,
+            # only accept a message that is replied to a specific user
+            reply_to_user_id=bot.me.id,
+            # only accept a message that is replied to a specific message 
+            reply_to_message_id=69,
+
             timeout=10,
         ) as convo:
             await convo.get_response(timeout=10)
@@ -138,7 +161,7 @@ By default core registers some handlers automatically on groups 0 and 1.
 
 
 ### UnifiedMessageHandler
-[UnifiedMessageHandler](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/handlers/unified_message_handler.py#L6) combines the _MessageHandler_ and _EditedMessageHandler_ classes using inheritance to bring back Pyro v1 filters.edited functionality.
+[UnifiedMessageHandler](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/handlers/unified_message_handler.py#L6) combines the _MessageHandler_ and _EditedMessageHandler_ classes using inheritance to bring back Pyro v1 filters.edited functionality.
 
 import and use this handler class in your bot.add_handler() to register a single handler for normal and edited messages.
 
@@ -162,7 +185,7 @@ It also automatically restarts your python interpreter when it detects network i
 
 
 ### Message
-A custom [Message](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/types/message.py#L37) class to expand on pyrogram's class to add extra goodies.
+A custom [Message](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/types/message.py#L37) class to expand on pyrogram's class to add extra goodies.
 
 Check the class for in depth details.
 
@@ -181,7 +204,7 @@ Core comes with a few basic quality of life [plugins](https://github.com/thedrag
     from ub_core.utils import Download 
     ```
     
-- [Aio](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/utils/aiohttp_tools.py#L15) class with a few useful methods and a static website hosting to pass hosts like koyeb, render etc's health checks. _(site only runs when a port is provided in env using API_PORT var)_
+- [Aio](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/utils/aiohttp_tools.py#L15) class with a few useful methods and a static website hosting to pass hosts like koyeb, render etc's health checks. _(site only runs when a port is provided in env using API_PORT var)_
     
     ```python
     # import the instance of Aio that was created on initialisation of core.
@@ -190,7 +213,7 @@ Core comes with a few basic quality of life [plugins](https://github.com/thedrag
 
 
 ### Updater 
-The [built in Updater](https://github.com/thedragonsinn/ub-core/blob/992a6e8fcdd1925b7a94025ad1ef1822fbb73759/ub_core/default_plugins/update.py#L82) is made to work directly with the bot repo that integrates the core as well as updating the core.
+The [built in Updater](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/default_plugins/update.py#L82) is made to work directly with the bot repo that integrates the core as well as updating the core.
 
 So running `.update ` will check updates for the current workdir's .git repository i.e your integrated bot's working dir.
 
@@ -200,7 +223,7 @@ To update core run `.update -c`
 ## Comparing_Branches
 The default main branch only has a single client and can be run either as an User or a Bot at a time.
 
-The [dual_mode](https://github.com/thedragonsinn/ub-core/tree/dual_mode) branch on the other hand has a [DualClient](https://github.com/thedragonsinn/ub-core/blob/7bbace81453af7db99c300f3f189c2c6941fa643/ub_core/core/client.py#L71) that can run both an User and a Bot at the same time.
+The [dual_mode](https://github.com/thedragonsinn/ub-core/tree/dual_mode) branch on the other hand has a [DualClient](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/client.py#L71) that can run both an User and a Bot at the same time.
 
 It also unlocks the possibility of running some commands inline for sudo/supers in their saved messages or DMs where the bot/user is not present to respond on normal text based commands.
 
