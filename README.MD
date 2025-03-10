@@ -54,21 +54,19 @@ it expands on core's initial features and transforms them into usable modules li
 
 
 ### Client
-A custom [Client](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/client.py#L44) with a few [Extra methods](https://github.com/thedragonsinn/ub-core/tree/main/ub_core/core/methods) and [Decorators](https://github.com/thedragonsinn/ub-core/tree/main/ub_core/core/decorators).
+A custom [Client](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/client.py#L44) with a few [Extra methods](https://github.com/thedragonsinn/ub-core/tree/main/ub_core/core/methods) and [Decorators](https://github.com/thedragonsinn/ub-core/tree/main/ub_core/core/decorators).
 
-  - **[send_message](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/methods/send_message.py#L13)**: _automatically sends text as document when it goes above 4096 chars (TG limit)._
+  - **[send_message](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/methods/send_message.py#L13)**: _automatically sends text as document when it goes above 4096 chars (TG limit)._
     
-
   - **[channel_logger](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/methods/channel_loggers.py)**: _Logs texts/message to your log channel, StdOut/StdError and log file. The type argument can be used to log at different logging levels like info, error warning etc._
     
-
-  - **[@add_cmd](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/add_cmd.py#L10)**: _Uses a custom command manager instead of pyrogram's. Useful when you wanna add sudo or multi user mode or run [dual_mode](https://github.com/thedragonsinn/ub-core/tree/main#Comparing_Branches). This decorator will negate the need to add handlers for each type of user/clients._
+  - **[@add_cmd](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/decorators/add_cmd.py#L10)**: _Uses a custom command manager instead of pyrogram's. Useful when you wanna add sudo or multi user mode or run [dual_mode](https://github.com/thedragonsinn/ub-core/tree/main#Comparing_Branches). This decorator will negate the need to add handlers for each type of user/clients._
     
+  - **[@make_async](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/decorators/make_async.py)**: _wraps blocking function into asyncio.to_thread so you can await it directly._
 
-   - **[@on_message](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/on_message.py#L14)**: _adds back edited support as a keyword argument "filters_edited" and uses a custom dispatcher._
+   - **[@on_message](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/decorators/on_message.py#L14)**: _adds back edited support as a keyword argument "filters_edited" and uses a custom dispatcher._
     
-
-  - **[@on_edited_message](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/decorators/on_edited_message.py#L9)**: _use a [custom dispatcher](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/handlers/dispatcher.py#L31)._
+  - **[@on_edited_message](https://github.com/thedragonsinn/ub-core/blob/main/ub_core/core/decorators/on_edited_message.py#L9)**: _use a [custom dispatcher](https://github.com/thedragonsinn/ub-core/blob/80db8c0365a1088fdcddd5a92aa2249e65469e5e/ub_core/core/handlers/dispatcher.py#L31)._
    
 ```python
     # import the instance that was created on core initialisation.
