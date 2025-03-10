@@ -2,7 +2,7 @@ import asyncio
 
 from ub_core import BOT, Config, CustomDB, Message, bot
 
-DB = CustomDB("COMMON_SETTINGS")
+DB = CustomDB["COMMON_SETTINGS"]
 
 RECENT_CHANGE = False
 

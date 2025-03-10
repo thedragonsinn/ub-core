@@ -13,20 +13,13 @@ dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
 dns.resolver.default_resolver.nameservers = ["8.8.8.8"]
 
 DB_URI: str = os.environ.get("DB_URL", "").strip()
-
-if DB_URI:
-    DATABASE_CLIENT: AgnosticClient | None = AsyncIOMotorClient(DB_URI)
-    db_name = Config.BOT_NAME.lower().replace("-", "_")
-    DATABASE: AgnosticDatabase | None = DATABASE_CLIENT[db_name]
-    Config.EXIT_TASKS.append(DATABASE_CLIENT.close)
-else:
-    DATABASE_CLIENT = DATABASE = None
+DATABASE_NAME = Config.BOT_NAME.lower().replace("-", "_")
 
 
-class CustomDB(AsyncIOMotorCollection):
+class CustomCollection(AsyncIOMotorCollection):
     """A Custom Class with a few Extra Methods for ease of access"""
 
-    def __init__(self, collection_name: str, database: AgnosticClient = DATABASE):
+    def __init__(self, collection_name: str, database: AgnosticDatabase):
         super().__init__(database=database, name=collection_name)
 
     async def add_data(self: AgnosticCollection, data: dict) -> int | str:
@@ -102,3 +95,17 @@ class CustomDB(AsyncIOMotorCollection):
         data = {key: {"$sum": f"${key}"} for key in keys}
         pipeline = [{"$group": {"_id": None, **data}}]
         return [results async for results in self.aggregate(pipeline=pipeline)]
+
+
+class CustomDatabase:
+    def __init__(self, db_uri: str, db_name: str):
+        self._client: AgnosticClient = AsyncIOMotorClient(db_uri)
+        self._db: AgnosticDatabase = self._client[db_name]
+
+        Config.EXIT_TASKS.append(self._client.close)
+
+    def __getitem__(self, item: str) -> AgnosticCollection | CustomCollection:
+        return CustomCollection(collection_name=item, database=self._db)
+
+    def __call__(self, collection_name) -> AgnosticCollection | CustomCollection:
+        return CustomCollection(collection_name=collection_name, database=self._db)

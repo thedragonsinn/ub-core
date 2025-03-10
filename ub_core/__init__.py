@@ -19,10 +19,10 @@ ub_core_dirname = os.path.dirname(__file__)
 
 from .config import Cmd, Config
 from .core import (
-    DATABASE,
-    DATABASE_CLIENT,
     CallbackQuery,
     Convo,
+    CustomCollection,
+    CustomDatabase,
     CustomDB,
     Message,
 )
