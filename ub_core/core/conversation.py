@@ -6,7 +6,7 @@ from pyrogram import filters
 from pyrogram.types import Message
 
 if TYPE_CHECKING:
-    from .client import BOT
+    from .client import DualClient
 
 
 # Relies on ub_core/core/handlers/conversation
@@ -21,22 +21,24 @@ class Conversation:
 
     def __init__(
         self,
-        client: "BOT",
+        client: "DualClient",
         chat_id: int | str,
         check_for_duplicates: bool = True,
         filters: filters.Filter | None = None,
-        from_user: int = None,
+        from_user: int | list[int] = None,
         reply_to_message_id: int = None,
         reply_to_user_id: int = None,
         timeout: int = 10,
     ):
         self.chat_id: int | str = chat_id
-        self._client: "BOT" = client
+        self.client: "DualClient" = client
         self.check_for_duplicates: bool = check_for_duplicates
+
         self.filters: filters.Filter = filters
         self.from_user: int = from_user
         self.reply_to_message_id: int = reply_to_message_id
         self.reply_to_user_id = reply_to_user_id
+
         self.response_future: asyncio.Future | None = None
         self.responses: list[Message] = []
         self.timeout: int = timeout
@@ -49,7 +51,7 @@ class Conversation:
         Initialize Context Manager and return the Object.
         """
         if isinstance(self.chat_id, str):
-            self.chat_id = (await self._client.get_chat(self.chat_id)).id
+            self.chat_id = (await self.client.get_chat(self.chat_id)).id
 
         if self.check_for_duplicates and self.chat_id in Conversation.CONVO_DICT.keys():
             raise self.DuplicateConvo(self.chat_id)
@@ -80,7 +82,11 @@ class Conversation:
         async def extra_filter(_, __, message: Message):
             try:
                 if self.from_user:
-                    assert message.from_user and message.from_user.id == self.from_user
+                    assert message.from_user
+                    if isinstance(self.from_user, list):
+                        assert message.from_user.id in self.from_user
+                    else:
+                        assert message.from_user.id == self.from_user
 
                 if self.reply_to_message_id:
                     assert message.reply_to_message_id == self.reply_to_message_id
@@ -100,8 +106,8 @@ class Conversation:
 
         self.filters = self.filters & ext_filter if self.filters else ext_filter
 
-    async def match_filters(self, client: "BOT", message: "Message") -> bool:
-        if client != self._client:
+    async def match_filters(self, client: "DualClient", message: "Message") -> bool:
+        if client != self.client:
             return False
 
         return await self.filters(client, message)
@@ -140,7 +146,7 @@ class Conversation:
         Bound Method to Send Texts in Convo Chat.
         Returns Sent Message and Response if get_response is True.
         """
-        message = await self._client.send_message(
+        message = await self.client.send_message(
             chat_id=self.chat_id, text=text, **kwargs
         )
         if get_response:
@@ -161,7 +167,7 @@ class Conversation:
         Bound Method to Send Documents in Convo Chat.
         Returns Sent Message and Response if get_response is True.
         """
-        message = await self._client.send_document(
+        message = await self.client.send_document(
             chat_id=self.chat_id,
             document=document,
             caption=caption,
