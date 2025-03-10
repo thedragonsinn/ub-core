@@ -1,20 +1,22 @@
 import asyncio
-import glob
 import importlib
 import logging
-import os
 import sys
 from functools import cached_property
 from inspect import iscoroutine, iscoroutinefunction
+from os import getenv, path
+from pathlib import Path
 from signal import SIGINT, raise_signal
 
 from pyrogram import Client, idle
+from pyrogram.enums import ParseMode
 
-from ub_core import ub_core_dir_name
+from ub_core import ub_core_dirname
 
 from .conversation import Conversation as Convo
 from .decorators import CustomDecorators
 from .methods import Methods
+from .storage import FileStorage
 from ..config import Config
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
@@ -22,14 +24,15 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 def import_modules(dir_name):
     """Import Plugins and Append init_task to Config.INIT_TASK"""
-    plugins_dir = os.path.join(dir_name, "**/[!^_]*.py")
-    modules = glob.glob(pathname=plugins_dir, recursive=True)
+    plugins_dir = Path(dir_name)
 
-    if dir_name == ub_core_dir_name:
-        modules = [m.split("site-packages/")[1] for m in modules]
+    modules = plugins_dir.rglob("**/[!^_]*.py")
+
+    if dir_name == ub_core_dirname:
+        modules = [str(m).split("site-packages/")[1] for m in modules]
 
     for py_module in modules:
-        name = os.path.splitext(py_module)[0]
+        name = path.splitext(py_module)[0]
         py_name = name.replace("/", ".")
         try:
             mod = importlib.import_module(py_name)
@@ -41,12 +44,16 @@ def import_modules(dir_name):
 
 class BOT(CustomDecorators, Methods, Client):
     def __init__(self):
+        bot_token=getenv("BOT_TOKEN")
+        name = Config.BOT_NAME + ("-bot" if bot_token else "")
         super().__init__(
-            name=Config.BOT_NAME,
-            api_id=int(os.environ.get("API_ID")),
-            api_hash=os.environ.get("API_HASH"),
-            bot_token=os.environ.get("BOT_TOKEN"),
-            session_string=os.environ.get("SESSION_STRING"),
+            name=name,
+            api_id=int(getenv("API_ID")),
+            api_hash=getenv("API_HASH"),
+            bot_token=bot_token,
+            storage_engine=FileStorage(
+                name=name, session_string=getenv("SESSION_STRING")
+            ),
             sleep_threshold=30,
             max_concurrent_transmissions=2,
         )
@@ -67,7 +74,7 @@ class BOT(CustomDecorators, Methods, Client):
     @staticmethod
     def _import() -> None:
         """Import Inbuilt and external Modules"""
-        import_modules(ub_core_dir_name)
+        import_modules(ub_core_dirname)
         import_modules(Config.WORKING_DIR)
         LOGGER.info("Plugins Imported.")
 
