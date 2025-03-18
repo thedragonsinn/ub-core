@@ -33,11 +33,7 @@ def owner_check(_, client, message: Message) -> bool:
         basic_check(message)
         or not message.text.startswith(Config.CMD_TRIGGER)
         or message.from_user.id != Config.OWNER_ID
-        or (
-            client.is_user
-            and message.chat.id != Config.OWNER_ID
-            and not message.outgoing
-        )
+        or (client.is_user and message.chat.id != Config.OWNER_ID and not message.outgoing)
     ):
         return False
     return cmd_check(message, Config.CMD_TRIGGER)
@@ -75,6 +71,4 @@ CMD_FILTER = create(owner_check) | create(sudo_check) | create(super_user_check)
 # Bots who would like to use custom filters
 # for those, Manually add handler on the above function
 if Config.LOAD_HANDLERS:
-    bot.add_handler(
-        UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
-    )
+    bot.add_handler(UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1)

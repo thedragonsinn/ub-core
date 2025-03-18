@@ -11,9 +11,7 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
 class FileStorage(FS):
-    def __init__(
-        self, name: str, session_string: str = None, workdir: Path = Path(".")
-    ):
+    def __init__(self, name: str, session_string: str = None, workdir: Path = Path(".")):
         super().__init__(name=name, workdir=Path(workdir))
         if isinstance(session_string, str):
             session_string = session_string.strip()
@@ -26,24 +24,17 @@ class FileStorage(FS):
             return
 
         string_len = len(self.session_string)
-        b64_string = base64.urlsafe_b64decode(
-            self.session_string + "=" * (-string_len % 4)
-        )
+        b64_string = base64.urlsafe_b64decode(self.session_string + "=" * (-string_len % 4))
 
         # Old format
-        if string_len in [
-            self.SESSION_STRING_SIZE,
-            self.SESSION_STRING_SIZE_64,
-        ]:
+        if string_len in [self.SESSION_STRING_SIZE, self.SESSION_STRING_SIZE_64]:
 
             if string_len == self.SESSION_STRING_SIZE:
                 format = self.OLD_SESSION_STRING_FORMAT
             else:
                 format = self.OLD_SESSION_STRING_FORMAT_64
 
-            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                format, b64_string
-            )
+            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(format, b64_string)
 
             await self.dc_id(dc_id)
             await self.test_mode(test_mode)

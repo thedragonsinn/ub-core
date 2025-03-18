@@ -25,9 +25,7 @@ async def init_task():
     TELEGRAPH = Telegraph()
     try:
         await TELEGRAPH.create_account(
-            short_name=Config.BOT_NAME,
-            author_name=Config.BOT_NAME,
-            author_url=Config.UPSTREAM_REPO,
+            short_name=Config.BOT_NAME, author_name=Config.BOT_NAME, author_url=Config.UPSTREAM_REPO
         )
     except Exception:
         LOGGER.error("Failed to Create Telegraph Account.")
@@ -40,10 +38,7 @@ async def post_to_telegraph(
     author_url: str = Config.UPSTREAM_REPO,
 ) -> str:
     telegraph = await TELEGRAPH.create_page(
-        title=title,
-        html_content=f"<p>{text}</p>",
-        author_name=author_name,
-        author_url=author_url,
+        title=title, html_content=f"<p>{text}</p>", author_name=author_name, author_url=author_url
     )
     return telegraph["url"]
 
@@ -68,11 +63,7 @@ def format_time(seconds):
 
 
 async def progress(
-    current_size: int,
-    total_size: int,
-    response: Message,
-    action_str: str = "",
-    file_path: str = "",
+    current_size: int, total_size: int, response: Message, action_str: str = "", file_path: str = ""
 ):
     if current_size == total_size:
         PROGRESS_DICT.pop(file_path, 0)

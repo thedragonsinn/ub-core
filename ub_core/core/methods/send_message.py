@@ -40,17 +40,12 @@ class SendMessage(Client):
             text = str(text)
 
         text_and_entities = await parse_text_entities(
-            client=self,
-            text=text,
-            parse_mode=parse_mode or self.parse_mode,
-            entities=entities,
+            client=self, text=text, parse_mode=parse_mode or self.parse_mode, entities=entities
         )
 
         if len(text_and_entities["message"]) <= 4096:
             if isinstance(disable_preview, bool):
-                kwargs["link_preview_options"] = LinkPreviewOptions(
-                    is_disabled=disable_preview
-                )
+                kwargs["link_preview_options"] = LinkPreviewOptions(is_disabled=disable_preview)
             message = await super().send_message(
                 chat_id=chat_id,
                 text=text,

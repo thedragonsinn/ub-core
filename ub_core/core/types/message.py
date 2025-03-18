@@ -32,9 +32,7 @@ async def async_deleter(del_in, task, block) -> MessageUpdate | None:
         await task_result.delete()
         return task_result
     else:
-        del_task = asyncio.create_task(
-            async_deleter(del_in=del_in, task=task, block=True)
-        )
+        del_task = asyncio.create_task(async_deleter(del_in=del_in, task=task, block=True))
         Config.BACKGROUND_TASKS.append(del_task)
         del_task.add_done_callback(del_task_cleaner)
 
@@ -205,30 +203,21 @@ class Message(MessageUpdate):
         """Edit self.text or send a file with text if text length exceeds 4096 chars"""
 
         if isinstance(disable_preview, bool):
-            kwargs["link_preview_options"] = LinkPreviewOptions(
-                is_disabled=disable_preview
-            )
+            kwargs["link_preview_options"] = LinkPreviewOptions(is_disabled=disable_preview)
 
         parse_mode = parse_mode or self._client.parse_mode
 
         text_and_entities = await parse_text_entities(
-            client=self._client,
-            text=text,
-            parse_mode=parse_mode,
-            entities=entities,
+            client=self._client, text=text, parse_mode=parse_mode, entities=entities
         )
 
         # text, entities = text_and_entities.values()
 
         if len(text_and_entities["message"]) <= 4096:
-            task = super().edit_text(
-                text=text, parse_mode=parse_mode, entities=entities, **kwargs
-            )
+            task = super().edit_text(text=text, parse_mode=parse_mode, entities=entities, **kwargs)
 
             if del_in:
-                edited_message = await async_deleter(
-                    task=task, del_in=del_in, block=block
-                )
+                edited_message = await async_deleter(task=task, del_in=del_in, block=block)
             else:
                 edited_message = Message((await task))  # fmt:skip
 
@@ -258,10 +247,7 @@ class Message(MessageUpdate):
         input_text_list = self.filtered_input.split(maxsplit=1)
 
         if not input_text_list:
-            return (
-                "Unable to Extract User info.\nReply to a user or input @ | id.",
-                None,
-            )
+            return ("Unable to Extract User info.\nReply to a user or input @ | id.", None)
 
         user = input_text_list[0]
         reason = None
@@ -286,11 +272,7 @@ class Message(MessageUpdate):
     async def get_response(self, filters: Filter = None, timeout: int = 8, **kwargs):
         """Get a Future Incoming message in chat where message was sent."""
         response: Message | None = await Convo.get_resp(
-            client=self._client,
-            chat_id=self.chat.id,
-            filters=filters,
-            timeout=timeout,
-            **kwargs,
+            client=self._client, chat_id=self.chat.id, filters=filters, timeout=timeout, **kwargs
         )
         return response
 
@@ -331,9 +313,7 @@ class Message(MessageUpdate):
 
         # Pop Custom Properties
         for arg in dir(Message):
-            is_property = isinstance(
-                getattr(Message, arg, 0), (cached_property, property)
-            )
+            is_property = isinstance(getattr(Message, arg, 0), (cached_property, property))
             is_present_in_super = hasattr(MessageUpdate, arg)
 
             if is_property and not is_present_in_super:

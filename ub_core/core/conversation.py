@@ -135,9 +135,7 @@ class Conversation:
             )
             return response
         except asyncio.TimeoutError:
-            raise TimeoutError(
-                f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}"
-            )
+            raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}")
 
     async def send_message(
         self, text: str, timeout: int = 0, get_response: bool = False, **kwargs
@@ -146,9 +144,7 @@ class Conversation:
         Bound Method to Send Texts in Convo Chat.
         Returns Sent Message and Response if get_response is True.
         """
-        message = await self.client.send_message(
-            chat_id=self.chat_id, text=text, **kwargs
-        )
+        message = await self.client.send_message(chat_id=self.chat_id, text=text, **kwargs)
         if get_response:
             response = await self.get_response(timeout=timeout)
             return message, response

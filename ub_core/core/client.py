@@ -44,16 +44,14 @@ def import_modules(dir_name):
 
 class BOT(CustomDecorators, Methods, Client):
     def __init__(self):
-        bot_token=getenv("BOT_TOKEN")
+        bot_token = getenv("BOT_TOKEN")
         name = Config.BOT_NAME + ("-bot" if bot_token else "")
         super().__init__(
             name=name,
             api_id=int(getenv("API_ID")),
             api_hash=getenv("API_HASH"),
             bot_token=bot_token,
-            storage_engine=FileStorage(
-                name=name, session_string=getenv("SESSION_STRING")
-            ),
+            storage_engine=FileStorage(name=name, session_string=getenv("SESSION_STRING")),
             sleep_threshold=30,
             max_concurrent_transmissions=2,
         )

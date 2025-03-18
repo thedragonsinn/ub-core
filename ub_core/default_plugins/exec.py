@@ -10,17 +10,7 @@ from pyrogram.enums import ParseMode
 import ub_core
 
 # noinspection PyUnresolvedReferences
-from ub_core import (
-    BOT,
-    Cmd,
-    Config,
-    CustomDB,
-    Message,
-    bot,
-    core,
-    default_plugins,
-    utils,
-)
+from ub_core import BOT, Cmd, Config, CustomDB, Message, bot, core, default_plugins, utils
 
 # noinspection PyUnresolvedReferences
 from ub_core.utils import aio, shell
@@ -81,11 +71,9 @@ async def executor(bot: BOT, message: Message) -> None:
             "async def _exec(bot: BOT, message: Message):"
             + "\n    r, c, cid , u, uid, ru, ruid = generate_locals(message=message)"
             + "\n    "
-            + "\n    ".join(code.splitlines()),
+            + "\n    ".join(code.splitlines())
         )
-        func_out = await asyncio.create_task(
-            locals()["_exec"](bot, message), name=reply.task_id
-        )
+        func_out = await asyncio.create_task(locals()["_exec"](bot, message), name=reply.task_id)
     except asyncio.exceptions.CancelledError:
         await reply.edit("`Cancelled....`")
         return
@@ -110,12 +98,7 @@ async def executor(bot: BOT, message: Message) -> None:
     else:
         output = f"```python\n{code}```\n\n```\n{output}```"
 
-    await reply.edit(
-        output,
-        name="exec.txt",
-        disable_preview=True,
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    await reply.edit(output, name="exec.txt", disable_preview=True, parse_mode=ParseMode.MARKDOWN)
 
 
 if Config.DEV_MODE:
