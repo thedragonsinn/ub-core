@@ -74,9 +74,7 @@ def make_file_name_tg_safe(file_name: str) -> str:
     return file_name
 
 
-def get_type(
-    url: str | None = "", path: str | None = "", generic: bool = True
-) -> MediaType | None:
+def get_type(url: str | None = "", path: str | None = "", generic: bool = True) -> MediaType | None:
     if url:
         media = get_filename_from_url(url)
     else:
@@ -103,20 +101,29 @@ def get_type(
 def get_tg_media_details(message: Message):
     match message.media:
         case MessageMediaType.PHOTO:
-            file = message.photo
-            file.file_name = "photo.jpg"
-            return file
+            media = message.photo
+            media.file_name = "photo.png"
         case MessageMediaType.AUDIO:
-            return message.audio
+            media = message.audio
         case MessageMediaType.ANIMATION:
-            return message.animation
+            media = message.animation
         case MessageMediaType.DOCUMENT:
-            return message.document
+            media = message.document
         case MessageMediaType.STICKER:
-            return message.sticker
+            media = message.sticker
         case MessageMediaType.VIDEO:
-            return message.video
+            media = message.video
         case MessageMediaType.VOICE:
-            return message.voice
+            media = message.voice
+        case MessageMediaType.STORY:
+            media = get_tg_media_details(message.story)
         case _:
             return
+
+    media.file_name = (
+        getattr(media, "file_name", None)
+        or get_filename_from_mime(getattr(media, "mime_type", None))
+        or "file"
+    )
+
+    return media
