@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Iterable
 
@@ -8,6 +9,8 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
 from ..config import Config
+
+LOGGER = logging.getLogger(Config.BOT_NAME)
 
 dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
 dns.resolver.default_resolver.nameservers = ["8.8.8.8"]
@@ -49,9 +52,7 @@ class CustomCollection(AsyncIOMotorCollection):
             entry: InsertOneResult = await self.insert_one(data)
             return entry.inserted_id
         else:
-            entry: UpdateResult = await self.update_one(
-                {"_id": data.pop("_id")}, {"$set": data}
-            )
+            entry: UpdateResult = await self.update_one({"_id": data.pop("_id")}, {"$set": data})
             return entry.modified_count
 
     async def delete_data(self: AgnosticCollection, id: int | str) -> int:
@@ -108,4 +109,7 @@ class CustomDatabase:
         return CustomCollection(collection_name=item, database=self._db)
 
     def __call__(self, collection_name) -> AgnosticCollection | CustomCollection:
+        LOGGER.warning(
+            f"{collection_name} - Deprecated usage of () brackets. Switch to [] brackets."
+        )
         return CustomCollection(collection_name=collection_name, database=self._db)
