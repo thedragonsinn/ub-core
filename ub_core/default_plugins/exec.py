@@ -85,9 +85,7 @@ async def executor(bot: BOT, message: Message) -> None:
             + "\n    "
             + "\n    ".join(code.splitlines()),
         )
-        func_out = await asyncio.create_task(
-            locals()["_exec"](bot, message), name=reply.task_id
-        )
+        func_out = await asyncio.create_task(locals()["_exec"](bot, message), name=reply.task_id)
     except asyncio.exceptions.CancelledError:
         await reply.edit("`Cancelled....`")
         return

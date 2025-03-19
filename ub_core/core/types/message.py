@@ -33,9 +33,7 @@ async def async_deleter(del_in, task, block) -> MessageUpdate | None:
         await task_result.delete()
         return task_result
     else:
-        del_task = asyncio.create_task(
-            async_deleter(del_in=del_in, task=task, block=True)
-        )
+        del_task = asyncio.create_task(async_deleter(del_in=del_in, task=task, block=True))
         Config.BACKGROUND_TASKS.append(del_task)
         del_task.add_done_callback(del_task_cleaner)
 
@@ -70,9 +68,7 @@ class Message(Properties, MessageUpdate):
 
         # Pop Custom Properties
         for arg in dir(Message):
-            is_property = isinstance(
-                getattr(Message, arg, 0), (cached_property, property)
-            )
+            is_property = isinstance(getattr(Message, arg, 0), (cached_property, property))
             is_present_in_super = hasattr(MessageUpdate, arg)
 
             if is_property and not is_present_in_super:
@@ -107,9 +103,7 @@ class Message(Properties, MessageUpdate):
         """Edit self.text or send a file with text if text length exceeds 4096 chars"""
 
         if isinstance(disable_preview, bool):
-            kwargs["link_preview_options"] = LinkPreviewOptions(
-                is_disabled=disable_preview
-            )
+            kwargs["link_preview_options"] = LinkPreviewOptions(is_disabled=disable_preview)
 
         parse_mode = parse_mode or self._client.parse_mode
 
@@ -123,14 +117,10 @@ class Message(Properties, MessageUpdate):
         # text, entities = text_and_entities.values()
 
         if len(text_and_entities["message"]) <= 4096:
-            task = super().edit_text(
-                text=text, parse_mode=parse_mode, entities=entities, **kwargs
-            )
+            task = super().edit_text(text=text, parse_mode=parse_mode, entities=entities, **kwargs)
 
             if del_in:
-                edited_message = await async_deleter(
-                    task=task, del_in=del_in, block=block
-                )
+                edited_message = await async_deleter(task=task, del_in=del_in, block=block)
             else:
                 edited_message = Message((await task))  # fmt:skip
 

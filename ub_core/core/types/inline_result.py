@@ -44,9 +44,7 @@ class InlineResult(Properties, InlineResultUpdate):
         kwargs.pop("text", 0)
 
         for arg in dir(InlineResult):
-            is_property = isinstance(
-                getattr(InlineResult, arg, 0), (cached_property, property)
-            )
+            is_property = isinstance(getattr(InlineResult, arg, 0), (cached_property, property))
             is_present_in_super = hasattr(InlineResultUpdate, arg)
 
             if is_property and not is_present_in_super:
@@ -95,9 +93,7 @@ class InlineResult(Properties, InlineResultUpdate):
         else:
             doc = BytesIO(bytes(text, encoding="utf-8"))
             doc.name = name
-            await self.edit_media(
-                media=InputMediaDocument(media=doc, file_name=doc.name)
-            )
+            await self.edit_media(media=InputMediaDocument(media=doc, file_name=doc.name))
 
         return self
 

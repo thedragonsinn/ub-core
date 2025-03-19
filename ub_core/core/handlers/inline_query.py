@@ -69,9 +69,7 @@ async def inline_handler(_, inline_query: InlineQuery):
 
     cleaner_task = asyncio.create_task(asyncio.sleep(60))
 
-    cleaner_task.add_done_callback(
-        partial(clean_cache, key=inline_query.id, uuid_4=result.id)
-    )
+    cleaner_task.add_done_callback(partial(clean_cache, key=inline_query.id, uuid_4=result.id))
     Config.INLINE_QUERY_CACHE[inline_query.id] = {
         "cmd": cmd,
         "text": inline_query.query,
@@ -83,6 +81,4 @@ async def inline_handler(_, inline_query: InlineQuery):
 
 
 if bot.has_bot or bot.is_bot:
-    bot.bot.add_handler(
-        InlineQueryHandler(callback=inline_handler, filters=INLINE_FILTER), group=1
-    )
+    bot.bot.add_handler(InlineQueryHandler(callback=inline_handler, filters=INLINE_FILTER), group=1)

@@ -99,10 +99,6 @@ CMD_FILTER = valid_chat_filter & (
 # for those, Manually add handler on the cmd_dispatcher
 
 if Config.LOAD_HANDLERS:
-    bot.add_handler(
-        UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
-    )
+    bot.add_handler(UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1)
     if bot.has_bot:
-        bot.bot.add_handler(
-            UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1
-        )
+        bot.bot.add_handler(UnifiedHandler(callback=cmd_dispatcher, filters=CMD_FILTER), group=1)

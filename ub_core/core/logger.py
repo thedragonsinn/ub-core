@@ -47,10 +47,7 @@ class TgErrorHandler(Handler):
 
         error_message: str = log_record.exc_text or log_record.message
 
-        if (
-            log_record.funcName in ("handler_worker", "run")
-            and "OSError:" in error_message
-        ):
+        if log_record.funcName in ("handler_worker", "run") and "OSError:" in error_message:
             return
 
         text = (

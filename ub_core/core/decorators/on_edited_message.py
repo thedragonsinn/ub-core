@@ -38,9 +38,7 @@ class OnEditedMessage(Client):
                 self.add_handler(EditedMessageHandler(dispatch_wrapper, filters), group)
 
                 if register_on_bot_too and self.has_bot:
-                    self.bot.add_handler(
-                        EditedMessageHandler(dispatch_wrapper, filters), group
-                    )
+                    self.bot.add_handler(EditedMessageHandler(dispatch_wrapper, filters), group)
 
             elif isinstance(self, Filter) or self is None:
                 if not hasattr(func, "handlers"):

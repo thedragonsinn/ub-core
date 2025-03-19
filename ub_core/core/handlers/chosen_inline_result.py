@@ -1,10 +1,6 @@
 from pyrogram.errors import UserIsBlocked
 from pyrogram.handlers import ChosenInlineResultHandler
-from pyrogram.types import (
-    ChosenInlineResult,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-)
+from pyrogram.types import ChosenInlineResult, InlineKeyboardButton, InlineKeyboardMarkup
 
 from ..handlers import cmd_dispatcher, create
 from ..types import InlineResult
@@ -32,9 +28,7 @@ async def chosen_result_handler(client: BOT, result: ChosenInlineResult):
             text=f"Use `.c -i {result.task_id}` to cancel Inline code execution.",
         )
     except UserIsBlocked:
-        button = InlineKeyboardButton(
-            text=f"Restart Me", url=f"http://t.me/{client.me.username}"
-        )
+        button = InlineKeyboardButton(text=f"Restart Me", url=f"http://t.me/{client.me.username}")
         reply_markup = InlineKeyboardMarkup([[button]])
 
         await result.edit(
@@ -55,8 +49,6 @@ async def chosen_result_handler(client: BOT, result: ChosenInlineResult):
 
 if bot.has_bot or bot.is_bot:
     bot.bot.add_handler(
-        ChosenInlineResultHandler(
-            callback=chosen_result_handler, filters=RESULT_FILTER
-        ),
+        ChosenInlineResultHandler(callback=chosen_result_handler, filters=RESULT_FILTER),
         group=1,
     )

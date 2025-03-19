@@ -43,9 +43,7 @@ async def pull_commits() -> bool:
 async def get_core_update():
     return -1, ""
     # noinspection PyUnreachableCode
-    tag_info = await aio.get_json(
-        "https://api.github.com/repos/thedragonsinn/ub-core/tags"
-    )
+    tag_info = await aio.get_json("https://api.github.com/repos/thedragonsinn/ub-core/tags")
     name = tag_info[0]["name"].strip("v")
 
     latest_version_parts = [int(i) for i in name.split(".")]
@@ -78,9 +76,7 @@ async def handle_core_update(bot: BOT, message: Message, reply: Message):
         await reply.edit(f"Already on latest version: {__version__}")
 
     else:
-        await reply.edit(
-            f"Currently on a test version: {__version__} ahead of {version}"
-        )
+        await reply.edit(f"Currently on a test version: {__version__} ahead of {version}")
 
 
 @BOT.add_cmd(cmd="update")
@@ -111,9 +107,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
         return
 
     if "-pull" not in message.flags:
-        await reply.edit(
-            text=f"<b>Update Available:</b>\n{commits}", disable_preview=True
-        )
+        await reply.edit(text=f"<b>Update Available:</b>\n{commits}", disable_preview=True)
         return
 
     if not (await pull_commits()):  # NOQA

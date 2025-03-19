@@ -50,9 +50,7 @@ class CallbackQuery(Properties, CallbackQueryUpdate):
             kwargs["message"] = Message(kwargs.pop("message"))
 
         for arg in dir(CallbackQuery):
-            is_property = isinstance(
-                getattr(CallbackQuery, arg, 0), (cached_property, property)
-            )
+            is_property = isinstance(getattr(CallbackQuery, arg, 0), (cached_property, property))
             is_present_in_super = hasattr(CallbackQueryUpdate, arg)
 
             if is_property and not is_present_in_super:
@@ -102,9 +100,7 @@ class CallbackQuery(Properties, CallbackQueryUpdate):
         else:
             doc = BytesIO(bytes(text, encoding="utf-8"))
             doc.name = name
-            await self.edit_message_media(
-                media=InputMediaDocument(media=doc, file_name=doc.name)
-            )
+            await self.edit_message_media(media=InputMediaDocument(media=doc, file_name=doc.name))
         return self
 
     async def edit_message_media(self, *args, **kwargs) -> Self:

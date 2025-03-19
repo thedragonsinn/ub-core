@@ -12,9 +12,7 @@ async def run_cmd(bot: BOT, message: Message) -> None:
     reply: Message = await message.reply("executing...")
 
     try:
-        proc_stdout: str = await asyncio.create_task(
-            shell.run_shell_cmd(cmd), name=reply.task_id
-        )
+        proc_stdout: str = await asyncio.create_task(shell.run_shell_cmd(cmd), name=reply.task_id)
     except asyncio.exceptions.CancelledError:
         await reply.edit("`Cancelled...`")
         return
@@ -34,9 +32,7 @@ async def live_shell(bot: BOT, message: Message):
     reply: Message = await message.reply("`getting live output....`")
     sub_process: shell.AsyncShell = await shell.AsyncShell.run_cmd(cmd)
     try:
-        await asyncio.create_task(
-            sub_process.send_output(message=reply), name=reply.task_id
-        )
+        await asyncio.create_task(sub_process.send_output(message=reply), name=reply.task_id)
         await reply.edit(
             text=f"<pre language=shell>~$ {cmd}\n\n{sub_process.stdout}</pre>",
             name="shell.txt",
@@ -84,9 +80,7 @@ async def interactive_shell(bot: BOT, message: Message):
                     return
 
                 await sub_process.write_input(input_text)
-                stdout_message = await input_cmd.reply(
-                    f"__Executing__: ```shell\n{input_text}```"
-                )
+                stdout_message = await input_cmd.reply(f"__Executing__: ```shell\n{input_text}```")
                 await asyncio.create_task(
                     sub_process.send_output(stdout_message),
                     name=f"{stdout_message.chat.id}-{stdout_message.id}",

@@ -129,16 +129,16 @@ class Aio:
         self.ping_interval = int(os.environ.get("PING_INTERVAL", 240))
         self.ping_url = os.environ.get("PING_URL")
 
+    async def set_session(self):
+        """Setup ClientSession on boot."""
+        LOGGER.info("AioHttp Session Created.")
+        self.session = ClientSession()
+
         if self.ping_url:
             LOGGER.info(
                 f"Starting Auto-Ping Task at {self.ping_url} with {self.ping_interval} seconds interval."
             )
             Config.BACKGROUND_TASKS.append(asyncio.create_task(self.ping_website()))
-
-    async def set_session(self):
-        """Setup ClientSession on boot."""
-        LOGGER.info("AioHttp Session Created.")
-        self.session = ClientSession()
 
     async def close(self):
         """Gracefully Shutdown Clients"""

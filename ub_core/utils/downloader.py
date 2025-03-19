@@ -162,9 +162,7 @@ class Download:
         if self.custom_file_name:
             return self.custom_file_name
 
-        name_from_headers = get_filename_from_headers(
-            self.headers, tg_safe=self.use_tg_safe_name
-        )
+        name_from_headers = get_filename_from_headers(self.headers, tg_safe=self.use_tg_safe_name)
         if name_from_headers:
             return name_from_headers
 
@@ -215,9 +213,7 @@ class Download:
 
     async def write_file(self) -> None:
         async with aiofiles.open(file=self.file_path, mode="wb") as async_file:
-            async for file_chunk in self.file_response_session.content.iter_chunked(
-                5120
-            ):
+            async for file_chunk in self.file_response_session.content.iter_chunked(5120):
                 await async_file.write(file_chunk)  # NOQA
                 self.completed_size_bytes += 5120
 

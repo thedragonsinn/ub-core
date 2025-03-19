@@ -18,9 +18,7 @@ async def loader(bot: BOT, message: Message) -> Message | None:
     reply: Message = await message.reply("Loading....")
 
     try:
-        assert "-r" in message.flags or message.replied.document.file_name.endswith(
-            ".py"
-        )
+        assert "-r" in message.flags or message.replied.document.file_name.endswith(".py")
     except (AssertionError, AttributeError):
         await reply.edit("Reply to a Plugin.")
         return

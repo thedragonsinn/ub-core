@@ -13,13 +13,9 @@ class AddCmd:
             path = inspect.stack()[1][1]
             if isinstance(cmd, list):
                 for _cmd in cmd:
-                    Config.CMD_DICT[_cmd] = Cmd(
-                        cmd=_cmd, func=func, cmd_path=path, sudo=allow_sudo
-                    )
+                    Config.CMD_DICT[_cmd] = Cmd(cmd=_cmd, func=func, cmd_path=path, sudo=allow_sudo)
             else:
-                Config.CMD_DICT[cmd] = Cmd(
-                    cmd=cmd, func=func, cmd_path=path, sudo=allow_sudo
-                )
+                Config.CMD_DICT[cmd] = Cmd(cmd=cmd, func=func, cmd_path=path, sudo=allow_sudo)
 
             return func
 

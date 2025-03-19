@@ -29,9 +29,7 @@ async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate) -> 
             text=f"Use `.c -i {callback_query.task_id}` to cancel Inline code execution.",
         )
     except UserIsBlocked:
-        button = InlineKeyboardButton(
-            text=f"Restart Me", url=f"http://t.me/{client.me.username}"
-        )
+        button = InlineKeyboardButton(text=f"Restart Me", url=f"http://t.me/{client.me.username}")
         reply_markup = InlineKeyboardMarkup([[button]])
         await callback_query.edit(
             text=f"You have Blocked @{client.me.username}.", reply_markup=reply_markup

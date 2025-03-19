@@ -18,9 +18,7 @@ async def cmd_list(bot: BOT, message: Message) -> None:
         return
 
     if cmd not in Config.CMD_DICT.keys():
-        await message.reply(
-            text=f"Invalid <b>{cmd}</b>, check {message.trigger}help", del_in=5
-        )
+        await message.reply(text=f"Invalid <b>{cmd}</b>, check {message.trigger}help", del_in=5)
         return
 
     doc_string = Config.CMD_DICT[cmd].doc
