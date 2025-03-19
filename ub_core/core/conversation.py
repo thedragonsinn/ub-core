@@ -185,7 +185,7 @@ class Conversation:
         **kwargs,
     ) -> Message | tuple[Message, Message]:
 
-        if reply_to_id := kwargs.get("reply_to_id"):
+        if reply_to_id := kwargs.pop("reply_to_id", None):
             reply_parameters = ReplyParameters(message_id=reply_to_id)
 
         message = await self.client.send_photo(
