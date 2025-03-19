@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Self
 
 from pyrogram import filters
-from pyrogram.types import Message
+from pyrogram.types import Message, ReplyParameters
 
 if TYPE_CHECKING:
     from .client import DualClient
@@ -170,6 +170,32 @@ class Conversation:
             disable_content_type_detection=disable_content_type_detection,
             **kwargs,
         )
+        if get_response:
+            response = await self.get_response(timeout=timeout)
+            return message, response
+        return message
+
+    async def send_photo(
+        self,
+        photo,
+        caption: str = "",
+        timeout: int = 0,
+        get_response: bool = False,
+        reply_parameters: ReplyParameters = None,
+        **kwargs,
+    ) -> Message | tuple[Message, Message]:
+
+        if reply_to_id := kwargs.get("reply_to_id"):
+            reply_parameters = ReplyParameters(message_id=reply_to_id)
+
+        message = await self.client.send_photo(
+            chat_id=self.chat_id,
+            photo=photo,
+            caption=caption,
+            reply_parameters=reply_parameters,
+            **kwargs,
+        )
+
         if get_response:
             response = await self.get_response(timeout=timeout)
             return message, response
