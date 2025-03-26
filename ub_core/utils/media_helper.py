@@ -42,13 +42,13 @@ def get_filename_from_headers(
     headers: dict | CIMultiDictProxy, tg_safe: bool = False
 ) -> str | None:
     content_disposition = headers.get("Content-Disposition", "")
-    match = re.search(pattern=r"filename=(.+)", string=content_disposition)
+
+    match = re.search(r"filename=[\"']?(.*?)[\"']?(?:;|$)", string=content_disposition)
 
     if not match:
         return
 
-    file_name = match.group(1)
-    return make_file_name_tg_safe(file_name) if tg_safe else file_name
+    return make_file_name_tg_safe(match.group(1)) if tg_safe else match.group(1)
 
 
 def get_filename_from_mime(mime_type: str, tg_safe: bool = False) -> None | str:
