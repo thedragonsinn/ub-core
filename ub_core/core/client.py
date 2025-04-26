@@ -113,7 +113,7 @@ class BOT(CustomDecorators, Methods, Client):
 
     async def restart_clients(self) -> bool:
         try:
-            await self.user.restart(block=False)
+            await self.restart(block=False)
             await asyncio.sleep(1.5)
             return True
         except Exception as e:
