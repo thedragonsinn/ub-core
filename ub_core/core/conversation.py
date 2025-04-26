@@ -58,8 +58,6 @@ class Conversation:
 
         Conversation.CONVO_DICT[self.chat_id].append(self)
 
-        await self._create_default_filters()
-
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -78,39 +76,36 @@ class Conversation:
         future.add_done_callback(self.set_future)
         self.response_future = future
 
-    async def _create_default_filters(self):
-        async def extra_filter(_, __, message: Message):
-            try:
-                if self.from_user:
-                    assert message.from_user
-                    if isinstance(self.from_user, list):
-                        assert message.from_user.id in self.from_user
-                    else:
-                        assert message.from_user.id == self.from_user
+    @staticmethod
+    async def extra_filter(self: "Self", client: "BOT", message: Message):
+        try:
+            if self.from_user:
+                assert message.from_user
+                if isinstance(self.from_user, list):
+                    assert message.from_user.id in self.from_user
+                else:
+                    assert message.from_user.id == self.from_user
 
-                if self.reply_to_message_id:
-                    assert message.reply_to_message_id == self.reply_to_message_id
+            if self.reply_to_message_id:
+                assert message.reply_to_message_id == self.reply_to_message_id
 
-                if self.reply_to_user_id:
-                    replied = message.reply_to_message
-                    assert (
-                        replied
-                        and replied.from_user
-                        and replied.from_user.id == self.reply_to_user_id
-                    )
-                return True
-            except AssertionError:
-                return False
-
-        ext_filter = filters.create(extra_filter)
-
-        self.filters = self.filters & ext_filter if self.filters else ext_filter
+            if self.reply_to_user_id:
+                replied = message.reply_to_message
+                assert (
+                    replied and replied.from_user and replied.from_user.id == self.reply_to_user_id
+                )
+            return True
+        except AssertionError:
+            return False
 
     async def match_filters(self, client: "BOT", message: "Message") -> bool:
         if client != self.client:
             return False
 
-        return await self.filters(client, message)
+        conv_filters_result = await self.filters(client, message) if self.filters else True
+        extra_filters_result = await self.extra_filter(self, client, message)
+
+        return conv_filters_result and extra_filters_result
 
     @classmethod
     async def get_resp(cls, client, *args, **kwargs) -> Message | None:
