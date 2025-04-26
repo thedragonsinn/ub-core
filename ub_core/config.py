@@ -63,6 +63,8 @@ class Config:
 
     LOG_CHAT: int = int(environ.get("LOG_CHAT", 0))
 
+    LOG_CHAT_THREAD_ID: int = int(environ.get("LOG_CHAT_THREAD_ID", 0)) or None
+
     LOAD_HANDLERS: bool = True
 
     MODE: str = "dual"
