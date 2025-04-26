@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+import sys
 from logging import (
     ERROR,
     INFO,
@@ -38,6 +39,7 @@ class TgErrorHandler(Handler):
             return
 
         tg_message = getattr(log_record, "tg_message", None)
+
         if isinstance(tg_message, Message):
             chat = tg_message.chat
             chat_name: str = chat.title or chat.first_name
@@ -66,22 +68,30 @@ class TgErrorHandler(Handler):
 
 
 class OnNetworkIssueHandler(Handler):
-    CLOSED_HANDLER_REGEX = (
-        r"\[WARNING\] \[\d{2}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M\]"
-        r" \[pyrogram\.session\.session\] \[session\]: \[\d+\] "
-        r'Retrying "[^"]+" due to: unable to perform operation on '
-        r"<TCPTransport closed=True reading=False [^>]+>; the handler is closed"
-    )
+    def emit(self, log_record: LogRecord):
+        self.format(log_record)
 
-    def emit(self, log_record):
-        warning = self.format(log_record)
-
-        if log_record.levelno != WARNING:
+        if log_record.funcName not in ("handler_worker", "run"):
             return
 
-        if re.search(self.CLOSED_HANDLER_REGEX, warning):
-            LOGGER.info("Network Issues Detected, Restarting client(s)")
-            bot.raise_sigint()
+        error_message: str = log_record.exc_text or log_record.message
+
+        is_network_error = re.search(r"handler is closed|TimeoutError", error_message)
+
+        if is_network_error is None:
+            return
+
+        LOGGER.info("Network Issues Detected, Restarting client(s)")
+
+        result = None
+        try:
+            fut = asyncio.run_coroutine_threadsafe(bot.restart(), bot.loop)
+            result = fut.result(timeout=10)
+        except (asyncio.CancelledError, TimeoutError):
+            result = None
+
+        if not result:
+            sys.exit(69)
 
 
 custom_error_handler = TgErrorHandler()
@@ -95,14 +105,7 @@ basicConfig(
     format="%(asctime)s    |   %(levelname)s   |   %(name)s   |   %(module)s: %(message)s",
     datefmt="%d-%m-%y %I:%M %p",
     handlers={
-        handlers.RotatingFileHandler(
-            filename="logs/app_logs.txt",
-            mode="a",
-            maxBytes=1024 * 1024,
-            backupCount=1,
-            encoding=None,
-            delay=False,
-        ),
+        handlers.RotatingFileHandler(filename="logs/app_logs.txt", maxBytes=1024 * 256),
         StreamHandler(),
         custom_error_handler,
         custom_network_error_handler,
