@@ -85,7 +85,7 @@ class OnNetworkIssueHandler(Handler):
 
         result = None
         try:
-            fut = asyncio.run_coroutine_threadsafe(bot.restart(), bot.loop)
+            fut = asyncio.run_coroutine_threadsafe(bot.restart_clients(), bot.loop)
             result = fut.result(timeout=10)
         except (asyncio.CancelledError, TimeoutError):
             result = None
