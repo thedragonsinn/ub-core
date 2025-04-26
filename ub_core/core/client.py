@@ -2,6 +2,7 @@ import asyncio
 import importlib
 import logging
 import sys
+import traceback
 from functools import cached_property
 from inspect import iscoroutine, iscoroutinefunction
 from os import getenv, path
@@ -190,6 +191,19 @@ class DualClient(Bot):
         else:
             self.exit_code = 69
         raise_signal(SIGINT)
+
+    async def restart_clients(self) -> bool:
+        try:
+            if self.user:
+                await self.user.restart(block=False)
+                await asyncio.sleep(1.5)
+            if self.bot:
+                await self.bot.restart(block=False)
+                await asyncio.sleep(1.5)
+            return True
+        except Exception as e:
+            traceback.print_exception(e)
+            return False
 
     async def stop_clients(self) -> None:
         if self.user:
