@@ -41,7 +41,8 @@ class ChannelLogger(Client):
             disable_preview=disable_preview,
             parse_mode=parse_mode,
             disable_notification=False,
-            schedule_date=schedule_date
+            schedule_date=schedule_date,
+            message_thread_id=Config.LOG_CHAT_THREAD_ID
         ))  # fmt:skip
 
     async def log_message(self, message: "Message") -> "Message":
@@ -54,5 +55,6 @@ class ChannelLogger(Client):
         return (await message.copy(
             chat_id=Config.LOG_CHAT,
             disable_notification=False,
-            schedule_date=schedule_date
+            schedule_date=schedule_date,
+            message_thread_id=Config.LOG_CHAT_THREAD_ID
         ))  # fmt:skip

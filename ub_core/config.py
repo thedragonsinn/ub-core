@@ -57,7 +57,13 @@ class Config:
 
     INIT_TASKS: list[Coroutine] = []
 
+    INLINE_QUERY_CACHE: dict[str | int, dict] = {}
+
+    INLINE_RESULT_CACHE: set[str] = set()
+
     LOG_CHAT: int = int(environ.get("LOG_CHAT", 0))
+
+    LOG_CHAT_THREAD_ID: int = int(environ.get("LOG_CHAT_THREAD_ID", 0)) or None
 
     LOAD_HANDLERS: bool = True
 
