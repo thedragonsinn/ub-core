@@ -1,7 +1,6 @@
 import asyncio
 import os
 import re
-import sys
 from logging import (
     ERROR,
     INFO,
@@ -83,15 +82,7 @@ class OnNetworkIssueHandler(Handler):
 
         LOGGER.info("Network Issues Detected, Restarting client(s)")
 
-        result = None
-        try:
-            fut = asyncio.run_coroutine_threadsafe(bot.restart_clients(), bot.loop)
-            result = fut.result(timeout=10)
-        except (asyncio.CancelledError, TimeoutError):
-            result = None
-
-        if not result:
-            sys.exit(69)
+        bot.raise_sigint()
 
 
 custom_error_handler = TgErrorHandler()
