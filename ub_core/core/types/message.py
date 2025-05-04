@@ -278,7 +278,7 @@ class Message(MessageUpdate):
 
     async def log(self):
         """Forward Self to Log Channel"""
-        return (await self.copy(Config.LOG_CHAT))  # fmt:skip
+        return (await self._client.log_message(self))  # fmt:skip
 
     async def reply(
         self,
