@@ -24,6 +24,7 @@ from .core import (
     CustomCollection,
     CustomDatabase,
     CustomDB,
+    InlineResult,
     Message,
 )
 from .core.client import DualClient
