@@ -13,11 +13,40 @@ from logging import (
     handlers,
 )
 
+from pyrogram.types import CallbackQuery, ChosenInlineResult
+
 from ub_core import Config, Message, bot
 
 os.makedirs(name="logs", exist_ok=True)
 
 LOGGER = getLogger(Config.BOT_NAME)
+
+UPDATE_TYPES = CallbackQuery, Message, ChosenInlineResult
+
+
+def extract_message_from_traceback(tb) -> Message | None:
+    while tb is not None:
+        frame_locals = tb.tb_frame.f_locals
+        if "message" in frame_locals:
+            return frame_locals["message"]
+        else:
+            for value in frame_locals.values():
+                if isinstance(value, UPDATE_TYPES):
+                    return value
+        tb = tb.tb_next
+    return None
+
+
+def extract_message_info(message: Message | None) -> tuple[int, int, str]:
+    message_id = getattr(message, "id", 0)
+    chat = getattr(message, "chat", None)
+
+    if chat is not None:
+        chat_name: str = chat.title or chat.first_name
+        chat_id: int = chat.id
+        return message_id, chat_id, chat_name
+    else:
+        return message_id, 0, ""
 
 
 class TgErrorHandler(Handler):
@@ -37,29 +66,33 @@ class TgErrorHandler(Handler):
         if not (bot.is_connected and bot.is_idling):
             return
 
-        tg_message = getattr(log_record, "tg_message", None)
-
-        if isinstance(tg_message, Message):
-            chat = tg_message.chat
-            chat_name: str = chat.title or chat.first_name
-            chat_id: int = chat.id
-        else:
-            chat_name, chat_id = "", 0
-
         error_message: str = log_record.exc_text or log_record.message
 
         if log_record.funcName in ("handler_worker", "run") and "OSError:" in error_message:
             return
 
+        if hasattr(log_record, "tg_message"):
+            tg_message = log_record.tg_message
+        elif log_record.exc_info:
+            tg_message = extract_message_from_traceback(log_record.exc_info[-1])
+        else:
+            tg_message = None
+
+        message_id, chat_id, chat_name = extract_message_info(tg_message)
+
         text = (
             f"#{log_record.levelname} #TRACEBACK"
-            f"<b>\nChat</b>: <code>{chat_name}</code> [<code>{chat_id}</code>]"
+            f"\n<b>Chat</b>: <code>{chat_name}</code> [<code>{chat_id}</code>]"
+            f"\n<b>Message ID</b>: <code>{message_id}</code>"
             f"\n<b>Line No</b>: <code>{log_record.lineno}</code>"
             f"\n<b>Func</b>: <code>{log_record.funcName}</code>"
-            f"\n<b>Module</b>: <pre language=python>{log_record.pathname}</pre>"
+            f"\n<b>Module</b>: <blockquote>{log_record.pathname}</blockquote>"
             f"\n<b>Time</b>: <code>{log_record.asctime}</code>"
             f"\n<b>Error Message</b>:\n<pre language=python>{error_message}</pre>"
         )
+
+        if not hasattr(log_record, "tg_message") and tg_message:
+            text += f"\nUpdate Object: <pre language=json>{tg_message}</pre>"
 
         asyncio.run_coroutine_threadsafe(
             coro=bot.log_text(text=text, name="traceback.txt"), loop=bot.loop
