@@ -19,7 +19,7 @@ os.makedirs(name="logs", exist_ok=True)
 
 LOGGER = getLogger(Config.BOT_NAME)
 
-UPDATE_TYPES = CallbackQuery, Message, ChosenInlineResult
+UPDATE_TYPES = CallbackQuery, Message, InlineResult
 
 
 def extract_message_from_traceback(tb) -> Message | None:
