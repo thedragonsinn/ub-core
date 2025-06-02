@@ -195,3 +195,28 @@ class Conversation:
             response = await self.get_response(timeout=timeout)
             return message, response
         return message
+
+    async def send_voice(
+        self,
+        voice,
+        caption: str = "",
+        timeout: int = 0,
+        get_response: bool = False,
+        reply_parameters: ReplyParameters = None,
+        **kwargs,
+    ):
+        if reply_to_id := kwargs.pop("reply_to_id", None):
+            reply_parameters = ReplyParameters(message_id=reply_to_id)
+
+        message = await self.client.send_voice(
+            chat_id=self.chat_id,
+            voice=voice,
+            caption=caption,
+            reply_parameters=reply_parameters,
+            **kwargs,
+        )
+
+        if get_response:
+            response = await self.get_response(timeout=timeout)
+            return message, response
+        return message
