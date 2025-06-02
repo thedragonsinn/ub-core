@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ub_core"
+description = "BoilerPlate Code for Bot projects."
+readme = "README.md"
+requires-python = "~=3.11"
+authors = [{ name = "Meliodas" }]
+version = "0.0.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[tool.setuptools]
+packages = ["ub_core"]
+
+[project.scripts]
+run-ub-core = "bin.run-ub-core"
