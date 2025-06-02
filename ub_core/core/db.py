@@ -3,29 +3,34 @@ import logging
 import os
 from typing import Iterable
 
-import dns.resolver
-from motor.core import AgnosticClient, AgnosticCollection, AgnosticDatabase
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from dns import resolver, asyncresolver
+from pymongo import AsyncMongoClient
+from pymongo.asynchronous.collection import AsyncCollection
+from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
 from ..config import Config
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
-dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
-dns.resolver.default_resolver.nameservers = ["8.8.8.8"]
+resolver.default_resolver = resolver.Resolver(configure=False)
+resolver.default_resolver.nameservers = ["8.8.8.8"]
+
+asyncresolver.default_resolver = asyncresolver.Resolver(configure=False)
+asyncresolver.default_resolver.nameservers = ["8.8.8.8"]
+
 
 DB_URI: str = os.environ.get("DB_URL", "").strip()
 DATABASE_NAME = Config.BOT_NAME.lower().replace("-", "_")
 
 
-class CustomCollection(AsyncIOMotorCollection):
+class CustomCollection(AsyncCollection):
     """A Custom Class with a few Extra Methods for ease of access"""
 
-    def __init__(self, collection_name: str, database: AgnosticDatabase):
-        super().__init__(database=database, name=collection_name)
+    def __init__(self, collection_name: str, database: AsyncDatabase):
+        super().__init__(name=collection_name, database=database)
 
-    async def add_data(self: AgnosticCollection, data: dict) -> int | str:
+    async def add_data(self, data: dict) -> int | str:
         """
         Add or Update Existing Data
 
@@ -52,10 +57,12 @@ class CustomCollection(AsyncIOMotorCollection):
             entry: InsertOneResult = await self.insert_one(data)
             return entry.inserted_id
         else:
-            entry: UpdateResult = await self.update_one({"_id": data.pop("_id")}, {"$set": data})
+            entry: UpdateResult = await self.update_one(
+                {"_id": data.pop("_id")}, {"$set": data}
+            )
             return entry.modified_count
 
-    async def delete_data(self: AgnosticCollection, id: int | str) -> int:
+    async def delete_data(self, id: int | str) -> int:
         """
         Delete a DB Collection Entry
 
@@ -68,7 +75,7 @@ class CustomCollection(AsyncIOMotorCollection):
         delete_result: DeleteResult = await self.delete_one({"_id": id})
         return delete_result.deleted_count
 
-    async def increment(self: AgnosticCollection, id: int, key: str, count: int) -> int:
+    async def increment(self, id: int, key: str, count: int) -> int:
         """
         Increment a DB Entry Value for specified key.
 
@@ -83,7 +90,7 @@ class CustomCollection(AsyncIOMotorCollection):
         increment_result = await self.update_one({"_id": id}, {"$inc": {key: count}})
         return increment_result.modified_count
 
-    async def get_total(self: AgnosticCollection, keys: Iterable) -> list[dict]:
+    async def get_total(self, keys: Iterable) -> list[dict]:
         """
         Get Sum for key's value across the Collection
 
@@ -95,20 +102,20 @@ class CustomCollection(AsyncIOMotorCollection):
         """
         data = {key: {"$sum": f"${key}"} for key in keys}
         pipeline = [{"$group": {"_id": None, **data}}]
-        return [results async for results in self.aggregate(pipeline=pipeline)]
+        return [results async for results in await self.aggregate(pipeline=pipeline)]
 
 
 class CustomDatabase:
     def __init__(self, db_uri: str, db_name: str):
-        self._client: AgnosticClient = AsyncIOMotorClient(db_uri)
-        self._db: AgnosticDatabase = self._client[db_name]
+        self._client: AsyncMongoClient = AsyncMongoClient(db_uri)
+        self._db: AsyncDatabase = self._client[db_name]
 
         Config.EXIT_TASKS.append(self._client.close)
 
-    def __getitem__(self, item: str) -> AgnosticCollection | CustomCollection:
+    def __getitem__(self, item: str) -> CustomCollection:
         return CustomCollection(collection_name=item, database=self._db)
 
-    def __call__(self, collection_name) -> AgnosticCollection | CustomCollection:
+    def __call__(self, collection_name) -> CustomCollection:
         LOGGER.warning(
             f"{collection_name} - Deprecated usage of () brackets. Switch to [] brackets."
         )
