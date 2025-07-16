@@ -1,6 +1,7 @@
 import asyncio
 import os
 import shutil
+from collections.abc import AsyncIterator
 from functools import cached_property
 from pathlib import Path
 
@@ -136,10 +137,34 @@ class Download:
     ) -> "Download":
 
         cls_object = cls(
-            url=url, dir=dir, message_to_edit=message_to_edit, custom_file_name=custom_file_name
+            url=url,
+            dir=dir,
+            message_to_edit=message_to_edit,
+            custom_file_name=custom_file_name,
         )
         await cls_object.set_sessions()
         return cls_object
+
+    async def download(self) -> DownloadedFile | None:
+        if self.client_session.closed or self.file_response_session.closed:
+            return
+
+        self.progress_task = asyncio.create_task(self.edit_progress())
+
+        try:
+            await self.write_file()
+            return self.return_file()
+        finally:
+            self.is_done = True
+            await self.close()
+
+    async def iter_chunks(self, chunk_size: int = 5120) -> AsyncIterator[bytes]:
+        """
+        @param chunk_size: size in bytes. defaults to 5120 (5mb)
+        @return: AsyncGenerator
+        """
+        async for chunk in self.file_response_session.content.iter_chunked(chunk_size):
+            yield chunk
 
     def check_disk_space(self) -> None:
         if shutil.disk_usage(self.dir).free < self.size_bytes:
@@ -191,28 +216,11 @@ class Download:
         """File size in MBs"""
         return bytes_to_mb(self.size_bytes)
 
-    async def download(self) -> DownloadedFile | Exception | None:
-        if self.client_session.closed or self.file_response_session.closed:
-            return
-
-        self.progress_task = asyncio.create_task(self.edit_progress())
-
-        exc = None
-        try:
-            await self.write_file()
-        except Exception as e:
-            exc = e
-        finally:
-            self.is_done = True
-            await self.close()
-
-        return exc or self.return_file()
-
     async def write_file(self) -> None:
         async with aiofiles.open(file=self.file_path, mode="wb") as async_file:
-            async for file_chunk in self.file_response_session.content.iter_chunked(5120):
-                await async_file.write(file_chunk)  # NOQA
-                self.completed_size_bytes += 5120
+            async for chunk in self.iter_chunks():
+                await async_file.write(chunk)
+                self.completed_size_bytes += len(chunk)
 
     async def edit_progress(self) -> None:
         if not isinstance(self.message_to_edit, Message):
