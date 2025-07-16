@@ -158,9 +158,9 @@ class Download:
             self.is_done = True
             await self.close()
 
-    async def iter_chunks(self, chunk_size: int = 5120) -> AsyncIterator[bytes]:
+    async def iter_chunks(self, chunk_size: int = 65536) -> AsyncIterator[bytes]:
         """
-        @param chunk_size: size in bytes. defaults to 5120 (5mb)
+        @param chunk_size: size in bytes. defaults to 65536 (64kb)
         @return: AsyncGenerator
         """
         async for chunk in self.file_response_session.content.iter_chunked(chunk_size):
