@@ -63,7 +63,7 @@ class SendMessage(Client):
 
         kwargs.pop("link_preview_options", None)
 
-        doc = BytesIO(bytes(text, encoding="utf-8"))
+        doc = BytesIO(bytes(text_and_entities["message"], encoding="utf-8"))
         doc.name = name
         return (await super().send_document(
             chat_id=chat_id, document=doc, **kwargs
