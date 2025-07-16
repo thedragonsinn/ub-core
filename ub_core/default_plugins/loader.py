@@ -10,10 +10,13 @@ async def loader(bot: BOT, message: Message) -> Message | None:
     """
     CMD: LOAD
     INFO: Load a Bot Plugin.
-    FLAGS: -r to reload a cmd.
+    FLAGS:
+        -r to reload a cmd.
+        -rit call init task on reload
     USAGE:
         .load [reply to plugin]
         .load -r ping
+        .load -rit
     """
     reply: Message = await message.reply("Loading....")
 
@@ -39,12 +42,14 @@ async def loader(bot: BOT, message: Message) -> Message | None:
 
     reload = sys.modules.pop(module, None)
     status: str = "Reloaded" if reload else "Loaded"
+
     try:
-        importlib.import_module(module)
-    except Exception:
-        await reply.edit(str(traceback.format_exc()))
-        return
-    await reply.edit(f"{status} {module}")
+        new_module = importlib.import_module(module)
+        if hasattr(new_module, "init_task"):
+            await new_module.init_task()
+            await reply.edit(f"{status} {module}")
+    except:
+        await reply.edit(f"```\n{traceback.format_exc()}```")
 
 
 if Config.DEV_MODE:

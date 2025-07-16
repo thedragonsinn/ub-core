@@ -28,7 +28,7 @@ class CallbackQuery(Properties, CallbackQueryUpdate):
         super().__init__(**kwargs)
 
         if isinstance(self.data, bytes):
-            self.data = self.data.decode("utf-8")
+            self.data = self.data.decode()
 
         if isinstance(callback_query, CallbackQuery):
             self.text = callback_query.text

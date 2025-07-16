@@ -84,10 +84,11 @@ class Message(Properties, MessageUpdate):
         """Delete Self and Replied if True"""
         try:
             await super().delete()
-            if reply and self.replied:
-                await self.replied.delete()
         except MessageDeleteForbidden:
             pass
+
+        if reply and self.replied:
+            await self.replied.delete()
 
     async def edit(
         self,
