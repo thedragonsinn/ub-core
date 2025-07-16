@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Iterable
 
-from dns import resolver, asyncresolver
+from dns import asyncresolver, resolver
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
@@ -57,9 +57,7 @@ class CustomCollection(AsyncCollection):
             entry: InsertOneResult = await self.insert_one(data)
             return entry.inserted_id
         else:
-            entry: UpdateResult = await self.update_one(
-                {"_id": data.pop("_id")}, {"$set": data}
-            )
+            entry: UpdateResult = await self.update_one({"_id": data.pop("_id")}, {"$set": data})
             return entry.modified_count
 
     async def delete_data(self, id: int | str) -> int:
