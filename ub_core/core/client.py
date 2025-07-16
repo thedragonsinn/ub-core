@@ -53,9 +53,11 @@ class Bot(CustomDecorators, Methods, Client):
             api_hash=getenv("API_HASH"),
             bot_token=bot_token,
             parse_mode=ParseMode.DEFAULT,
-            sleep_threshold=30,
+            sleep_threshold=60,
             storage_engine=FileStorage(name=name, session_string=session_string),
-            max_concurrent_transmissions=2,
+            max_concurrent_transmissions=4,
+            max_message_cache_size=1000,
+            max_business_user_connection_cache_size=1000,
         )
         self.log = LOGGER
         self.Convo = Conversation
