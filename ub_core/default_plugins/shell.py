@@ -57,21 +57,25 @@ async def interactive_shell(bot: BOT, message: Message):
         then keep replying to the bot's messages with shell commands.
     """
     sub_process: shell.InteractiveShell = await shell.InteractiveShell.spawn_shell()
-    reply_to_id = message.id
     try:
         async with bot.Convo(
             client=bot,
             chat_id=message.chat.id,
-            filters=generate_filter(message),
             timeout=180,
+            from_user=message.from_user.id,
+            reply_to_user_id=bot.me.id,
+            reply_to_message_id=None,
         ) as convo:
+            reply_to_id = message.id
             while 1:
-
-                input_prompt, input_cmd = await convo.send_message(
+                input_cmd = await convo.send_message(
                     text="__Reply to this message to pass in the command.__",
                     reply_to_id=reply_to_id,
-                    get_response=True,
                 )
+                reply_to_id = input_cmd.id
+                convo.reply_to_message_id = reply_to_id
+                input_prompt = await convo.get_response()
+
                 input_text = input_cmd.text
 
                 if input_text in ("q", "exit", "cancel", "c"):
@@ -80,10 +84,14 @@ async def interactive_shell(bot: BOT, message: Message):
                     return
 
                 await sub_process.write_input(input_text)
-                stdout_message = await input_cmd.reply(f"__Executing__: ```shell\n{input_text}```")
+
+                stdout_message = await input_cmd.reply(
+                    text=f"__Executing__: ```shell\n{input_text}```",
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+
                 await asyncio.create_task(
-                    sub_process.send_output(stdout_message),
-                    name=f"{stdout_message.chat.id}-{stdout_message.id}",
+                    sub_process.send_output(stdout_message), name=stdout_message.task_id
                 )
 
                 await stdout_message.edit(
@@ -93,7 +101,6 @@ async def interactive_shell(bot: BOT, message: Message):
                     parse_mode=ParseMode.HTML,
                 )
                 sub_process.flush_stdout()
-                reply_to_id = input_cmd.id
 
     except asyncio.exceptions.CancelledError:
         sub_process.cancel()
@@ -104,22 +111,6 @@ async def interactive_shell(bot: BOT, message: Message):
     except BaseException:
         sub_process.cancel()
         raise
-
-
-def generate_filter(message: Message):
-    async def _filter(_, __, msg: Message):
-        if (
-            not msg.text
-            or not msg.from_user
-            or msg.from_user.id != message.from_user.id
-            or not msg.reply_to_message
-            or not msg.reply_to_message.from_user
-            or msg.reply_to_message.from_user.id != message._client.me.id
-        ):
-            return False
-        return True
-
-    return filters.create(_filter)
 
 
 if Config.DEV_MODE:

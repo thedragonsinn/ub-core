@@ -18,6 +18,10 @@ async def check_change(message: Message):
 
 @bot.add_cmd(cmd="mode", allow_sudo=False)
 async def mode_change(bot: BOT, message: Message):
+    """
+    CMD: MODE
+    INFO: Changes mode to bot or dual
+    """
     async with LOCK:
         await check_change(message)
 
