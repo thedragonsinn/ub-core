@@ -42,6 +42,10 @@ async def cmd_info(bot: BOT, message: Message):
 
 @BOT.add_cmd(cmd="s")
 async def search(bot: BOT, message: Message):
+    """
+    CMD: Search
+    INFO: Searches the given string in cmds.
+    """
     search_str = message.input
 
     if not search_str:
