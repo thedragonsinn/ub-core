@@ -11,7 +11,6 @@ from pyrogram.types import ReplyParameters, User
 from pyrogram.utils import parse_text_entities
 
 from .extra_properties import Properties
-from .. import Convo
 from ...config import Config
 
 if TYPE_CHECKING:
@@ -178,7 +177,7 @@ class Message(Properties, MessageUpdate):
 
     async def get_response(self, filters: Filter = None, timeout: int = 8, **kwargs):
         """Get a Future Incoming message in chat where message was sent."""
-        response: Message | None = await Convo.get_resp(
+        response: Message | None = await self._client.Convo.get_resp(
             client=self._client,
             chat_id=self.chat.id,
             filters=filters,

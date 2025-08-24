@@ -3,7 +3,9 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Self
 
 from pyrogram import filters
-from pyrogram.types import Message, ReplyParameters
+from pyrogram.types import ReplyParameters
+
+from .types import Message
 
 if TYPE_CHECKING:
     from .client import DualClient
@@ -108,27 +110,46 @@ class Conversation:
         return conv_filters_result and extra_filters_result
 
     @classmethod
-    async def get_resp(cls, client, *args, **kwargs) -> Message | None:
+    async def get_resp(
+        cls, client, *args, quote: bool = False, lower: bool = False, **kwargs
+    ) -> Message | tuple[str, None | Message] | None:
         """
         Bound Method to Gracefully handle Timeout.
         but only returns first Message.
         """
         try:
             async with cls(*args, client=client, **kwargs) as convo:
-                response: Message | None = await convo.get_response()
+                if quote:
+                    response: tuple[str, Message] = await convo.get_quote_or_text(lower=lower)
+                else:
+                    response: Message | None = await convo.get_response()
                 return response
         except TimeoutError:
-            return
+            return "", None if quote else None
 
     """Methods"""
 
     async def get_response(self, timeout: int = 0) -> Message | None:
         """Returns Latest Message for Specified Filters."""
         try:
-            response: asyncio.Future.result = await asyncio.wait_for(
+            response: Message = await asyncio.wait_for(
                 fut=self.response_future, timeout=timeout or self.timeout
             )
             return response
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}")
+
+    async def get_quote_or_text(self, timeout: int = 0, lower: bool = False) -> tuple[str, Message]:
+        try:
+            response: Message = await asyncio.wait_for(
+                fut=self.response_future, timeout=timeout or self.timeout
+            )
+            if response.quote is not None and response.quote.text:
+                value = response.quote.text
+            else:
+                value = response.content
+            return value.lower() if lower else value, response
+
         except asyncio.TimeoutError:
             raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}")
 
@@ -142,8 +163,8 @@ class Conversation:
         message = await self.client.send_message(chat_id=self.chat_id, text=text, **kwargs)
         if get_response:
             response = await self.get_response(timeout=timeout)
-            return message, response
-        return message
+            return Message.parse(message), Message.parse(response)
+        return Message.parse(message)
 
     async def send_document(
         self,
@@ -167,8 +188,8 @@ class Conversation:
         )
         if get_response:
             response = await self.get_response(timeout=timeout)
-            return message, response
-        return message
+            return Message.parse(message), Message.parse(response)
+        return Message.parse(message)
 
     async def send_photo(
         self,
@@ -193,8 +214,8 @@ class Conversation:
 
         if get_response:
             response = await self.get_response(timeout=timeout)
-            return message, response
-        return message
+            return Message.parse(message), Message.parse(response)
+        return Message.parse(message)
 
     async def send_voice(
         self,
@@ -218,5 +239,5 @@ class Conversation:
 
         if get_response:
             response = await self.get_response(timeout=timeout)
-            return message, response
-        return message
+            return Message.parse(message), Message.parse(response)
+        return Message.parse(message)
