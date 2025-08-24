@@ -6,7 +6,7 @@ from urllib.parse import unquote_plus, urlparse
 
 from multidict import CIMultiDictProxy
 from pyrogram.enums import MessageMediaType
-from pyrogram.types import Message
+from pyrogram.types import Message, Story
 
 
 class MediaType(Enum):
@@ -98,10 +98,10 @@ def get_type(url: str | None = "", path: str | None = "", generic: bool = True) 
         return MediaType.DOCUMENT
 
 
-def get_tg_media_details(message: Message):
+def get_tg_media_details(message: Message | Story):
     match message.media:
         case MessageMediaType.PHOTO:
-            media = message.photo
+            media = message.photo.sizes[-1]
             media.file_name = "photo.png"
         case MessageMediaType.AUDIO:
             media = message.audio
