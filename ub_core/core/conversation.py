@@ -125,7 +125,7 @@ class Conversation:
                     response: Message | None = await convo.get_response()
                 return response
         except TimeoutError:
-            return "", None if quote else None
+            return ("", None) if quote else None
 
     """Methods"""
 
@@ -140,18 +140,13 @@ class Conversation:
             raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}")
 
     async def get_quote_or_text(self, timeout: int = 0, lower: bool = False) -> tuple[str, Message]:
-        try:
-            response: Message = await asyncio.wait_for(
-                fut=self.response_future, timeout=timeout or self.timeout
-            )
-            if response.quote is not None and response.quote.text:
-                value = response.quote.text
-            else:
-                value = response.content
-            return value.lower() if lower else value, response
-
-        except asyncio.TimeoutError:
-            raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}")
+        response: Message = await self.get_response(timeout=timeout)
+        if response.quote is not None and response.quote.text:
+            value = response.quote.text
+        else:
+            value = response.content
+        value = value.lower() if lower else value
+        return value, response
 
     async def send_message(
         self, text: str, timeout: int = 0, get_response: bool = False, **kwargs
