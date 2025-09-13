@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class SendMessage(Client):
-
     # noinspection PyMethodOverriding
     async def send_message(
         self: "BOT",

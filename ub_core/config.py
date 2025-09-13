@@ -2,8 +2,8 @@ import asyncio
 import importlib
 import json
 import logging
+from collections.abc import Callable, Coroutine
 from os import environ, path, sep
-from typing import Callable, Coroutine
 
 from git import InvalidGitRepositoryError, Repo
 

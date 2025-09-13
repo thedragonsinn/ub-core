@@ -1,5 +1,5 @@
 import inspect
-from typing import Callable
+from collections.abc import Callable
 
 from ...config import Cmd, Config
 

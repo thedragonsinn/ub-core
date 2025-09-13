@@ -1,6 +1,6 @@
 from asyncio import iscoroutine, iscoroutinefunction, to_thread
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 
 class MakeAsync:

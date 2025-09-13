@@ -1,6 +1,5 @@
 import asyncio
 
-from pyrogram import filters
 from pyrogram.enums import ParseMode
 
 from ub_core import BOT, Config, Message
@@ -41,7 +40,7 @@ async def live_shell(bot: BOT, message: Message):
         )
     except asyncio.exceptions.CancelledError:
         sub_process.cancel()
-        await reply.edit(f"`Cancelled....`")
+        await reply.edit("`Cancelled....`")
     except BaseException:
         sub_process.cancel()
         raise

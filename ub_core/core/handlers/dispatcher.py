@@ -1,7 +1,7 @@
 import asyncio
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import Callable
 
 from pyrogram import ContinuePropagation, StopPropagation
 from pyrogram.types import Message as MessageUpdate

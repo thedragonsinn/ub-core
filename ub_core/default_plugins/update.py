@@ -46,7 +46,7 @@ async def get_core_update():
     latest_version_parts = [int(i) for i in name.split(".")]
     current_version_parts = [int(x) for x in __version__.split(".")]
 
-    for current, latest in zip(current_version_parts, latest_version_parts):
+    for current, latest in zip(current_version_parts, latest_version_parts, strict=False):
         if current < latest:
             return -1, name  # Current is older
         elif current > latest:

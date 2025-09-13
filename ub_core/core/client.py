@@ -9,7 +9,6 @@ from pathlib import Path
 from signal import SIGINT, raise_signal
 
 from pyrogram import Client, idle
-from pyrogram.enums import ParseMode
 
 from ub_core import ub_core_dirname
 

@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Self
 from pyrogram.enums import MessageEntityType, MessageServiceType
 from pyrogram.errors import MessageDeleteForbidden
 from pyrogram.filters import Filter
-from pyrogram.types import LinkPreviewOptions
+from pyrogram.types import LinkPreviewOptions, ReplyParameters, User
 from pyrogram.types import Message as MessageUpdate
-from pyrogram.types import ReplyParameters, User
 from pyrogram.utils import parse_text_entities
 
 from ...config import Config
@@ -218,7 +217,7 @@ class Message(MessageUpdate):
             if del_in:
                 edited_message = await async_deleter(task=task, del_in=del_in, block=block)
             else:
-                edited_message = Message((await task))  # fmt:skip
+                edited_message = Message(await task)  # fmt:skip
 
             if edited_message is not None:
                 self.text = edited_message.text
@@ -299,7 +298,7 @@ class Message(MessageUpdate):
         if del_in:
             await async_deleter(task=task, del_in=del_in, block=block)
         else:
-            return Message((await task))  # fmt:skip
+            return Message(await task)  # fmt:skip
 
     @staticmethod
     def sanitize_message(kwargs):
@@ -312,7 +311,7 @@ class Message(MessageUpdate):
 
         # Pop Custom Properties
         for arg in dir(Message):
-            is_property = isinstance(getattr(Message, arg, 0), (cached_property, property))
+            is_property = isinstance(getattr(Message, arg, 0), cached_property | property)
             is_present_in_super = hasattr(MessageUpdate, arg)
 
             if is_property and not is_present_in_super:

@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 from pyrogram import Client
 from pyrogram.filters import Filter
