@@ -31,7 +31,6 @@ class FileStorage(FS):
             self.SESSION_STRING_SIZE,
             self.SESSION_STRING_SIZE_64,
         ]:
-
             if string_len == self.SESSION_STRING_SIZE:
                 format = self.OLD_SESSION_STRING_FORMAT
             else:

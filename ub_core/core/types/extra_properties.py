@@ -7,7 +7,6 @@ from pyrogram.types import Message as MessageUpdate
 from ...config import Config
 
 if TYPE_CHECKING:
-
     from . import CallbackQuery, InlineResult, Message
 
     type Supers = Message | CallbackQuery | InlineResult

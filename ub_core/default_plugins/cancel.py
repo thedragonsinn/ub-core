@@ -29,6 +29,6 @@ async def cancel_task(bot: BOT, message: Message) -> Message | None:
     response: str = ""
     for task in tasks:
         status: bool = task.cancel()
-        response += f"Task: <code>{task.get_name()}</code>" f"\nCancelled: <code>{status}</code>\n"
+        response += f"Task: <code>{task.get_name()}</code>\nCancelled: <code>{status}</code>\n"
 
     await message.reply(response, del_in=5)

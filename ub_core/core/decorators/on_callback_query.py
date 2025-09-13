@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from pyrogram import Client
 from pyrogram.filters import Filter
@@ -10,13 +11,11 @@ if TYPE_CHECKING:
 
 
 class OnCallbackQuery(Client):
-
     def on_callback_query(
         self: "DualClient" = None,
         filters: Filter = None,
         group: int = 2,
     ) -> Callable:
-
         def decorator(func: Callable) -> Callable:
             from ..handlers import cmd_dispatcher
 

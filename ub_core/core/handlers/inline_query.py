@@ -18,7 +18,6 @@ from ...config import Config
 
 
 def inline_check(_, __, inline_query: InlineQuery):
-
     if not inline_query.query or not inline_query.from_user:
         return False
 

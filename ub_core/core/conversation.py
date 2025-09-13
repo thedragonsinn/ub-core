@@ -17,7 +17,7 @@ class Conversation:
 
     CONVO_DICT: dict[int, list["Conversation"]] = defaultdict(list)
 
-    class DuplicateConvo(Exception):
+    class DuplicateConvoError(Exception):
         def __init__(self, chat: str | int):
             super().__init__(f"Conversation already started with {chat} ")
 
@@ -33,7 +33,7 @@ class Conversation:
         timeout: int = 10,
     ):
         self.chat_id: int | str = chat_id
-        self.client: "DualClient" = client
+        self.client: DualClient = client
         self.check_for_duplicates: bool = check_for_duplicates
 
         self.filters: filters.Filter = filters
@@ -56,7 +56,7 @@ class Conversation:
             self.chat_id = (await self.client.get_chat(self.chat_id)).id
 
         if self.check_for_duplicates and self.chat_id in Conversation.CONVO_DICT.keys():
-            raise self.DuplicateConvo(self.chat_id)
+            raise self.DuplicateConvoError(self.chat_id)
 
         Conversation.CONVO_DICT[self.chat_id].append(self)
 
@@ -136,8 +136,10 @@ class Conversation:
                 fut=self.response_future, timeout=timeout or self.timeout
             )
             return response
-        except asyncio.TimeoutError:
-            raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}")
+        except TimeoutError as err:
+            raise TimeoutError(
+                f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}"
+            ) from err
 
     async def get_quote_or_text(self, timeout: int = 0, lower: bool = False) -> tuple[str, Message]:
         response: Message = await self.get_response(timeout=timeout)
@@ -195,7 +197,6 @@ class Conversation:
         reply_parameters: ReplyParameters = None,
         **kwargs,
     ) -> Message | tuple[Message, Message]:
-
         if reply_to_id := kwargs.pop("reply_to_id", None):
             reply_parameters = ReplyParameters(message_id=reply_to_id)
 

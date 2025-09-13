@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from pyrogram import Client
 from pyrogram.filters import Filter

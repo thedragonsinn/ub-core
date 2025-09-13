@@ -28,7 +28,7 @@ async def chosen_result_handler(client: BOT, result: ChosenInlineResult):
             text=f"Use `.c -i {result.task_id}` to cancel Inline code execution.",
         )
     except UserIsBlocked:
-        button = InlineKeyboardButton(text=f"Restart Me", url=f"http://t.me/{client.me.username}")
+        button = InlineKeyboardButton(text="Restart Me", url=f"http://t.me/{client.me.username}")
         reply_markup = InlineKeyboardMarkup([[button]])
 
         await result.edit(

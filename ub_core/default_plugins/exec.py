@@ -5,10 +5,11 @@ from io import StringIO
 
 from pyrogram.enums import ParseMode
 
-# isort: off
+# ruff: noqa: F401
 # noinspection PyUnresolvedReferences
 import ub_core
 
+# ruff: noqa: F401
 # noinspection PyUnresolvedReferences
 from ub_core import (
     BOT,
@@ -24,10 +25,9 @@ from ub_core import (
     utils,
 )
 
+# ruff: noqa: F401
 # noinspection PyUnresolvedReferences
 from ub_core.utils import aio, shell
-
-# isort: on
 
 
 def generate_locals(message: Message) -> tuple:

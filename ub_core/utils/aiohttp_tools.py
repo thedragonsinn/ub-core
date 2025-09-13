@@ -116,7 +116,6 @@ class AioServer:
 
 
 class Aio:
-
     def __init__(self):
         """Setup aio object and params"""
         self.session: ClientSession | None = None
@@ -155,7 +154,7 @@ class Aio:
             await asyncio.sleep(self.ping_interval)
             if not await self.get_text(url=self.ping_url):
                 LOGGER.info(
-                    f"Unsuccessful ping task wake-up at {total_seconds//3600} hours after boot."
+                    f"Unsuccessful ping task wake-up at {total_seconds // 3600} hours after boot."
                 )
 
     async def get(

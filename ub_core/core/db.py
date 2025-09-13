@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Iterable
+from collections.abc import Iterable
 
 from dns import asyncresolver, resolver
 from pymongo import AsyncMongoClient

@@ -1,7 +1,7 @@
 import asyncio
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import Callable
 
 from pyrogram import ContinuePropagation, StopPropagation
 from pyrogram.types import CallbackQuery as CallbackQueryUpdate
@@ -45,13 +45,13 @@ async def client_check(client: BOT, message: Message):
 def make_custom_object(
     update: MessageUpdate | CallbackQueryUpdate | InlineResultUpdate,
 ) -> Message | CallbackQuery | InlineResult | None:
-    if isinstance(update, (MessageUpdate, Message)):
+    if isinstance(update, MessageUpdate | Message):
         return Message.parse(update)
 
-    if isinstance(update, (CallbackQueryUpdate, CallbackQuery)):
+    if isinstance(update, CallbackQueryUpdate | CallbackQuery):
         return CallbackQuery.parse(update)
 
-    if isinstance(update, (InlineResult, InlineResultUpdate)):
+    if isinstance(update, InlineResult | InlineResultUpdate):
         return InlineResult.parse(update)
 
 

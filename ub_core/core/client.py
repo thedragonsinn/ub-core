@@ -167,7 +167,7 @@ class DualClient(Bot):
 
         if self._bot:
             await self._bot.start()
-            LOGGER.info(f"[BOT] Connected  to TG.")
+            LOGGER.info("[BOT] Connected  to TG.")
 
         await asyncio.to_thread(self._import)
 

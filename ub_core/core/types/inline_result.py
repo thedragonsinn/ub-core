@@ -44,7 +44,7 @@ class InlineResult(Properties, InlineResultUpdate):
         kwargs.pop("text", 0)
 
         for arg in dir(InlineResult):
-            is_property = isinstance(getattr(InlineResult, arg, 0), (cached_property, property))
+            is_property = isinstance(getattr(InlineResult, arg, 0), cached_property | property)
             is_present_in_super = hasattr(InlineResultUpdate, arg)
 
             if is_property and not is_present_in_super:
