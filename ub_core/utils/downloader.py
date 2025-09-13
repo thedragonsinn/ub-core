@@ -161,11 +161,7 @@ class Download:
         return cls_object
 
     async def download(self) -> DownloadedFile | None:
-        if self.client_session.closed or self.file_response_session.closed:
-            raise RuntimeError("Downloader Client Session(s) closed by website.")
-
         self.progress_task = asyncio.create_task(self.edit_progress())
-
         try:
             await self.write_file()
             return self.return_file()
@@ -254,5 +250,9 @@ class Download:
     def return_file(self) -> DownloadedFile:
         if not self.file_path.is_file():
             raise FileNotFoundError(self.file_path)
+
+        if self.file_path.stat().st_size == 0:
+            self.file_path.unlink()
+            raise ValueError("Downloaded file size equals to 0 and so was removed.")
 
         return DownloadedFile(self.file_path)
