@@ -73,10 +73,24 @@ class Download:
         file = await dl_obj.download()
     """
 
+    _default_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+    }
+
     def __init__(
         self,
         url: str,
         dir: str | Path,
+        headers: dict = None,
         is_encoded_url: bool = False,
         custom_file_name: str | None = None,
         message_to_edit: "Message" = None,
@@ -86,23 +100,25 @@ class Download:
         self.is_encoded_url = is_encoded_url
         self.custom_file_name: str = custom_file_name
         self.use_tg_safe_name = use_tg_safe_name
-        self.message_to_edit: "Message" = message_to_edit
+        self.message_to_edit: Message = message_to_edit
 
         self.dir: Path = Path(dir)
         self.dir.mkdir(parents=True, exist_ok=True)
 
         # noinspection PyTypeChecker
-        self.client_session: "ClientSession" = None
+        self.client_session: ClientSession = None
         # noinspection PyTypeChecker
-        self.file_response_session: "ClientResponse" = None
-        self.headers: "ClientResponse.headers" = None
+        self.file_response_session: ClientResponse = None
+        self.headers: ClientResponse.headers = None
 
         self.completed_size_bytes: int = 0
         self.is_done: bool = False
         self.progress_task: asyncio.Task | None = None
 
+        self._headers = headers or self._default_headers
+
     async def set_sessions(self):
-        self.client_session = ClientSession()
+        self.client_session = ClientSession(headers=self._headers)
         self.file_response_session = await self.client_session.get(
             url=URL(self.url, encoded=self.is_encoded_url)
         )
@@ -135,7 +151,6 @@ class Download:
         message_to_edit: "Message" = None,
         custom_file_name: str | None = None,
     ) -> "Download":
-
         cls_object = cls(
             url=url,
             dir=dir,
@@ -147,7 +162,7 @@ class Download:
 
     async def download(self) -> DownloadedFile | None:
         if self.client_session.closed or self.file_response_session.closed:
-            return
+            raise RuntimeError("Downloader Client Session(s) closed by website.")
 
         self.progress_task = asyncio.create_task(self.edit_progress())
 
