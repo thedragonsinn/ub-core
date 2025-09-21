@@ -115,7 +115,7 @@ class Download:
         self.is_done: bool = False
         self.progress_task: asyncio.Task | None = None
 
-        self._headers = headers or self._default_headers
+        self._headers = headers if headers is not None else self._default_headers
 
     async def set_sessions(self):
         self.client_session = ClientSession(headers=self._headers)
