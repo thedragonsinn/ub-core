@@ -54,6 +54,10 @@ class Message(MessageUpdate):
 
         self._raw = message._raw
 
+    @classmethod
+    def parse(cls, update) -> Self:
+        return update if isinstance(update, Message) else cls(update)
+
     @cached_property
     def cmd(self) -> str | None:
         """Returns First Word of text if it's a valid command."""
