@@ -68,7 +68,9 @@ class TgErrorHandler(Handler):
 
         error_message: str = log_record.exc_text or log_record.message
 
-        if log_record.funcName in ("handler_worker", "run") and "OSError:" in error_message:
+        if log_record.funcName in ("handler_worker", "run") and (
+            "OSError:" in error_message or "The server sent an unknown constructor" in error_message
+        ):
             return
 
         if hasattr(log_record, "tg_message"):
