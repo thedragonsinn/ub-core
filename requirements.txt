@@ -16,7 +16,7 @@ python-dotenv==0.21.0
 
 telegraph>=2.2.0,<2.3.0
 
-uvloop>=0.17.0,<1.0.0
+uvloop==0.21.0
 
 pyrotgfork
 
