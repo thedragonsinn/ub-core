@@ -6,24 +6,20 @@ from setuptools import find_packages, setup
 __version__: str | None = None
 
 
-with open("ub_core/version.py", mode="r", encoding="utf-8") as version_file:
+with open("ub_core/version.py", encoding="utf-8") as version_file:
     exec(version_file.read())
 
 
 def get_platform_requirements() -> list[str]:
-    with open("requirements.txt", mode="r", encoding="utf-8") as req_file:
+    with open("requirements.txt", encoding="utf-8") as req_file:
         packages: list[str] = list(
-            filter(lambda l: not l.startswith("#"), req_file.readlines())
+            filter(lambda l: not l.startswith("#") and l != "\n", req_file.readlines())
         )
 
     if "termux" not in os.environ.get("HOME", ""):
         return packages
 
-    return [
-        package
-        for package in packages
-        if package.split(">")[0] not in ("uvloop", "psutil", "pillow")
-    ]
+    return list(filter(lambda p: not p.startswith(("uvloop", "psutil", "pillow")), packages))
 
 
 def clean_up():
