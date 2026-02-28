@@ -1,13 +1,7 @@
 import asyncio
-from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from pyrogram.enums import MessageEntityType
-from pyrogram.errors import MessageDeleteForbidden
-from pyrogram.filters import Filter
-from pyrogram.types import LinkPreviewOptions, ReplyParameters, User
-from pyrogram.types import Message as MessageUpdate
-from pyrogram.utils import parse_text_entities
+from pyrogram import enums, errors, filters, types, utils
 
 from .extra_properties import Properties
 from ...config import Config
@@ -19,70 +13,48 @@ if TYPE_CHECKING:
     from ..client import DualClient
 
 
-def del_task_cleaner(del_task):
-    Config.BACKGROUND_TASKS.remove(del_task)
-
-
-async def async_deleter(del_in, task, block) -> MessageUpdate | None:
+async def async_deleter(del_in, coro, block) -> types.Message | None:
     """Delete Message w/wo blocking code execution."""
     if block:
-        task_result: MessageUpdate = await task
+        task_result: types.Message = await coro
         await asyncio.sleep(del_in)
         await task_result.delete()
         return task_result
     else:
-        del_task = asyncio.create_task(async_deleter(del_in=del_in, task=task, block=True))
-        Config.BACKGROUND_TASKS.append(del_task)
-        del_task.add_done_callback(del_task_cleaner)
+        Config.TASK_MANAGER.create_temp_task(
+            async_deleter(del_in=del_in, coro=coro, block=True), name=str(coro)
+        )
 
 
-class Message(Properties, MessageUpdate):
+class Message(Properties, types.Message):
     """A Custom Message Class with ease of access methods"""
 
     _client: "DualClient"
 
-    def __init__(self, message: MessageUpdate | Self) -> None:
-        super().__init__(**self.sanitize_message(message))
+    def __init__(self, message: types.Message | Self) -> None:
+        super().__init__(**self.sanitize_update(message, _Super=types.Message, _SubClass=Message))
 
         self._replied = None
-        self._reply_to_message: MessageUpdate | None = message.reply_to_message
+        self._reply_to_message: types.Message | None = message.reply_to_message
 
         if self._reply_to_message:
             self._replied = Message.parse(self._reply_to_message)
-
-        self._raw = message._raw
-
-    @staticmethod
-    def sanitize_message(message) -> dict:
-        """Remove Extra/Custom Attrs from Message Object"""
-        kwargs = vars(message).copy()
-        kwargs["client"] = kwargs.pop("_client", message._client)
-
-        # Pop Private Variables
-        for attr_name in list(kwargs.keys()):
-            if attr_name.startswith("_"):
-                kwargs.pop(attr_name)
-
-        # Pop Custom Properties
-        for arg in dir(Message):
-            is_property = isinstance(getattr(Message, arg, 0), cached_property | property)
-            is_present_in_super = hasattr(MessageUpdate, arg)
-
-            if is_property and not is_present_in_super:
-                kwargs.pop(arg, 0)
-
-        return kwargs
 
     @classmethod
     def parse(cls, update) -> Self:
         return update if isinstance(update, Message) else cls(update)
 
-    async def delete(self, reply: bool = False) -> None:
+    async def delete(self, reply: bool = False, revoke: bool = True) -> None:
         """Delete Self and Replied if True"""
-        try:
-            await super().delete()
-        except MessageDeleteForbidden:
-            pass
+        has_del_perm = self.chat.admin_privileges and self.chat.admin_privileges.can_delete_messages
+        outgoing = self.outgoing
+        is_regular_group = self.chat.type == enums.ChatType.GROUP
+
+        if any((has_del_perm, outgoing, is_regular_group and self._client.is_user)):
+            try:
+                await super().delete(revoke=revoke)
+            except errors.MessageDeleteForbidden:
+                pass
 
         if reply and self.replied:
             await self.replied.delete()
@@ -101,11 +73,11 @@ class Message(Properties, MessageUpdate):
         """Edit self.text or send a file with text if text length exceeds 4096 chars"""
 
         if isinstance(disable_preview, bool):
-            kwargs["link_preview_options"] = LinkPreviewOptions(is_disabled=disable_preview)
+            kwargs["link_preview_options"] = types.LinkPreviewOptions(is_disabled=disable_preview)
 
         parse_mode = parse_mode or self._client.parse_mode
 
-        text_and_entities = await parse_text_entities(
+        text_and_entities = await utils.parse_text_entities(
             client=self._client,
             text=text,
             parse_mode=parse_mode,
@@ -118,7 +90,7 @@ class Message(Properties, MessageUpdate):
             task = super().edit_text(text=text, parse_mode=parse_mode, entities=entities, **kwargs)
 
             if del_in:
-                edited_message = await async_deleter(task=task, del_in=del_in, block=block)
+                edited_message = await async_deleter(coro=task, del_in=del_in, block=block)
             else:
                 edited_message = Message(await task)  # fmt:skip
 
@@ -141,7 +113,7 @@ class Message(Properties, MessageUpdate):
             )
         return edited_message
 
-    async def extract_user_n_reason(self) -> tuple[User | str | Exception, str | None]:
+    async def extract_user_n_reason(self) -> tuple[types.User | str | Exception, str | None]:
         if self.replied:
             return self.replied.from_user, self.filtered_input
 
@@ -160,7 +132,7 @@ class Message(Properties, MessageUpdate):
             reason = input_text_list[1]
         if self.entities:
             for entity in self.entities:
-                if entity == MessageEntityType.MENTION:
+                if entity == enums.MessageEntityType.TEXT_MENTION:
                     return entity.user, reason
 
         if user.isdigit():
@@ -169,11 +141,11 @@ class Message(Properties, MessageUpdate):
             user = user.strip("@")
 
         try:
-            return (await self._client.get_users(user_ids=user)), reason
+            return await self._client.get_users(user_ids=user), reason
         except Exception:
             return user, reason
 
-    async def get_response(self, filters: Filter = None, timeout: int = 8, **kwargs):
+    async def get_response(self, filters: "filters.Filter" = None, timeout: int = 8, **kwargs):
         """Get a Future Incoming message in chat where message was sent."""
         response: Message | None = await self._client.Convo.get_resp(
             client=self._client,
@@ -184,9 +156,9 @@ class Message(Properties, MessageUpdate):
         )
         return response
 
-    async def log(self):
+    async def log(self) -> Self:
         """Forward Self to Log Channel"""
-        return (await self._client.log_message(self))  # fmt:skip
+        return Message(await self._client.log_message(self))
 
     async def reply(
         self,
@@ -194,7 +166,7 @@ class Message(Properties, MessageUpdate):
         del_in: int = 0,
         block: bool = True,
         disable_preview: bool = False,
-        reply_parameters: ReplyParameters = None,
+        reply_parameters: types.ReplyParameters = None,
         **kwargs,
     ) -> "Message":
         """reply text or send a file with text if text length exceeds 4096 chars"""
@@ -202,10 +174,11 @@ class Message(Properties, MessageUpdate):
             chat_id=self.chat.id,
             text=text,
             disable_preview=disable_preview,
-            reply_parameters=reply_parameters or ReplyParameters(message_id=self.id),
+            reply_parameters=reply_parameters or types.ReplyParameters(message_id=self.id),
+            message_thread_id=self.message_thread_id,
             **kwargs,
         )
         if del_in:
-            await async_deleter(task=task, del_in=del_in, block=block)
+            await async_deleter(coro=task, del_in=del_in, block=block)
         else:
-            return Message(await task)  # fmt:skip
+            return Message(await task)

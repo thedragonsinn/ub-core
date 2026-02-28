@@ -143,7 +143,7 @@ class Properties:
     @cached_property
     def trigger(self: "Supers") -> str:
         """Returns Cmd or Sudo Trigger"""
-        # Legacy w/o db and sudo support
+        # Legacy w/o db and allow_sudo support
         if hasattr(Config, "TRIGGER"):
             return Config.TRIGGER
 
@@ -156,3 +156,28 @@ class Properties:
     def unique_chat_user_id(self: "Supers") -> int | str:
         chat_id = self.chat.id if hasattr(self, "chat") else ""
         return f"{chat_id}-{self.from_user.id}" if self.from_user else 0
+
+    @staticmethod
+    def sanitize_update(
+        update: "Supers", _Super, _SubClass, instance_variables_to_rm: list[str] = None
+    ) -> dict:
+        """Remove Extra/Custom Attrs from Message Object"""
+        kwargs = vars(update).copy()
+        # Pop Private Variables
+        [kwargs.pop(attr_name) for attr_name in list(kwargs.keys()) if attr_name.startswith("_")]
+        # Pop Extra vars present after initialising custom class
+        [kwargs.pop(key, 0) for key in (instance_variables_to_rm or [])]
+        # Pop Custom Properties
+        for arg in dir(_SubClass):
+            is_property = isinstance(getattr(_SubClass, arg, 0), cached_property | property)
+            is_not_present_in_super = not hasattr(_Super, arg)
+
+            if is_property and is_not_present_in_super:
+                kwargs.pop(arg, 0)
+
+        kwargs["client"] = update._client
+
+        if hasattr(update, "_raw"):
+            kwargs["_raw"] = update._raw
+
+        return kwargs
