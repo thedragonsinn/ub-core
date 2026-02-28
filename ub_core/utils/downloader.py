@@ -147,17 +147,19 @@ class Download:
     async def setup(
         cls,
         url: str,
-        dir: str = "downloads",
+        dir: str | Path = "downloads",
         message_to_edit: "Message" = None,
         custom_file_name: str | None = None,
+        **kwargs,
     ) -> "Download":
         cls_object = cls(
             url=url,
             dir=dir,
             message_to_edit=message_to_edit,
             custom_file_name=custom_file_name,
+            **kwargs,
         )
-        await cls_object.set_sessions()
+        await cls_object.__aenter__()
         return cls_object
 
     async def download(self) -> DownloadedFile | None:
