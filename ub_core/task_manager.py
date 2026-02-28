@@ -192,9 +192,7 @@ class TaskManager:
         if no args are given, get all tasks
         """
         if task_type and task_type not in self._store.keys():
-            raise TypeError(
-                f"get_tasks: Got unexpected type: {task_type}\nAvailable: {self._store.keys()}"
-            )
+            raise TypeError(f"get_tasks: Got unexpected type: {task_type}\nAvailable: {self._store.keys()}")
 
         set_to_search = (self._store.get(task_type) or self.all_tasks).copy()
 

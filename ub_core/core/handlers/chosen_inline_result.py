@@ -35,9 +35,7 @@ async def chosen_result_handler(client: BOT, result: ChosenInlineResult):
         button = InlineKeyboardButton(text="Restart Me", url=f"http://t.me/{client.me.username}")
         reply_markup = InlineKeyboardMarkup([[button]])
 
-        await result.edit(
-            text=f"You have Blocked @{client.me.username}.", reply_markup=reply_markup
-        )
+        await result.edit(text=f"You have Blocked @{client.me.username}.", reply_markup=reply_markup)
         return
 
     await cmd_dispatcher(client=client, update=result, mode_sensitive=False, is_command=False)

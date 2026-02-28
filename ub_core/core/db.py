@@ -118,7 +118,5 @@ class CustomDatabase:
         return CustomCollection(collection_name=item, database=self._db)
 
     def __call__(self, collection_name) -> CustomCollection:
-        LOGGER.warning(
-            f"{collection_name} - Deprecated usage of () brackets. Switch to [] brackets."
-        )
+        LOGGER.warning(f"{collection_name} - Deprecated usage of () brackets. Switch to [] brackets.")
         return CustomCollection(collection_name=collection_name, database=self._db)

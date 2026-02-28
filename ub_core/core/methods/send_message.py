@@ -51,9 +51,6 @@ class SendMessage(Client):
             message = await super().send_message(
                 chat_id=chat_id,
                 text=text,
-                # Pyrogram Shenanigans for not accepting parsed values.
-                # text=text_and_entities["message"],
-                # entities=text_and_entities["entities"],
                 entities=entities,
                 parse_mode=parse_mode,
                 **kwargs,
@@ -64,6 +61,4 @@ class SendMessage(Client):
 
         doc = BytesIO(bytes(text_and_entities["message"], encoding="utf-8"))
         doc.name = name
-        return (await super().send_document(
-            chat_id=chat_id, document=doc, **kwargs
-        ))  # fmt: skip
+        return await super().send_document(chat_id=chat_id, document=doc, **kwargs)

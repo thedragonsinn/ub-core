@@ -54,9 +54,7 @@ class Properties:
         returns: do something here
         """
         split_lines = self.input.split(sep="\n", maxsplit=1)
-        split_lines[0] = " ".join(
-            [word for word in split_lines[0].split(" ") if word not in self.flags]
-        )
+        split_lines[0] = " ".join([word for word in split_lines[0].split(" ") if word not in self.flags])
         return "\n".join(split_lines)
 
     @cached_property

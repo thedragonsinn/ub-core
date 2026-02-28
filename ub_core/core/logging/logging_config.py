@@ -28,7 +28,7 @@ class ColorFormatter(Formatter):
         if getattr(record, "raw", False):
             return record.getMessage() or record.exc_text
 
-        record.asctime = self.formatTime(record, self.datefmt)  
+        record.asctime = self.formatTime(record, self.datefmt)
 
         if self.handler_name == "stream_handler" and os.getenv("COLORTERM") == "truecolor":
             level_color = COLORS.get(record.levelno, "")
@@ -57,9 +57,7 @@ custom_network_error_handler.setLevel(WARNING)
 custom_network_error_handler.setFormatter(ColorFormatter("network_error_handler"))
 
 
-file_handler = handlers.TimedRotatingFileHandler(
-    filename="logs/app_logs.txt", when="W3", encoding="utf-8"
-)
+file_handler = handlers.TimedRotatingFileHandler(filename="logs/app_logs.txt", when="W3", encoding="utf-8")
 file_handler.setFormatter(ColorFormatter("file_handler"))
 
 stream_handler = StreamHandler()

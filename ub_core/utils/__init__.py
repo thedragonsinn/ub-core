@@ -1,8 +1,8 @@
 from .aiohttp_tools import Aio
 from .downloader import Download, DownloadedFile
-from .helpers import extract_user_data, get_name, post_to_telegraph, progress
+from .helpers import extract_user_data, get_name, post_to_telegraph, progress, run_unknown_callable
 from .media_helper import (
-    MediaExts,
+    MediaExtensions,
     MediaType,
     bytes_to_mb,
     get_filename_from_headers,

@@ -81,9 +81,7 @@ class CallbackQuery(Properties, types.CallbackQuery):
         else:
             doc = BytesIO(bytes(text, encoding="utf-8"))
             doc.name = name
-            await self.edit_message_media(
-                media=types.InputMediaDocument(media=doc, file_name=doc.name)
-            )
+            await self.edit_message_media(media=types.InputMediaDocument(media=doc, file_name=doc.name))
         return self
 
     async def edit_message_media(self, *args, **kwargs) -> Self:

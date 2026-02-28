@@ -31,9 +31,7 @@ async def callback_handler(client: BOT, callback_query: CallbackQueryUpdate) -> 
     except UserIsBlocked:
         button = InlineKeyboardButton(text="Restart Me", url=f"http://t.me/{client.me.username}")
         reply_markup = InlineKeyboardMarkup([[button]])
-        await callback_query.edit(
-            text=f"You have Blocked @{client.me.username}.", reply_markup=reply_markup
-        )
+        await callback_query.edit(text=f"You have Blocked @{client.me.username}.", reply_markup=reply_markup)
         return
 
     await callback_query.edit_message_reply_markup()

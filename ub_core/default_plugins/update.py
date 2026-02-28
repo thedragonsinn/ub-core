@@ -66,9 +66,7 @@ async def handle_core_update(bot: BOT, message: Message, reply: Message):
             run_shell_cmd(
                 f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"
             ),
-            reply.edit(
-                f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"
-            ),
+            reply.edit(f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"),
         )
         bot.raise_sigint()
 
@@ -117,9 +115,7 @@ async def updater(bot: BOT, message: Message) -> None | Message:
     await asyncio.gather(
         bot.log_text(text=f"#Updater\nPulled:\n{commits}", disable_preview=True),
         reply.edit("<b>Update Found</b>\n<code>Pulling....</code>"),
-        run_shell_cmd(
-            f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"
-        ),
+        run_shell_cmd(f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"),
     )
 
     bot.raise_sigint()

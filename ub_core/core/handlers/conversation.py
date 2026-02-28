@@ -6,8 +6,7 @@ from ..handlers import create, valid_chat_filter
 from ...core.conversation import Conversation
 
 CONVO_FILTER = valid_chat_filter & create(
-    lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys())
-    and (not message.reactions)
+    lambda _, __, message: (message.chat.id in Conversation.CONVO_DICT.keys()) and (not message.reactions)
 )
 
 

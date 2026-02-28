@@ -30,13 +30,9 @@ class RegisterTask:
                     )
 
             if task_type == "exit":
-                Config.TASK_MANAGER.create_task(
-                    func, name=name, task_type=task_type, replace=replace
-                )
+                Config.TASK_MANAGER.create_task(func, name=name, task_type=task_type, replace=replace)
             else:
-                Config.TASK_MANAGER.create_task(
-                    func(), name=name, task_type=task_type, replace=replace
-                )
+                Config.TASK_MANAGER.create_task(func(), name=name, task_type=task_type, replace=replace)
             return func
 
         return inner

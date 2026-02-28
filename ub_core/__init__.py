@@ -33,4 +33,4 @@ from .version import __version__
 bot: DualClient = DualClient()
 BOT = DualClient
 
-from .core.logger import LOGGER
+from .core.logging import LOGGER

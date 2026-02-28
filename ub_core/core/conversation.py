@@ -93,9 +93,7 @@ class Conversation:
 
             if self.reply_to_user_id:
                 replied = message.reply_to_message
-                assert (
-                    replied and replied.from_user and replied.from_user.id == self.reply_to_user_id
-                )
+                assert replied and replied.from_user and replied.from_user.id == self.reply_to_user_id
             return True
         except AssertionError:
             return False
@@ -137,9 +135,7 @@ class Conversation:
             )
             return response
         except TimeoutError as err:
-            raise TimeoutError(
-                f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}"
-            ) from err
+            raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}") from err
 
     async def get_quote_or_text(self, timeout: int = 0, lower: bool = False) -> tuple[str, Message]:
         response: Message = await self.get_response(timeout=timeout)

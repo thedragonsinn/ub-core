@@ -1,4 +1,3 @@
-import inspect
 from collections.abc import Callable
 
 from ...config import Config
