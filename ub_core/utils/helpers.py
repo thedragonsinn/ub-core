@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import time
 from collections import defaultdict
+from inspect import isawaitable, iscoroutine, iscoroutinefunction
 from typing import Any
 
 from pyrogram.enums import ParseMode
@@ -25,12 +27,10 @@ async def init_task():
     TELEGRAPH = Telegraph()
     try:
         await TELEGRAPH.create_account(
-            short_name=Config.BOT_NAME,
-            author_name=Config.BOT_NAME,
-            author_url=Config.UPSTREAM_REPO,
+            short_name=Config.BOT_NAME, author_name=Config.BOT_NAME, author_url=Config.UPSTREAM_REPO
         )
-    except Exception:
-        LOGGER.error("Failed to Create Telegraph Account.")
+    except Exception as e:
+        LOGGER.error(f"Failed to Create Telegraph Account: {e}")
 
 
 async def post_to_telegraph(
@@ -40,10 +40,7 @@ async def post_to_telegraph(
     author_url: str = Config.UPSTREAM_REPO,
 ) -> str:
     telegraph = await TELEGRAPH.create_page(
-        title=title,
-        html_content=f"<p>{text}</p>",
-        author_name=author_name,
-        author_url=author_url,
+        title=title, html_content=f"<p>{text}</p>", author_name=author_name, author_url=author_url
     )
     return telegraph["url"]
 
@@ -68,11 +65,7 @@ def format_time(seconds):
 
 
 async def progress(
-    current_size: int,
-    total_size: int,
-    response: Message,
-    action_str: str = "",
-    file_path: str = "",
+    current_size: int, total_size: int, response: Message, action_str: str = "", file_path: str = ""
 ):
     if current_size == total_size:
         PROGRESS_DICT.pop(file_path, 0)
@@ -130,3 +123,21 @@ def create_chunks(array: list[Any], chunk_size: int = 5) -> list[list[Any]]:
     Defaults to chunks of 5
     """
     return [array[idx : idx + chunk_size] for idx in range(0, len(array), chunk_size)]
+
+
+async def run_unknown_callable(resource, *args, ignore_errors: bool = False, **kwargs) -> Any:
+    try:
+        if resource is None:
+            return
+        elif iscoroutinefunction(resource):
+            return await resource(*args, **kwargs)
+        elif iscoroutine(resource) or isawaitable(resource):
+            return await resource
+        else:
+            return await asyncio.to_thread(resource, *args, **kwargs)
+    except Exception as e:
+        if ignore_errors:
+            LOGGER.exception(e)
+        else:
+            raise
+    return None
