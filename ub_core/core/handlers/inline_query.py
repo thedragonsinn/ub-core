@@ -1,5 +1,4 @@
 import asyncio
-from functools import partial
 from uuid import uuid4
 
 from pyrogram.handlers import InlineQueryHandler
@@ -22,12 +21,10 @@ def inline_check(_, __, inline_query: InlineQuery):
         return False
 
     user_id = inline_query.from_user.id
-    supers = [Config.OWNER_ID, *Config.SUPERUSERS]
 
-    if user_id not in Config.SUDO_USERS + supers:
+    super_user = user_id == Config.OWNER_ID or user_id in Config.SUPERUSERS
+    if not super_user and user_id not in Config.SUDO_USERS:
         return False
-
-    super = user_id in supers
 
     query_list: list = inline_query.query.split(maxsplit=1)
 
@@ -37,19 +34,13 @@ def inline_check(_, __, inline_query: InlineQuery):
     if not cmd_obj:
         return False
 
-    if not super:
+    if not super_user:
         return check_sudo_access(cmd_obj)
 
     return True
 
 
 INLINE_FILTER = create(inline_check)
-
-
-def clean_cache(task, key, uuid_4):
-    Config.INLINE_QUERY_CACHE.pop(key, 0)
-    Config.INLINE_RESULT_CACHE.discard(uuid_4)
-    Config.BACKGROUND_TASKS.remove(task)
 
 
 async def inline_handler(_, inline_query: InlineQuery):
@@ -66,14 +57,19 @@ async def inline_handler(_, inline_query: InlineQuery):
         reply_markup=reply_markup,
     )
 
-    cleaner_task = asyncio.create_task(asyncio.sleep(60))
+    Config.TASK_MANAGER.create_temp_task(
+        asyncio.sleep(60),
+        name="inline_handler_cache",
+        extra_callback=lambda: (
+            Config.INLINE_QUERY_CACHE.pop(inline_query.id, 0),
+            Config.INLINE_RESULT_CACHE.discard(result.id),
+        ),
+    )
 
-    cleaner_task.add_done_callback(partial(clean_cache, key=inline_query.id, uuid_4=result.id))
     Config.INLINE_QUERY_CACHE[inline_query.id] = {
         "cmd": cmd,
         "text": inline_query.query,
     }
-    Config.BACKGROUND_TASKS.append(cleaner_task)
     Config.INLINE_RESULT_CACHE.add(result.id)
 
     await inline_query.answer(results=[result], cache_time=0)

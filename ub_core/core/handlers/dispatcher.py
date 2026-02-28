@@ -12,7 +12,7 @@ from ub_core import BOT, Config
 
 from ..types import CallbackQuery, InlineResult, Message
 
-USER_IS_PROCESSING_MESSAGE: list[int] = []
+USER_IS_PROCESSING_MESSAGE: set[int] = set()
 
 MESSAGE_TEXT_CACHE: dict[str, str] = defaultdict(str)
 
@@ -33,13 +33,19 @@ def anti_reaction(message: Message):
 
 
 async def client_check(client: BOT, message: Message):
-    if Config.MODE == "dual":
-        if client.is_user:
-            USER_IS_PROCESSING_MESSAGE.append(message.id)
-        else:
-            await asyncio.sleep(0.5)
-            if message.id in USER_IS_PROCESSING_MESSAGE:
-                message.stop_propagation()
+    if Config.MODE != "dual":
+        return
+
+    if client.is_user:
+        USER_IS_PROCESSING_MESSAGE.add(message.id)
+        return
+
+    # Sleep 0.5 to let user client receive the message and process it
+    await asyncio.sleep(0.5)
+    # If message was processed by User Stop Message Processing
+    if message.id in USER_IS_PROCESSING_MESSAGE:
+        USER_IS_PROCESSING_MESSAGE.discard(message.id)
+        message.stop_propagation()
 
 
 def make_custom_object(
@@ -85,8 +91,15 @@ async def cmd_dispatcher(
 
     try:
         await task
-        if is_command and update.is_from_owner:
-            await update.delete()
+        if is_command:
+            if update.is_from_owner:
+                await update.delete()
+
+            from ..logging.cmd_usage_logger import record_usage
+
+            record_usage(update)
+
+            update.stop_propagation()
 
     except asyncio.exceptions.CancelledError:
         await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{update.text}</code>")
@@ -97,9 +110,7 @@ async def cmd_dispatcher(
     except Exception as e:
         client.log.error(e, exc_info=True, extra={"tg_message": update})
 
-    if not client.is_bot and update.id in USER_IS_PROCESSING_MESSAGE:
-        await asyncio.sleep(1)
-        USER_IS_PROCESSING_MESSAGE.remove(update.id)
-
-    if is_command:
-        update.stop_propagation()
+    finally:
+        if not client.is_bot and update.id in USER_IS_PROCESSING_MESSAGE:
+            await asyncio.sleep(1)
+            USER_IS_PROCESSING_MESSAGE.discard(update.id)

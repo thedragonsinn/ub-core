@@ -16,15 +16,15 @@ def client_check(_, client: BOT, message: Message):
 
 
 def check_sudo_access(cmd_obj: Cmd):
-    in_loaded = cmd_obj.loaded
-    has_access = cmd_obj.sudo
-    return in_loaded and has_access
+    is_loaded_for_use = cmd_obj.loaded_for_sudo
+    has_access = cmd_obj.allow_sudo
+    return is_loaded_for_use and has_access
 
 
 def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
     """
     Check if first word of message is a valid cmd \n
-    if sudo: check if sudo users have access to the cmd.
+    if allow_sudo: check if allow_sudo users have access to the cmd.
     """
     start_str = message.text.split(maxsplit=1)[0]
     cmd = start_str.replace(trigger, "", 1)
