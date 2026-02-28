@@ -1,16 +1,13 @@
 import asyncio
 import importlib
 import logging
+import os
+import signal
 import sys
-from functools import cached_property
-from inspect import iscoroutine, iscoroutinefunction
-from os import getenv, path
+import typing
 from pathlib import Path
-from signal import SIGINT, raise_signal
-from typing import Self
 
-from pyrogram import Client, idle
-from pyrogram.enums import ParseMode
+import pyrogram
 
 from ub_core import ub_core_dirname
 
@@ -18,7 +15,6 @@ from . import CustomDB
 from .conversation import Conversation
 from .decorators import CustomDecorators
 from .methods import Methods
-from .storage import FileStorage
 from ..config import Config
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
@@ -34,27 +30,28 @@ def import_modules(dir_name):
         modules = [str(m).split("site-packages/")[1] for m in modules]
 
     for py_module in modules:
-        name = path.splitext(py_module)[0]
+        name = os.path.splitext(py_module)[0]
         py_name = name.replace("/", ".")
         try:
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
-                Config.INIT_TASKS.append(mod.init_task())
+                Config.TASK_MANAGER.create_task(mod.init_task(), task_type="init")
         except Exception as ie:
             LOGGER.error(ie, exc_info=True)
 
 
-class Bot(CustomDecorators, Methods, Client):
+class Bot(CustomDecorators, Methods, pyrogram.Client):
     def __init__(self, bot_token: str | None = None, session_string: str | None = None):
         name = Config.BOT_NAME + ("-bot" if bot_token else "")
         super().__init__(
             name=name,
-            api_id=int(getenv("API_ID")),
-            api_hash=getenv("API_HASH"),
+            api_id=int(os.getenv("API_ID")),
+            api_hash=os.getenv("API_HASH"),
             bot_token=bot_token,
-            parse_mode=ParseMode.DEFAULT,
+            in_memory=False,
+            parse_mode=pyrogram.enums.ParseMode.DEFAULT,
+            session_string=session_string,
             sleep_threshold=60,
-            storage_engine=FileStorage(name=name, session_string=session_string),
             max_concurrent_transmissions=4,
             max_message_cache_size=1000,
             max_business_user_connection_cache_size=1000,
@@ -63,11 +60,11 @@ class Bot(CustomDecorators, Methods, Client):
         self.Convo = Conversation
         self.exit_code = 0
 
-    @cached_property
+    @property
     def is_bot(self):
         return self.me.is_bot
 
-    @cached_property
+    @property
     def is_user(self):
         return not self.me.is_bot
 
@@ -75,7 +72,7 @@ class Bot(CustomDecorators, Methods, Client):
 class DualClient(Bot):
     """A custom Class to Handle Both User and Bot client"""
 
-    def __init__(self, force_bot: bool = False, _user: Self | None = None):
+    def __init__(self, force_bot: bool = False, _user: typing.Self | None = None):
         """
         Initialise the class as per config vars.
         If both the bot token and string are available, boot into dual mode.
@@ -85,8 +82,8 @@ class DualClient(Bot):
         self._user = _user
         self.is_idling = False
 
-        session_string = getenv("SESSION_STRING")
-        bot_token = getenv("BOT_TOKEN")
+        session_string = os.getenv("SESSION_STRING")
+        bot_token = os.getenv("BOT_TOKEN")
 
         if force_bot:
             # BOT INIT WHEN DUAL MODE
@@ -105,11 +102,11 @@ class DualClient(Bot):
         # BOT ONLY MODE
         super().__init__(bot_token=bot_token)
 
-    @cached_property
+    @property
     def bot(self) -> "DualClient":
         return self if self.is_bot else self._bot
 
-    @cached_property
+    @property
     def user(self) -> "DualClient":
         return self if self.is_user else self._user
 
@@ -121,11 +118,11 @@ class DualClient(Bot):
     def client_type(self) -> str:
         return "User" if self.is_user else "Bot"
 
-    @cached_property
+    @property
     def has_bot(self) -> bool:
         return self._bot is not None
 
-    @cached_property
+    @property
     def has_user(self) -> bool:
         return self._user is not None
 
@@ -149,17 +146,6 @@ class DualClient(Bot):
 
         LOGGER.info("Plugins Imported.")
 
-    @staticmethod
-    async def _run_init_tasks():
-        results = await asyncio.gather(*Config.INIT_TASKS, return_exceptions=True)
-
-        for result in results:
-            if isinstance(result, BaseException):
-                LOGGER.exception(result)
-
-        Config.INIT_TASKS.clear()
-        LOGGER.info("Init Tasks Completed.")
-
     async def boot(self) -> None:
         await super().start()
 
@@ -170,19 +156,18 @@ class DualClient(Bot):
             LOGGER.info("[BOT] Connected  to TG.")
 
         await asyncio.to_thread(self._import)
-
         await self.set_mode(force_bot=self.is_bot)
-
-        await self._run_init_tasks()
+        await Config.TASK_MANAGER.run_init_tasks()
 
         await self.log_text(text="<i>Started</i>")
-
         LOGGER.info(f"Idling on [{Config.MODE.upper()}] Mode...")
-
         self.is_idling = True
-        await idle()
+        await pyrogram.idle()
 
         await self.shut_down()
+
+        # for readability of logs.
+        LOGGER.info(f"\n\n{'#' * 10} < End of run > {'#' * 10}\n\n", extra={"raw": True})
 
         sys.exit(self.exit_code)
 
@@ -191,7 +176,7 @@ class DualClient(Bot):
             self.user.exit_code = 69
         else:
             self.exit_code = 69
-        raise_signal(SIGINT)
+        signal.raise_signal(signal.SIGINT)
 
     async def stop_clients(self) -> None:
         if self.user:
@@ -204,23 +189,7 @@ class DualClient(Bot):
 
     async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
-
-        LOGGER.info("Stopping all processes and running Exit Tasks.")
-
-        for task in Config.BACKGROUND_TASKS:
-            if not task.done():
-                task.cancel()
-
-        for resource in Config.EXIT_TASKS:
-            if resource is None:
-                continue
-            elif iscoroutinefunction(resource):
-                await resource()
-            elif iscoroutine(resource):
-                await resource
-            else:
-                resource()
-
+        LOGGER.info("Stopping all processes...")
+        await Config.TASK_MANAGER.close_and_run_exit_tasks()
         await self.stop_clients()
-
-        LOGGER.info("Exit Tasks Completed... Exiting...")
+        LOGGER.info(" Exiting...")
