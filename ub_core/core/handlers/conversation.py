@@ -20,11 +20,11 @@ CONVO_FILTER = valid_chat_filter & create(
 )
 async def convo_handler(client: BOT, message: MessageUpdate):
     """Check for convo filter and update convo future accordingly"""
-    conv_objects: list[Conversation] = Conversation.CONVO_DICT[message.chat.id]
+    conv_objects: set[Conversation] = Conversation.CONVO_DICT[message.chat.id]
 
     for conv_object in conv_objects:
         if await conv_object.match_filters(client, message):
+            await conv_object.response_queue.put(message)
             conv_object.responses.append(message)
-            conv_object.response_future.set_result(message)
 
     message.continue_propagation()

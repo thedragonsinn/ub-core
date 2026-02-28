@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 from collections import defaultdict
 from typing import TYPE_CHECKING, Self
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 class Conversation:
     """A Custom Class to get responses from chats"""
 
-    CONVO_DICT: dict[int, list["Conversation"]] = defaultdict(list)
+    CONVO_DICT: dict[int, set["Conversation"]] = defaultdict(set)
 
     class DuplicateConvoError(Exception):
         def __init__(self, chat: str | int):
@@ -41,10 +42,18 @@ class Conversation:
         self.reply_to_message_id: int = reply_to_message_id
         self.reply_to_user_id = reply_to_user_id
 
-        self.response_future: asyncio.Future | None = None
+        self.response_queue = asyncio.Queue()
         self.responses: list[Message] = []
         self.timeout: int = timeout
-        self.set_future()
+        self.call_path = inspect.stack()[0]
+
+    def __str__(self) -> str:
+        return (
+            f"Client: {self.client.name} \n"
+            f"Chat Id: {self.chat_id} \n"
+            f"Timeout: {self.timeout} \n"
+            f"Created By: {self.call_path}"
+        )
 
     async def __aenter__(self) -> Self:
         """
@@ -58,25 +67,16 @@ class Conversation:
         if self.check_for_duplicates and self.chat_id in Conversation.CONVO_DICT.keys():
             raise self.DuplicateConvoError(self.chat_id)
 
-        Conversation.CONVO_DICT[self.chat_id].append(self)
+        Conversation.CONVO_DICT[self.chat_id].add(self)
 
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Exit Context Manager and remove Chat ID from Dict."""
-        if self in Conversation.CONVO_DICT[self.chat_id]:
-            Conversation.CONVO_DICT[self.chat_id].remove(self)
+        Conversation.CONVO_DICT[self.chat_id].discard(self)
 
-        if not self.response_future.done():
-            self.response_future.cancel()
-
-        if not Conversation.CONVO_DICT[self.chat_id]:
+        if len(Conversation.CONVO_DICT[self.chat_id]) == 0:
             Conversation.CONVO_DICT.pop(self.chat_id)
-
-    def set_future(self, *_, **__):
-        future = asyncio.Future()
-        future.add_done_callback(self.set_future)
-        self.response_future = future
 
     @staticmethod
     async def extra_filter(self: "Self", client: "DualClient", message: Message):
@@ -133,7 +133,7 @@ class Conversation:
         """Returns Latest Message for Specified Filters."""
         try:
             response: Message = await asyncio.wait_for(
-                fut=self.response_future, timeout=timeout or self.timeout
+                fut=self.response_queue.get(), timeout=timeout or self.timeout
             )
             return response
         except TimeoutError as err:
