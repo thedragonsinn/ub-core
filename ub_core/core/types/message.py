@@ -21,9 +21,7 @@ async def async_deleter(del_in, coro, block) -> types.Message | None:
         await task_result.delete()
         return task_result
     else:
-        Config.TASK_MANAGER.create_temp_task(
-            async_deleter(del_in=del_in, coro=coro, block=True), name=str(coro)
-        )
+        Config.TASK_MANAGER.create_temp_task(async_deleter(del_in=del_in, coro=coro, block=True), name=str(coro))
 
 
 class Message(Properties, types.Message):

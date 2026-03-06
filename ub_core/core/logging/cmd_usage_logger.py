@@ -1,7 +1,12 @@
-import asyncio
-import os
+from pathlib import Path
 
 from ub_core import Config, Message, bot, utils
+
+LOG_FILE = Path("logs/usage_record.txt").resolve()
+
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+LOG_FILE.unlink(missing_ok=True)
+LOG_FILE.touch()
 
 
 def record_usage(update: Message):
@@ -21,7 +26,7 @@ def record_usage(update: Message):
         case _:
             pass
 
-    with open("usage_record.txt", "a+") as f:
+    with LOG_FILE.open("a+") as f:
         f.write(
             f"user: {utils.get_name(update.from_user)}"
             f"\ncmd: {update.cmd}"
@@ -31,18 +36,18 @@ def record_usage(update: Message):
         )
 
 
-@bot.register_task(task_type="bg", name="usage-record", ignore_if_exists=True)
+@bot.register_worker(interval=3600, name="usage-record")
 async def upload_usage_record():
     if Config.COMMAND_LOG_LEVEL == 0:
         return
 
-    log_file = "usage_record.txt"
+    if not LOG_FILE.is_file():
+        return
 
-    while True:
-        await asyncio.sleep(3600)
-        if not os.path.isfile(log_file):
-            continue
-        await bot.send_document(
-            chat_id=Config.LOG_CHAT, message_thread_id=Config.LOG_CHAT_THREAD_ID, document=log_file
-        )
-        os.remove(log_file)
+    await bot.send_document(
+        chat_id=Config.LOG_CHAT,
+        message_thread_id=Config.LOG_CHAT_THREAD_ID,
+        document=str(LOG_FILE),
+    )
+
+    LOG_FILE.write_text("")

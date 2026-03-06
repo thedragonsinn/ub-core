@@ -15,9 +15,7 @@ from ..config import Config
 TELEGRAPH: None | Telegraph = None
 
 
-PROGRESS_DICT: dict[str, dict[str, float]] = defaultdict(
-    lambda: {"start_time": (t := time.time()), "progress_time": t}
-)
+PROGRESS_DICT: dict[str, dict[str, float]] = defaultdict(lambda: {"start_time": (t := time.time()), "progress_time": t})
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
 
@@ -64,9 +62,7 @@ def format_time(seconds):
     return f"{minutes}m {seconds}s"
 
 
-async def progress(
-    current_size: int, total_size: int, response: Message, action_str: str = "", file_path: str = ""
-):
+async def progress(current_size: int, total_size: int, response: Message, action_str: str = "", file_path: str = ""):
     if current_size == total_size:
         PROGRESS_DICT.pop(file_path, 0)
         return

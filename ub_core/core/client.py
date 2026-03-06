@@ -35,7 +35,7 @@ def import_modules(dir_name):
         try:
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
-                Config.TASK_MANAGER.create_task(mod.init_task(), task_type="init")
+                Config.TASK_MANAGER.add_init(mod.init_task())
         except Exception as ie:
             LOGGER.error(ie, exc_info=True)
 

@@ -89,9 +89,7 @@ async def interactive_shell(bot: BOT, message: Message):
                     parse_mode=ParseMode.MARKDOWN,
                 )
 
-                await asyncio.create_task(
-                    sub_process.send_output(stdout_message), name=stdout_message.task_id
-                )
+                await asyncio.create_task(sub_process.send_output(stdout_message), name=stdout_message.task_id)
 
                 await stdout_message.edit(
                     text=f"<pre language=shell>~$ {input_text}\n\n{sub_process.stdout}</pre>",

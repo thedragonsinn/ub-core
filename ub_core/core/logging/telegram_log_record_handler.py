@@ -84,9 +84,7 @@ class TgErrorHandler(Handler):
         if not hasattr(log_record, "tg_message") and tg_message:
             text += f"\nUpdate Object: <pre language=json>{tg_message}</pre>"
 
-        asyncio.run_coroutine_threadsafe(
-            coro=bot.client.log_text(text=text, name="traceback.txt"), loop=bot.loop
-        )
+        asyncio.run_coroutine_threadsafe(coro=bot.client.log_text(text=text, name="traceback.txt"), loop=bot.loop)
 
 
 class OnNetworkIssueHandler(Handler):

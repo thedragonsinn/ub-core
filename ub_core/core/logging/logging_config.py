@@ -40,7 +40,9 @@ class ColorFormatter(Formatter):
             message = f"{level_color}{record.getMessage()}{RESET}"
             formatted_text = f"{level}  {timestamp}  [{record.name} : {record.module}]  {message}"
         else:
-            formatted_text = f"{record.levelname}  {record.asctime}  [{record.name} : {record.module}]  {record.getMessage()}"
+            formatted_text = (
+                f"{record.levelname}  {record.asctime}  [{record.name} : {record.module}]  {record.getMessage()}"
+            )
 
         if record.exc_text:
             formatted_text += f"\n{record.exc_text}"

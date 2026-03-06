@@ -81,9 +81,7 @@ class InlineResult(Properties, types.ChosenInlineResult):
 
     edit = reply = reply_text = edit_text
 
-    async def edit_media(
-        self, media: types.InputMedia, *_, reply_markup: "types.InlineKeyboardMarkup" = None, **__
-    ):
+    async def edit_media(self, media: types.InputMedia, *_, reply_markup: "types.InlineKeyboardMarkup" = None, **__):
         await self._client.edit_inline_media(
             inline_message_id=self.inline_message_id,
             media=media,

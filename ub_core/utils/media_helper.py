@@ -122,9 +122,7 @@ def get_tg_media_details(message: Message | Story):
                 return get_tg_media_details(message.story)
 
             media.file_name = (
-                getattr(media, "file_name", None)
-                or get_filename_from_mime(getattr(media, "mime_type", None))
-                or "file"
+                getattr(media, "file_name", None) or get_filename_from_mime(getattr(media, "mime_type", None)) or "file"
             )
 
             return media

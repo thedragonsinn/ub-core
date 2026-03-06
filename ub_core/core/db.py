@@ -112,7 +112,7 @@ class CustomDatabase:
         self._client: AsyncMongoClient = AsyncMongoClient(db_uri)
         self._db: AsyncDatabase = self._client[db_name]
 
-        Config.TASK_MANAGER.create_task(self._client.close, task_type="exit")
+        Config.TASK_MANAGER.add_exit(self._client.close)
 
     def __getitem__(self, item: str) -> CustomCollection:
         return CustomCollection(collection_name=item, database=self._db)

@@ -119,9 +119,7 @@ class Download:
 
     async def set_sessions(self):
         self.client_session = ClientSession(headers=self._headers)
-        self.file_response_session = await self.client_session.get(
-            url=URL(self.url, encoded=self.is_encoded_url)
-        )
+        self.file_response_session = await self.client_session.get(url=URL(self.url, encoded=self.is_encoded_url))
         self.headers = self.file_response_session.headers
 
     async def __aenter__(self) -> "Download":
@@ -208,9 +206,7 @@ class Download:
             return name_from_url
 
         # Try to guess from mime-header
-        name_from_mime = get_filename_from_mime(
-            self.headers.get("Content-Type", ""), tg_safe=self.use_tg_safe_name
-        )
+        name_from_mime = get_filename_from_mime(self.headers.get("Content-Type", ""), tg_safe=self.use_tg_safe_name)
 
         # if mime fails fallback to whatever name is extracted from url
         return name_from_mime or name_from_url

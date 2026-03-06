@@ -130,9 +130,7 @@ class Conversation:
     async def get_response(self, timeout: int = 0) -> Message | None:
         """Returns Latest Message for Specified Filters."""
         try:
-            response: Message = await asyncio.wait_for(
-                fut=self.response_queue.get(), timeout=timeout or self.timeout
-            )
+            response: Message = await asyncio.wait_for(fut=self.response_queue.get(), timeout=timeout or self.timeout)
             return response
         except TimeoutError as err:
             raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}") from err

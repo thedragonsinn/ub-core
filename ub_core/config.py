@@ -72,7 +72,7 @@ class Config:
 
     try:
         REPO: Repo = Repo(".")
-        TASK_MANAGER.create_task(REPO.close, task_type="exit")
+        TASK_MANAGER.add_exit(REPO.close)
     except InvalidGitRepositoryError:
         REPO = None
 

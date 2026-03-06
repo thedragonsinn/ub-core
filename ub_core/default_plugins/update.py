@@ -63,9 +63,7 @@ async def handle_core_update(bot: BOT, message: Message, reply: Message):
 
     if update_status == -1:
         await asyncio.gather(
-            run_shell_cmd(
-                f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"
-            ),
+            run_shell_cmd(f"pip install -q --no-cache-dir --force-reinstall git+{Config.UPDATE_REPO}@dual_mode"),
             reply.edit(f"An update is available!: {version}\n<code>Pulling and Restarting...</code>"),
         )
         bot.raise_sigint()

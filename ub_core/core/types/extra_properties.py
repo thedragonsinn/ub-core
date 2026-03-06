@@ -156,9 +156,7 @@ class Properties:
         return f"{chat_id}-{self.from_user.id}" if self.from_user else 0
 
     @staticmethod
-    def sanitize_update(
-        update: "Supers", _Super, _SubClass, instance_variables_to_rm: list[str] = None
-    ) -> dict:
+    def sanitize_update(update: "Supers", _Super, _SubClass, instance_variables_to_rm: list[str] = None) -> dict:
         """Remove Extra/Custom Attrs from Message Object"""
         kwargs = vars(update).copy()
         # Pop Private Variables
