@@ -44,9 +44,7 @@ class OnMessage(Client):
                 if not hasattr(func, "handlers"):
                     func.handlers = []
 
-                func.handlers.append(
-                    (handler(dispatch_wrapper, self), group if filters is None else filters)
-                )
+                func.handlers.append((handler(dispatch_wrapper, self), group if filters is None else filters))
 
             return dispatch_wrapper
 

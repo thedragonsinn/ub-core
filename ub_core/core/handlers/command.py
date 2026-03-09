@@ -16,9 +16,9 @@ def cmd_check(message: Message, trigger: str, sudo: bool = False) -> bool:
         return False
 
     if sudo:
-        in_loaded = cmd_obj.loaded
-        has_access = cmd_obj.sudo
-        return in_loaded and has_access
+        is_loaded_for_use = cmd_obj.loaded_for_sudo
+        has_access = cmd_obj.allow_sudo
+        return is_loaded_for_use and has_access
 
     return True
 

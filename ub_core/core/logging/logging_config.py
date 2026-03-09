@@ -30,7 +30,9 @@ class ColorFormatter(Formatter):
 
         record.asctime = self.formatTime(record, self.datefmt)
 
-        stdout_supports_color = os.getenv("COLORTERM") in ("truecolor", "24bit") or os.getenv("TERM","").endswith("256color")
+        stdout_supports_color = os.getenv("COLORTERM") in ("truecolor", "24bit") or os.getenv("TERM", "").endswith(
+            "256color"
+        )
 
         if self.handler_name == "stream_handler" and stdout_supports_color:
             level_color = COLORS.get(record.levelno, "")

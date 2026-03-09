@@ -24,4 +24,4 @@ from .core.client import BOT
 
 bot: BOT = BOT()
 
-from .core.logger import LOGGER
+from .core.logging import LOGGER

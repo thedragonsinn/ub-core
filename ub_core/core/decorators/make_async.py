@@ -15,9 +15,7 @@ class MakeAsync:
         """
 
         if iscoroutinefunction(function) or iscoroutine(function):
-            raise ValueError(
-                f"Non-Async function expected, got async function/coroutine {function}"
-            )
+            raise ValueError(f"Non-Async function expected, got async function/coroutine {function}")
 
         @wraps(function)
         async def wrapper(*args, **kwargs):

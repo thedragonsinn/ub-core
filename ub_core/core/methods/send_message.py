@@ -39,7 +39,10 @@ class SendMessage(Client):
             text = str(text)
 
         text_and_entities = await parse_text_entities(
-            client=self, text=text, parse_mode=parse_mode or self.parse_mode, entities=entities
+            client=self,
+            text=text,
+            parse_mode=parse_mode or self.parse_mode,
+            entities=entities,
         )
 
         if len(text_and_entities["message"]) <= 4096:
@@ -48,9 +51,6 @@ class SendMessage(Client):
             message = await super().send_message(
                 chat_id=chat_id,
                 text=text,
-                # Pyrogram Shenanigans for not accepting parsed values.
-                # text=text_and_entities["message"],
-                # entities=text_and_entities["entities"],
                 entities=entities,
                 parse_mode=parse_mode,
                 **kwargs,
@@ -61,6 +61,4 @@ class SendMessage(Client):
 
         doc = BytesIO(bytes(text, encoding="utf-8"))
         doc.name = name
-        return (await super().send_document(
-            chat_id=chat_id, document=doc, **kwargs
-        ))  # fmt: skip
+        return await super().send_document(chat_id=chat_id, document=doc, **kwargs)
