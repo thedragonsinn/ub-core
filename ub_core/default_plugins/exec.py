@@ -64,6 +64,7 @@ async def executor(bot: BOT, message: Message) -> None:
 
     sys.stdout = codeOut = StringIO()
     sys.stderr = codeErr = StringIO()
+    func_def = {}
 
     try:
         # Create and initialise the function
@@ -71,9 +72,11 @@ async def executor(bot: BOT, message: Message) -> None:
             "async def _exec(bot: BOT, message: Message):"
             + "\n    r, c, cid , u, uid, ru, ruid = generate_locals(message=message)"
             + "\n    "
-            + "\n    ".join(code.splitlines())
+            + "\n    ".join(code.splitlines()),
+            globals(),
+            func_def,
         )
-        func_out = await asyncio.create_task(locals()["_exec"](bot, message), name=reply.task_id)
+        func_out = await asyncio.create_task(func_def["_exec"](bot, message), name=reply.task_id)
     except asyncio.exceptions.CancelledError:
         await reply.edit("`Cancelled....`")
         return
