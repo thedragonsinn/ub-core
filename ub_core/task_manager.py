@@ -230,7 +230,6 @@ class TaskManager:
             from .utils.helpers import run_unknown_callable
 
             for resource in self._store["exit"]:
-                print(resource)
                 await run_unknown_callable(resource, ignore_errors=True)
 
             self._store.clear()
