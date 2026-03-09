@@ -46,6 +46,11 @@ class Properties:
         """
         return [i for i in self.text_list if i.startswith("-")]
 
+    def get_flag_value(self: "Supers", flag: str):
+        flag_index = self.text_list.index(flag)
+        value_index = flag_index + 1
+        return self.text_list[value_index]
+
     @cached_property
     def filtered_input(self: "Supers") -> str:
         """
