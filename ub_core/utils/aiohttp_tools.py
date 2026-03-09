@@ -30,8 +30,8 @@ class AioServer:
         self.port = os.environ.get("API_PORT", 0)
 
         if self.port:
-            Config.INIT_TASKS.append(self.start())
-            Config.EXIT_TASKS.append(self.close)
+            Config.TASK_MANAGER.add_init(self.start())
+            Config.TASK_MANAGER.add_exit(self.close)
             self.set_health_check_handler()
 
     async def start(self):
@@ -62,7 +62,11 @@ class AioServer:
         """Start A Dummy Website to pass Health Checks"""
         LOGGER.info("Starting Static WebSite.")
         self.site = web.TCPSite(
-            runner=self.runner, host="0.0.0.0", port=self.port, reuse_address=True, reuse_port=True
+            runner=self.runner,
+            host="0.0.0.0",
+            port=self.port,
+            reuse_address=True,
+            reuse_port=True,
         )
         await self.site.start()
 
@@ -106,7 +110,10 @@ class AioServer:
     @ensure_not_running
     def set_health_check_handler(self) -> web.RouteDef:
         return self.add_route(
-            method="GET", path="/", handler=self.handle_health_check_request, name="HEALTH_CHECK"
+            method="GET",
+            path="/",
+            handler=self.handle_health_check_request,
+            name="HEALTH_CHECK",
         )
 
     @staticmethod
@@ -120,8 +127,8 @@ class Aio:
         """Setup aio object and params"""
         self.session: ClientSession | None = None
 
-        Config.INIT_TASKS.append(self.set_session())
-        Config.EXIT_TASKS.append(self.close)
+        Config.TASK_MANAGER.add_init(self.set_session())
+        Config.TASK_MANAGER.add_exit(self.close)
 
         self.server: AioServer = AioServer()
 
@@ -134,10 +141,8 @@ class Aio:
         self.session = ClientSession()
 
         if self.ping_url:
-            LOGGER.info(
-                f"Starting Auto-Ping Task at {self.ping_url} with {self.ping_interval} seconds interval."
-            )
-            Config.BACKGROUND_TASKS.append(asyncio.create_task(self.ping_website()))
+            LOGGER.info(f"Starting Auto-Ping Task at {self.ping_url} with {self.ping_interval} seconds interval.")
+            Config.TASK_MANAGER.create_bg_task(self.ping_website(), name="dummy-website-ping-task")
 
     async def close(self):
         """Gracefully Shutdown Clients"""
@@ -153,12 +158,15 @@ class Aio:
             total_seconds += self.ping_interval
             await asyncio.sleep(self.ping_interval)
             if not await self.get_text(url=self.ping_url):
-                LOGGER.info(
-                    f"Unsuccessful ping task wake-up at {total_seconds // 3600} hours after boot."
-                )
+                LOGGER.info(f"Unsuccessful ping task wake-up at {total_seconds // 3600} hours after boot.")
 
     async def get(
-        self, url: str, json: bool = False, text: bool = False, content: bool = False, **kwargs
+        self,
+        url: str,
+        json: bool = False,
+        text: bool = False,
+        content: bool = False,
+        **kwargs,
     ):
         if json:
             return await self.get_json(url=url, **kwargs)
@@ -179,9 +187,7 @@ class Aio:
         timeout: int = 10,
     ) -> dict | None:
         try:
-            async with self.session.get(
-                url=url, headers=headers, params=params, timeout=timeout
-            ) as ses:
+            async with self.session.get(url=url, headers=headers, params=params, timeout=timeout) as ses:
                 if json_:
                     return await ses.json()
                 else:
@@ -192,23 +198,27 @@ class Aio:
             LOGGER.debug(f"Timeout: {url}")
 
     async def get_text(
-        self, url: str, headers: dict = None, params: dict | str = None, timeout: int = 10
+        self,
+        url: str,
+        headers: dict = None,
+        params: dict | str = None,
+        timeout: int = 10,
     ):
         try:
-            async with self.session.get(
-                url=url, headers=headers, params=params, timeout=timeout
-            ) as ses:
+            async with self.session.get(url=url, headers=headers, params=params, timeout=timeout) as ses:
                 return await ses.text()
         except TimeoutError:
             LOGGER.debug(f"Timeout: {url}")
 
     async def get_content(
-        self, url: str, headers: dict = None, params: dict | str = None, timeout: int = 10
+        self,
+        url: str,
+        headers: dict = None,
+        params: dict | str = None,
+        timeout: int = 10,
     ):
         try:
-            async with self.session.get(
-                url=url, headers=headers, params=params, timeout=timeout
-            ) as ses:
+            async with self.session.get(url=url, headers=headers, params=params, timeout=timeout) as ses:
                 return await ses.content.read()
         except TimeoutError:
             LOGGER.debug(f"Timeout: {url}")
