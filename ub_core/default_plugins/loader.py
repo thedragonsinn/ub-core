@@ -45,7 +45,7 @@ async def loader(bot: BOT, message: Message) -> Message | None:
 
     try:
         new_module = importlib.import_module(module)
-        if hasattr(new_module, "init_task"):
+        if hasattr(new_module, "init_task") and "-rit" in message.flags:
             await new_module.init_task()
         await reply.edit(f"{status} {module}")
     except:
