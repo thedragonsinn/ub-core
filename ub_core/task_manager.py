@@ -41,11 +41,22 @@ class TaskManager:
         }
 
         self._closed: bool = False
+        self._loop = None
         self.lock = threading.Lock()
         self.async_lock = asyncio.Lock()
 
     def __str__(self) -> str:
         return json.dumps(self._store, indent=4, ensure_ascii=False, default=str)
+
+    @property
+    def loop(self):
+        if self._loop is None:
+            raise RuntimeError("Event loop not found.")
+        return self._loop
+
+    @loop.setter
+    def loop(self, loop):
+        self._loop = loop
 
     @property
     def is_closed(self):
@@ -125,7 +136,7 @@ class TaskManager:
             if replace:
                 self.cancel_tasks(name, "bg")
 
-            task = asyncio.create_task(coro, name=name or str(coro))
+            task = self.loop.create_task(coro, name=name or str(coro))
             self._store["bg"].add(task)
             return task
 
@@ -134,12 +145,12 @@ class TaskManager:
         with self.lock:
             from .utils.helpers import run_unknown_callable
 
-            temp_task: asyncio.Task = asyncio.create_task(coro, name=name)
+            temp_task: asyncio.Task = self.loop.create_task(coro, name=name)
             self._store["temp"].add(temp_task)
             temp_task.add_done_callback(
                 lambda t: (
                     self._store["temp"].discard(t),
-                    asyncio.create_task(run_unknown_callable(resource=extra_callback)),
+                    self.loop.create_task(run_unknown_callable(resource=extra_callback)),
                 )
             )
             return temp_task
@@ -184,7 +195,7 @@ class TaskManager:
         with self.lock:
             name = name or f"{function.__name__}-worker"
             coro = self._worker(function, interval, break_condition, name)
-            task = asyncio.create_task(coro, name=name)
+            task = self.loop.create_task(coro, name=name)
             self._store["workers"].add(task)
             return task
 

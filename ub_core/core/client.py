@@ -75,6 +75,7 @@ class BOT(CustomDecorators, Methods, pyrogram.Client):
         LOGGER.info("Plugins Imported.")
 
     async def boot(self) -> None:
+        Config.TASK_MANAGER.loop = self.loop
         await super().start()
 
         LOGGER.info("Connected to TG.")
