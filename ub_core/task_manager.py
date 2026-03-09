@@ -11,7 +11,7 @@ LOGGER = logging.getLogger("Config")
 
 def ensure_is_not_closed(function):
     @wraps(function)
-    def inner(self: TaskManager, *args, **kwargs):
+    def inner(self: "TaskManager", *args, **kwargs):
         if self.is_closed:
             raise RuntimeError("Task Manager is closed.")
         return function(self, *args, **kwargs)
