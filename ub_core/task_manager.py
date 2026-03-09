@@ -53,11 +53,10 @@ class TaskManager:
 
     @property
     def all_tasks(self) -> Generator:
-        with self.lock:
-            for tasks in self._store.values():
-                for task in tasks:
-                    if isinstance(task, asyncio.Task):
-                        yield task
+        for tasks in list(self._store.values()):
+            for task in tasks:
+                if isinstance(task, asyncio.Task):
+                    yield task
 
     @property
     def locked(self):
@@ -169,8 +168,8 @@ class TaskManager:
         self,
         function: Callable,
         interval: int,
-        break_condition: Callable = None,
         name: str = None,
+        break_condition: Callable = None,
     ):
         """
         just a while loop wrapper for bg tasks,
@@ -195,16 +194,15 @@ class TaskManager:
         get a specific task matching name and type
         if no args are given, get all tasks
         """
-        with self.lock:
-            if task_type and task_type not in self._store.keys():
-                raise TypeError(f"get_tasks: Got unexpected type: {task_type}\nAvailable: {self._store.keys()}")
+        if task_type and task_type not in self._store.keys():
+            raise TypeError(f"get_tasks: Got unexpected type: {task_type}\nAvailable: {self._store.keys()}")
 
-            set_to_search = self._store.get(task_type) or self.all_tasks
+        set_to_search = self._store.get(task_type, []).copy() or self.all_tasks
 
-            if name:
-                yield from filter(lambda t: t.get_name() == name, set_to_search)
-            else:
-                yield from set_to_search
+        if name:
+            yield from filter(lambda t: t.get_name() == name, set_to_search)
+        else:
+            yield from set_to_search
 
     @ensure_is_not_closed
     def cancel_tasks(self, name: str = None, task_type: str = None) -> set[asyncio.Task]:
@@ -212,10 +210,9 @@ class TaskManager:
         cancel a specific task matching name and type
         if no args are given, cancel all tasks
         """
-        with self.lock:
-            tasks: set[asyncio.Task] = set(self.get_tasks(name, task_type))
-            [task.cancel() for task in tasks if not (task.done() or task.cancelled())]
-            return tasks
+        tasks: set[asyncio.Task] = set(self.get_tasks(name, task_type))
+        [task.cancel() for task in tasks if not (task.done() or task.cancelled())]
+        return tasks
 
     @ensure_is_not_closed
     async def run_init_tasks(self):
