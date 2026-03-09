@@ -2,12 +2,13 @@ import json
 import logging
 import os
 from collections.abc import Iterable
+from datetime import UTC, datetime
 
 from dns import asyncresolver, resolver
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
-from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
+from pymongo.results import DeleteResult, UpdateResult
 
 from ..config import Config
 
@@ -51,14 +52,17 @@ class CustomCollection(AsyncCollection):
                 f"data:{json.dumps(data, indent=4, ensure_ascii=False, default=str)}"
             )
 
-        is_existing_entry = await self.find_one({"_id": unique_id_key})
+        entry: UpdateResult = await self.update_one(
+            filter={"_id": data.pop("_id")},
+            update={
+                "$set": data,
+                "$setOnInsert": {"created_at": datetime.now(UTC)},
+                "$currentDate": {"updated_at": True},
+            },
+            upsert=True,
+        )
 
-        if not is_existing_entry:
-            entry: InsertOneResult = await self.insert_one(data)
-            return entry.inserted_id
-        else:
-            entry: UpdateResult = await self.update_one({"_id": data.pop("_id")}, {"$set": data})
-            return entry.modified_count
+        return entry.upserted_id or entry.modified_count
 
     async def delete_data(self, id: int | str) -> int:
         """
@@ -108,13 +112,11 @@ class CustomDatabase:
         self._client: AsyncMongoClient = AsyncMongoClient(db_uri)
         self._db: AsyncDatabase = self._client[db_name]
 
-        Config.EXIT_TASKS.append(self._client.close)
+        Config.TASK_MANAGER.add_exit(self._client.close)
 
     def __getitem__(self, item: str) -> CustomCollection:
         return CustomCollection(collection_name=item, database=self._db)
 
     def __call__(self, collection_name) -> CustomCollection:
-        LOGGER.warning(
-            f"{collection_name} - Deprecated usage of () brackets. Switch to [] brackets."
-        )
+        LOGGER.warning(f"{collection_name} - Deprecated usage of () brackets. Switch to [] brackets.")
         return CustomCollection(collection_name=collection_name, database=self._db)
