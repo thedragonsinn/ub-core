@@ -67,13 +67,13 @@ async def interactive_shell(bot: BOT, message: Message):
         ) as convo:
             reply_to_id = message.id
             while 1:
-                input_cmd = await convo.send_message(
+                input_prompt = await convo.send_message(
                     text="__Reply to this message to pass in the command.__",
                     reply_to_id=reply_to_id,
                 )
-                reply_to_id = input_cmd.id
+                reply_to_id = input_prompt.id
                 convo.reply_to_message_id = reply_to_id
-                input_prompt = await convo.get_response()
+                input_cmd = await convo.get_response()
 
                 input_text = input_cmd.text
 
@@ -89,9 +89,7 @@ async def interactive_shell(bot: BOT, message: Message):
                     parse_mode=ParseMode.MARKDOWN,
                 )
 
-                await asyncio.create_task(
-                    sub_process.send_output(stdout_message), name=stdout_message.task_id
-                )
+                await asyncio.create_task(sub_process.send_output(stdout_message), name=stdout_message.task_id)
 
                 await stdout_message.edit(
                     text=f"<pre language=shell>~$ {input_text}\n\n{sub_process.stdout}</pre>",

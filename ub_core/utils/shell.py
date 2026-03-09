@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shlex
 from asyncio.subprocess import Process
 from typing import TYPE_CHECKING, Any
 
@@ -11,8 +12,8 @@ if TYPE_CHECKING:
 
 async def run_shell_cmd(cmd: str, timeout: int = 300, ret_val: Any | None = None) -> str:
     """Runs a Shell Command and Returns Output"""
-    sub_process: asyncio.create_subprocess_shell = await asyncio.create_subprocess_shell(
-        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+    sub_process: asyncio.create_subprocess_shell = await asyncio.create_subprocess_exec(
+        *shlex.split(cmd), stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
     )
 
     try:
@@ -161,7 +162,7 @@ class InteractiveShell:
             old_output = new_output
 
     async def write_input(self, text: str):
-        self.process.stdin.write(bytes(text + "\necho 'ish cmd is done'\n", encoding="utf-8"))
+        self.process.stdin.write((text + "\necho 'ish cmd is done'\n").encode())
         await self.process.stdin.drain()
         self.is_running = True
 
