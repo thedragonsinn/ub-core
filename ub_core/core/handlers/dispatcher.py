@@ -52,10 +52,17 @@ async def cmd_dispatcher(
         func = cmd_object.func
 
     try:
-        task = asyncio.create_task(func(client, update), name=update.task_id)
-        await task
-        if is_command and update.is_from_owner:
-            await update.delete()
+        await asyncio.create_task(func(client, update), name=update.task_id)
+
+        if is_command:
+            if update.is_from_owner:
+                await update.delete()
+
+            from ..logging.cmd_usage_logger import record_usage
+
+            record_usage(update)
+
+            update.stop_propagation()
 
     except asyncio.exceptions.CancelledError:
         await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{update.text}</code>")
@@ -65,6 +72,3 @@ async def cmd_dispatcher(
 
     except Exception as e:
         client.log.error(e, exc_info=True, extra={"tg_message": update})
-
-    if is_command:
-        update.stop_propagation()

@@ -1,19 +1,7 @@
 import asyncio
 import os
 import re
-from logging import (
-    ERROR,
-    INFO,
-    WARNING,
-    Handler,
-    LogRecord,
-    StreamHandler,
-    basicConfig,
-    getLogger,
-    handlers,
-)
-
-from pyrogram.types import CallbackQuery, ChosenInlineResult
+from logging import Handler, LogRecord, getLogger
 
 from ub_core import Config, Message, bot
 
@@ -21,7 +9,7 @@ os.makedirs(name="logs", exist_ok=True)
 
 LOGGER = getLogger(Config.BOT_NAME)
 
-UPDATE_TYPES = CallbackQuery, Message, ChosenInlineResult
+UPDATE_TYPES = Message
 
 
 def extract_message_from_traceback(tb) -> Message | None:
@@ -37,7 +25,7 @@ def extract_message_from_traceback(tb) -> Message | None:
     return None
 
 
-def extract_message_info(message: Message | None) -> tuple[int, int, str]:
+def extract_message_info(message: Message | None) -> tuple[int, int | None, str | None]:
     message_id = getattr(message, "id", 0)
     chat = getattr(message, "chat", None)
 
@@ -46,7 +34,7 @@ def extract_message_info(message: Message | None) -> tuple[int, int, str]:
         chat_id: int = chat.id
         return message_id, chat_id, chat_name
     else:
-        return message_id, 0, ""
+        return message_id, None, None
 
 
 class TgErrorHandler(Handler):
@@ -66,7 +54,7 @@ class TgErrorHandler(Handler):
         if not (bot.is_connected and bot.is_idling):
             return
 
-        error_message: str = log_record.exc_text or log_record.message
+        error_message: str = log_record.exc_text or ""
 
         if log_record.funcName in ("handler_worker", "run") and (
             "OSError:" in error_message or "The server sent an unknown constructor" in error_message
@@ -96,9 +84,7 @@ class TgErrorHandler(Handler):
         if not hasattr(log_record, "tg_message") and tg_message:
             text += f"\nUpdate Object: <pre language=json>{tg_message}</pre>"
 
-        asyncio.run_coroutine_threadsafe(
-            coro=bot.log_text(text=text, name="traceback.txt"), loop=bot.loop
-        )
+        asyncio.run_coroutine_threadsafe(coro=bot.log_text(text=text, name="traceback.txt"), loop=bot.loop)
 
 
 class OnNetworkIssueHandler(Handler):
@@ -118,26 +104,3 @@ class OnNetworkIssueHandler(Handler):
         LOGGER.info("Network Issues Detected, Restarting client(s)")
 
         bot.raise_sigint()
-
-
-custom_error_handler = TgErrorHandler()
-custom_error_handler.setLevel(ERROR)
-
-custom_network_error_handler = OnNetworkIssueHandler()
-custom_network_error_handler.setLevel(WARNING)
-
-basicConfig(
-    level=INFO,
-    format="%(asctime)s    |   %(levelname)s   |   %(name)s   |   %(module)s: %(message)s",
-    datefmt="%d-%m-%y %I:%M %p",
-    handlers={
-        handlers.RotatingFileHandler(filename="logs/app_logs.txt", maxBytes=1024 * 256),
-        StreamHandler(),
-        custom_error_handler,
-        custom_network_error_handler,
-    },
-)
-
-getLogger("pyrogram").setLevel(WARNING)
-getLogger("httpx").setLevel(WARNING)
-getLogger("aiohttp.access").setLevel(WARNING)
