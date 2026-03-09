@@ -18,9 +18,9 @@ telegraph>=2.2.0
 
 uvloop==0.21.0
 
-# pyrotgfork==2.2.17
+pyrotgfork
 
 # v2.2.18 + storage fix
-Pyrotgfork @ git+https://github.com/TelegramPlayground/pyrogram@242875734b913509529b1b8bd02e31d115a0e131
+# Pyrotgfork @ git+https://github.com/TelegramPlayground/pyrogram@242875734b913509529b1b8bd02e31d115a0e131
 
 PyTgCrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto
