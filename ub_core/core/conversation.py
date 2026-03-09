@@ -1,13 +1,13 @@
 import asyncio
-from collections import defaultdict
-from typing import TYPE_CHECKING, Self
+import collections
+import inspect
+import typing
 
-from pyrogram import filters
-from pyrogram.types import ReplyParameters
+import pyrogram
 
 from .types import Message
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from .client import BOT
 
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class Conversation:
     """A Custom Class to get responses from chats"""
 
-    CONVO_DICT: dict[int, list["Conversation"]] = defaultdict(list)
+    CONVO_DICT: dict[int, set["Conversation"]] = collections.defaultdict(set)
 
     class DuplicateConvoError(Exception):
         def __init__(self, chat: str | int):
@@ -26,7 +26,7 @@ class Conversation:
         client: "BOT",
         chat_id: int | str,
         check_for_duplicates: bool = True,
-        filters: filters.Filter | None = None,
+        filters: pyrogram.filters.Filter | None = None,
         from_user: int | list[int] = None,
         reply_to_message_id: int = None,
         reply_to_user_id: int = None,
@@ -41,12 +41,16 @@ class Conversation:
         self.reply_to_message_id: int = reply_to_message_id
         self.reply_to_user_id = reply_to_user_id
 
-        self.response_future: asyncio.Future | None = None
+        self.response_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.responses: list[Message] = []
         self.timeout: int = timeout
-        self.set_future()
 
-    async def __aenter__(self) -> Self:
+        self.call_path = inspect.stack()[0]
+
+    def __str__(self):
+        return f"Client:{self.client.name}, {self.chat_id=}, {self.timeout=}, {self.call_path=}"
+
+    async def __aenter__(self) -> typing.Self:
         """
         Convert Username to ID if chat_id is username.
         Check Convo Dict for duplicate Convo with same ID.
@@ -58,28 +62,19 @@ class Conversation:
         if self.check_for_duplicates and self.chat_id in Conversation.CONVO_DICT.keys():
             raise self.DuplicateConvoError(self.chat_id)
 
-        Conversation.CONVO_DICT[self.chat_id].append(self)
+        Conversation.CONVO_DICT[self.chat_id].add(self)
 
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Exit Context Manager and remove Chat ID from Dict."""
-        if self in Conversation.CONVO_DICT[self.chat_id]:
-            Conversation.CONVO_DICT[self.chat_id].remove(self)
+        Conversation.CONVO_DICT[self.chat_id].discard(self)
 
-        if not self.response_future.done():
-            self.response_future.cancel()
-
-        if not Conversation.CONVO_DICT[self.chat_id]:
+        if len(Conversation.CONVO_DICT[self.chat_id]) == 0:
             Conversation.CONVO_DICT.pop(self.chat_id)
 
-    def set_future(self, *_, **__):
-        future = asyncio.Future()
-        future.add_done_callback(self.set_future)
-        self.response_future = future
-
     @staticmethod
-    async def extra_filter(self: "Self", client: "BOT", message: Message):
+    async def extra_filter(self: "typing.Self", client: "BOT", message: Message):
         try:
             if self.from_user:
                 assert message.from_user
@@ -93,9 +88,7 @@ class Conversation:
 
             if self.reply_to_user_id:
                 replied = message.reply_to_message
-                assert (
-                    replied and replied.from_user and replied.from_user.id == self.reply_to_user_id
-                )
+                assert replied and replied.from_user and replied.from_user.id == self.reply_to_user_id
             return True
         except AssertionError:
             return False
@@ -129,17 +122,13 @@ class Conversation:
 
     """Methods"""
 
-    async def get_response(self, timeout: int = 0) -> Message | None:
+    async def get_response(self, timeout: int = 0) -> Message:
         """Returns Latest Message for Specified Filters."""
         try:
-            response: Message = await asyncio.wait_for(
-                fut=self.response_future, timeout=timeout or self.timeout
-            )
+            response: Message = await asyncio.wait_for(fut=self.response_queue.get(), timeout=timeout or self.timeout)
             return response
         except TimeoutError as err:
-            raise TimeoutError(
-                f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}"
-            ) from err
+            raise TimeoutError(f"Conversation Timeout [{self.timeout}s] with chat: {self.chat_id}") from err
 
     async def get_quote_or_text(self, timeout: int = 0, lower: bool = False) -> tuple[str, Message]:
         response: Message = await self.get_response(timeout=timeout)
@@ -194,11 +183,11 @@ class Conversation:
         caption: str = "",
         timeout: int = 0,
         get_response: bool = False,
-        reply_parameters: ReplyParameters = None,
+        reply_parameters: pyrogram.types.ReplyParameters = None,
         **kwargs,
     ) -> Message | tuple[Message, Message]:
         if reply_to_id := kwargs.pop("reply_to_id", None):
-            reply_parameters = ReplyParameters(message_id=reply_to_id)
+            reply_parameters = pyrogram.types.ReplyParameters(message_id=reply_to_id)
 
         message = await self.client.send_photo(
             chat_id=self.chat_id,
@@ -219,11 +208,11 @@ class Conversation:
         caption: str = "",
         timeout: int = 0,
         get_response: bool = False,
-        reply_parameters: ReplyParameters = None,
+        reply_parameters: pyrogram.types.ReplyParameters = None,
         **kwargs,
     ):
         if reply_to_id := kwargs.pop("reply_to_id", None):
-            reply_parameters = ReplyParameters(message_id=reply_to_id)
+            reply_parameters = pyrogram.types.ReplyParameters(message_id=reply_to_id)
 
         message = await self.client.send_voice(
             chat_id=self.chat_id,
