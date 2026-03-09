@@ -5,28 +5,16 @@ from io import StringIO
 
 from pyrogram.enums import ParseMode
 
-# ruff: noqa: F401
 # noinspection PyUnresolvedReferences
+# ruff: noqa: F401
 import ub_core
 
-# ruff: noqa: F401
 # noinspection PyUnresolvedReferences
-from ub_core import (
-    BOT,
-    Cmd,
-    Config,
-    CustomCollection,
-    CustomDatabase,
-    CustomDB,
-    Message,
-    bot,
-    core,
-    default_plugins,
-    utils,
-)
+# ruff: noqa: F401
+from ub_core import BOT, Cmd, Config, CustomDB, Message, bot, core, default_plugins, utils
 
-# ruff: noqa: F401
 # noinspection PyUnresolvedReferences
+# ruff: noqa: F401
 from ub_core.utils import aio, shell
 
 
@@ -76,6 +64,7 @@ async def executor(bot: BOT, message: Message) -> None:
 
     sys.stdout = codeOut = StringIO()
     sys.stderr = codeErr = StringIO()
+    func_def = {}
 
     try:
         # Create and initialise the function
@@ -84,8 +73,10 @@ async def executor(bot: BOT, message: Message) -> None:
             + "\n    r, c, cid , u, uid, ru, ruid = generate_locals(message=message)"
             + "\n    "
             + "\n    ".join(code.splitlines()),
+            globals(),
+            func_def,
         )
-        func_out = await asyncio.create_task(locals()["_exec"](bot, message), name=reply.task_id)
+        func_out = await asyncio.create_task(func_def["_exec"](bot, message), name=reply.task_id)
     except asyncio.exceptions.CancelledError:
         await reply.edit("`Cancelled....`")
         return
@@ -110,12 +101,7 @@ async def executor(bot: BOT, message: Message) -> None:
     else:
         output = f"```python\n{code}```\n\n```\n{output}```"
 
-    await reply.edit(
-        output,
-        name="exec.txt",
-        disable_preview=True,
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    await reply.edit(output, name="exec.txt", disable_preview=True, parse_mode=ParseMode.MARKDOWN)
 
 
 if Config.DEV_MODE:
