@@ -1,0 +1,180 @@
+from functools import cached_property, wraps
+from typing import TYPE_CHECKING
+
+from pyrogram.enums import MessageServiceType
+from pyrogram.types import Message as MessageUpdate
+
+from ...config import Config
+
+if TYPE_CHECKING:
+    from .message import Message
+
+
+def handle_attribute_error(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except AttributeError:
+            return None
+
+    return wrapper
+
+
+class Properties:
+    @cached_property
+    def cmd(self: "Message") -> str | None:
+        """Returns First Word of text if it's a valid command."""
+        if not self.text_list:
+            return
+
+        raw_cmd = self.text_list[0]
+        cmd = raw_cmd.replace(self.trigger, "", 1)
+
+        return cmd if cmd in Config.CMD_DICT.keys() else None
+
+    @cached_property
+    def flags(self: "Message") -> list:
+        """
+        Returns list of text that start with - i.e. flags. \n
+        text: .example -d -s something \n
+        returns: [-d, -s]
+        """
+        return [i for i in self.text_list if i.startswith("-")]
+
+    def get_flag_value(self: "Message", flag: str):
+        flag_index = self.text_list.index(flag)
+        value_index = flag_index + 1
+        return self.text_list[value_index]
+
+    @cached_property
+    def filtered_input(self: "Message") -> str:
+        """
+        Returns all text except command and flags. \n
+        text: .example -d -s do something here \n
+        returns: do something here
+        """
+        split_lines = self.input.split(sep="\n", maxsplit=1)
+        split_lines[0] = " ".join([word for word in split_lines[0].split(" ") if word not in self.flags])
+        return "\n".join(split_lines)
+
+    @cached_property
+    def input(self: "Message") -> str:
+        """
+        Returns raw text except command. \n
+        text: .example -d -s do something here \n
+        returns: -d -s do something here
+        """
+        if len(self.text_list) > 1:
+            return self.text.split(maxsplit=1)[-1]
+        return ""
+
+    @cached_property
+    def is_from_owner(self: "Message") -> bool:
+        """Returns True if message is from Owner of bot."""
+        return self.from_user and self.from_user.id == Config.OWNER_ID
+
+    @cached_property
+    @handle_attribute_error
+    def replied(self: "Message") -> "Message":
+        """
+        Returns Custom Message object for message.reply_to_message
+        If replied isn't the Thread Origin Message.
+        """
+        if self._replied and not self._replied.is_thread_origin:
+            return self._replied
+
+    @property
+    @handle_attribute_error
+    def reply_to_message(self: "Message") -> MessageUpdate | None:
+        """
+        Returns Pyrogram's Message object if replied isn't a Thread Origin Message.
+        """
+        if self._replied and not self._replied.is_thread_origin:
+            return self._reply_to_message
+
+    @reply_to_message.setter
+    def reply_to_message(self, value) -> None:
+        pass
+
+    @cached_property
+    @handle_attribute_error
+    def reply_id(self: "Message") -> int | None:
+        """Returns message.reply_to_message.id if message.reply_to_message"""
+        return self.reply_to_message_id
+
+    @cached_property
+    def replied_task_id(self: "Message") -> str | None:
+        """Returns message.reply_to_message.task_id if message.reply_to_message"""
+        return self.replied.task_id if self.replied else None
+
+    @cached_property
+    def reply_text_list(self: "Message") -> list:
+        """Returns list of message.reply_to_message.text.split()"""
+        return self.replied.text_list if self.replied else []
+
+    @cached_property
+    def task_id(self: "Message") -> str:
+        """Task ID to Cancel/Track Command Progress."""
+        chat_id = self.chat.id if hasattr(self, "chat") else ""
+        return f"{chat_id}-{self.id}"
+
+    @cached_property
+    def text_list(self: "Message") -> list:
+        """Returns list of message.text.split()"""
+        return self.text.split() if self.text else []
+
+    @cached_property
+    @handle_attribute_error
+    def is_thread_origin(self: "Message") -> bool:
+        return self.service == MessageServiceType.FORUM_TOPIC_CREATED
+
+    @cached_property
+    @handle_attribute_error
+    def thread_origin_message(self: "Message") -> "Message":
+        """
+        Returns Custom Message object for message.reply_to_message
+        If replied is the Thread Origin Message.
+        """
+        if self._replied and self._replied.is_thread_origin:
+            return self._replied
+
+    @cached_property
+    def trigger(self: "Message") -> str:
+        """Returns Cmd or Sudo Trigger"""
+        # Legacy w/o db and sudo support
+        if hasattr(Config, "TRIGGER"):
+            return Config.TRIGGER
+
+        if self.is_from_owner and not self._client.is_bot:
+            return Config.CMD_TRIGGER
+        else:
+            return Config.SUDO_TRIGGER
+
+    @cached_property
+    def unique_chat_user_id(self: "Message") -> int | str:
+        chat_id = self.chat.id if hasattr(self, "chat") else ""
+        return f"{chat_id}-{self.from_user.id}" if self.from_user else 0
+
+    @staticmethod
+    def sanitize_update(update: "Message", _Super, _SubClass, instance_variables_to_rm: list[str] = None) -> dict:
+        """Remove Extra/Custom Attrs from Message Object"""
+        kwargs = vars(update).copy()
+        # Pop Private Variables
+        [kwargs.pop(attr_name) for attr_name in list(kwargs.keys()) if attr_name.startswith("_")]
+        # Pop Extra vars present after initialising custom class
+        [kwargs.pop(key, 0) for key in (instance_variables_to_rm or [])]
+        # Pop Custom Properties
+        for arg in dir(_SubClass):
+            is_property = isinstance(getattr(_SubClass, arg, 0), cached_property | property)
+            is_not_present_in_super = not hasattr(_Super, arg)
+
+            if is_property and is_not_present_in_super:
+                kwargs.pop(arg, 0)
+
+        kwargs["client"] = update._client
+
+        if hasattr(update, "_raw"):
+            kwargs["_raw"] = update._raw
+
+        return kwargs
