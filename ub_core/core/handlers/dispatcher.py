@@ -87,10 +87,9 @@ async def cmd_dispatcher(
 
         func = cmd_object.func
 
-    task = asyncio.create_task(func(client, update), name=update.task_id)
-
     try:
-        await task
+        await asyncio.create_task(func(client, update), name=update.task_id)
+
         if is_command:
             if update.is_from_owner:
                 await update.delete()

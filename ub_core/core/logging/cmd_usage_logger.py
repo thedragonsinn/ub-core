@@ -6,7 +6,6 @@ LOG_FILE = Path("logs/usage_record.txt").resolve()
 
 LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 LOG_FILE.unlink(missing_ok=True)
-LOG_FILE.touch()
 
 
 def record_usage(update: Message):

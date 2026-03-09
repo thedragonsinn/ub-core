@@ -147,6 +147,8 @@ class DualClient(Bot):
         LOGGER.info("Plugins Imported.")
 
     async def boot(self) -> None:
+        Config.TASK_MANAGER.loop = self.loop
+
         await super().start()
 
         LOGGER.info(f"[{self.client_type}] Connected to TG.")
