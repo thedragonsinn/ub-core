@@ -137,3 +137,17 @@ async def run_unknown_callable(resource, *args, ignore_errors: bool = False, **k
         else:
             raise
     return None
+
+
+def wrap_in_block_quote(text: str, quote_delimiter: str, end_delimiter: str = "") -> str:
+    """
+
+    quote_delimiters:
+        '>'  for normal quote
+        '**>' for expandable quote
+
+    end_delimiter:
+        '<**' for closing expandable quote
+
+    """
+    return quote_delimiter + quote_delimiter.join(text.splitlines(keepends=True)) + end_delimiter

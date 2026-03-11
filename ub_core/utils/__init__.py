@@ -1,6 +1,13 @@
 from .aiohttp_tools import Aio
 from .downloader import Download, DownloadedFile
-from .helpers import extract_user_data, get_name, post_to_telegraph, progress, run_unknown_callable
+from .helpers import (
+    extract_user_data,
+    get_name,
+    post_to_telegraph,
+    progress,
+    run_unknown_callable,
+    wrap_in_block_quote,
+)
 from .media_helper import (
     MediaExtensions,
     MediaType,
