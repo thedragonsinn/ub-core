@@ -47,8 +47,9 @@ class Message(Properties, types.Message):
         has_del_perm = self.chat.admin_privileges and self.chat.admin_privileges.can_delete_messages
         outgoing = self.outgoing
         is_regular_group = self.chat.type == enums.ChatType.GROUP
+        is_private = self.chat.type in {enums.ChatType.PRIVATE, enums.ChatType.BOT}
 
-        if any((has_del_perm, outgoing, is_regular_group and self._client.is_user)):
+        if any((has_del_perm, outgoing, is_regular_group and self._client.is_user, is_private)):
             try:
                 await super().delete(revoke=revoke)
             except errors.MessageDeleteForbidden:
