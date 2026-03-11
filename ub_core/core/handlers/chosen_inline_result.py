@@ -38,7 +38,9 @@ async def chosen_result_handler(client: BOT, result: ChosenInlineResult):
         await result.edit(text=f"You have Blocked @{client.me.username}.", reply_markup=reply_markup)
         return
 
-    await cmd_dispatcher(client=client, update=result, mode_sensitive=False, is_command=False)
+    await cmd_dispatcher(
+        client=client, update=result, check_for_reactions=False, mode_sensitive=False, is_command=False
+    )
 
     result.stop_propagation()
 
