@@ -1,26 +1,44 @@
 import asyncio
+import ctypes
 import os
-import shlex
-from asyncio.subprocess import Process
+import signal
 from typing import TYPE_CHECKING, Any
 
 from pyrogram.enums import ParseMode
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
+
     from ..core.types.message import Message
+
+
+libc = ctypes.CDLL("libc.so.6")
+PR_SET_PDEATHSIG = 1
+
+
+def set_pdeathsig():
+    libc.prctl(PR_SET_PDEATHSIG, signal.SIGKILL)
+
+
+def kill_subprocess(proc: "Process"):
+    os.killpg(proc.pid, signal.SIGKILL)
 
 
 async def run_shell_cmd(cmd: str, timeout: int = 300, ret_val: Any | None = None) -> str:
     """Runs a Shell Command and Returns Output"""
-    sub_process: asyncio.create_subprocess_shell = await asyncio.create_subprocess_exec(
-        *shlex.split(cmd), stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+    sub_process: Process = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+        start_new_session=True,
+        preexec_fn=set_pdeathsig,
     )
 
     try:
         stdout, _ = await asyncio.wait_for(fut=sub_process.communicate(), timeout=timeout)
         return stdout.decode("utf-8")
     except (asyncio.CancelledError, TimeoutError):
-        sub_process.kill()
+        kill_subprocess(sub_process)
         if ret_val is not None:
             return ret_val
         raise
@@ -53,7 +71,7 @@ async def get_duration(file: str) -> int:
 
 
 class AsyncShell:
-    def __init__(self, process: Process):
+    def __init__(self, process: "Process"):
         """Not to Be Invoked Directly.\n
         Use AsyncShell.run_cmd"""
         self.process: Process = process
@@ -96,7 +114,7 @@ class AsyncShell:
 
     def cancel(self) -> None:
         if not self.is_done:
-            self.process.kill()
+            kill_subprocess(self.process)
             self._task.cancel()
 
     async def create_stdout_task(self, name: str):
@@ -108,7 +126,11 @@ class AsyncShell:
         """Setup Object, Start Fetching output and return the process Object."""
         sub_process: AsyncShell = cls(
             process=await asyncio.create_subprocess_shell(
-                cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                start_new_session=True,
+                preexec_fn=set_pdeathsig,
             )
         )
         await sub_process.create_stdout_task(name=name)
@@ -116,7 +138,7 @@ class AsyncShell:
 
 
 class InteractiveShell:
-    def __init__(self, process: Process):
+    def __init__(self, process: "Process"):
         """Not to Be Invoked Directly.\n
         Use InteractiveShell.spawn_shell"""
         self.process: Process = process
@@ -170,7 +192,7 @@ class InteractiveShell:
         self.stdout = self.last_line = ""
 
     def cancel(self) -> None:
-        self.process.kill()
+        kill_subprocess(self.process)
         self._task.cancel()
 
     async def create_stdout_task(self, name: str):
@@ -186,6 +208,8 @@ class InteractiveShell:
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
+                start_new_session=True,
+                preexec_fn=set_pdeathsig,
             )
         )
         await sub_process.create_stdout_task(name=name)
