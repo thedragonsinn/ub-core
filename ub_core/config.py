@@ -50,7 +50,7 @@ class Config:
 
     CMD_TRIGGER: str = getenv("CMD_TRIGGER", ".")
 
-    COMMAND_LOG_LEVEL: int = getenv("COMMAND_LOG_LEVEL")
+    COMMAND_LOG_LEVEL: int = int(getenv("COMMAND_LOG_LEVEL", 0))
 
     DEV_MODE: int = int(getenv("DEV_MODE", 0))
 

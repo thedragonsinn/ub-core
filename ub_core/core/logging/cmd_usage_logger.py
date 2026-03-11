@@ -42,7 +42,6 @@ async def upload_usage_record():
 
     if not LOG_FILE.is_file():
         return
-
     await bot.send_document(
         chat_id=Config.LOG_CHAT,
         message_thread_id=Config.LOG_CHAT_THREAD_ID,
