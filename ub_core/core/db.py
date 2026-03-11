@@ -52,6 +52,9 @@ class CustomCollection(AsyncCollection):
                 f"data:{json.dumps(data, indent=4, ensure_ascii=False, default=str)}"
             )
 
+        data.pop("created_at")
+        data.pop("updated_at")
+
         entry: UpdateResult = await self.update_one(
             filter={"_id": data.pop("_id")},
             update={
