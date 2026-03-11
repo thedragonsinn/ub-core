@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ..core.types.message import Message
 
 
-libc = ctypes.CDLL("libc.so.6")
+libc = ctypes.CDLL(None)
 PR_SET_PDEATHSIG = 1
 
 
