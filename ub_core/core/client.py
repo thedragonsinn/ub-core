@@ -18,6 +18,7 @@ from .methods import Methods
 from ..config import Config
 
 LOGGER = logging.getLogger(Config.BOT_NAME)
+EXIT_CODE = 0
 
 
 def import_modules(dir_name):
@@ -58,7 +59,6 @@ class Bot(CustomDecorators, Methods, pyrogram.Client):
         )
         self.log = LOGGER
         self.Convo = Conversation
-        self.exit_code = 0
 
     @property
     def is_bot(self):
@@ -170,14 +170,12 @@ class DualClient(Bot):
 
         # for readability of logs.
         LOGGER.info(f"\n\n{'#' * 10} < End of run > {'#' * 10}\n\n", extra={"raw": True})
-
-        sys.exit(self.exit_code)
+        global EXIT_CODE
+        sys.exit(EXIT_CODE)
 
     def raise_sigint(self):
-        if self.user:
-            self.user.exit_code = 69
-        else:
-            self.exit_code = 69
+        global EXIT_CODE
+        EXIT_CODE = 69
         signal.raise_signal(signal.SIGINT)
 
     async def stop_clients(self) -> None:
@@ -191,7 +189,8 @@ class DualClient(Bot):
 
     async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
+        global EXIT_CODE
         LOGGER.info("Stopping all processes...")
         await Config.TASK_MANAGER.close_and_run_exit_tasks()
         await self.stop_clients()
-        LOGGER.info(" Exiting...")
+        LOGGER.info(f"Exiting with code: {EXIT_CODE}")
