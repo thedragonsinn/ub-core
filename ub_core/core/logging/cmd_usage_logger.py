@@ -40,8 +40,9 @@ async def upload_usage_record():
     if Config.COMMAND_LOG_LEVEL == 0:
         return
 
-    if not LOG_FILE.is_file():
+    if not LOG_FILE.is_file() or LOG_FILE.stat().st_size == 0:
         return
+
     await bot.send_document(
         chat_id=Config.LOG_CHAT,
         message_thread_id=Config.LOG_CHAT_THREAD_ID,
