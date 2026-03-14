@@ -3,6 +3,7 @@ import logging
 import time
 from collections import defaultdict
 from inspect import isawaitable, iscoroutine, iscoroutinefunction
+from pathlib import Path
 from typing import Any
 
 from pyrogram.enums import ParseMode
@@ -14,6 +15,7 @@ from ..config import Config
 
 TELEGRAPH: None | Telegraph = None
 
+_TELEGRAPH_TOKEN_FILE = Path(".telegraph_token")
 
 PROGRESS_DICT: dict[str, dict[str, float]] = defaultdict(lambda: {"start_time": (t := time.time()), "progress_time": t})
 
@@ -23,10 +25,20 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 async def init_task():
     global TELEGRAPH
     TELEGRAPH = Telegraph()
+
+    if _TELEGRAPH_TOKEN_FILE.is_file():
+        token = _TELEGRAPH_TOKEN_FILE.read_text().strip()
+        if token:
+            TELEGRAPH = Telegraph(access_token=token)
+            return
+
     try:
         await TELEGRAPH.create_account(
             short_name=Config.BOT_NAME, author_name=Config.BOT_NAME, author_url=Config.UPSTREAM_REPO
         )
+        token = TELEGRAPH.get_access_token()
+        if token:
+            _TELEGRAPH_TOKEN_FILE.write_text(token)
     except Exception as e:
         LOGGER.error(f"Failed to Create Telegraph Account: {e}")
 
