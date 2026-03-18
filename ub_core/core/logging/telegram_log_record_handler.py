@@ -54,7 +54,7 @@ class TgErrorHandler(Handler):
         if not (bot.client.is_connected and bot.is_idling):
             return
 
-        error_message: str = log_record.exc_text or ""
+        error_message: str = log_record.exc_text or log_record.getMessage() or ""
 
         if log_record.funcName in ("handler_worker", "run") and (
             "OSError:" in error_message or "The server sent an unknown constructor" in error_message
