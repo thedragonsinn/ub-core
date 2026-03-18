@@ -1,6 +1,69 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ub_core"
+description = "BoilerPlate Code for Bot projects."
+readme = { file = "README.md", content-type = "text/markdown" }
+
+requires-python = ">=3.11"
+
+authors = [
+  { name = "Meliodas [@thedragonsinn]" },
+  { name = "Ryuk [@anonymousx97]" },
+]
+
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+dynamic = ["version"]
+
+dependencies = [
+  "aiohttp>=3.9.0",
+  "aiofiles>=23.2.1",
+  "async-lru>=2.0.4",
+  "httpx>=0.25.0",
+  "dnspython==2.7.0",
+  "pymongo==4.13.0",
+  "gitpython>=3.1.41",
+  "python-dotenv==0.21.0",
+  "telegraph>=2.2.0",
+  "pyrotgfork",
+  "PyTgCrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto",
+]
+
+
+[project.optional-dependencies]
+fast = ["uvloop==0.21.0; sys_platform != 'win32' and sys_platform!='android'"]
+
+nodb = [
+  "aiohttp>=3.9.0",
+  "aiofiles>=23.2.1",
+  "async-lru>=2.0.4",
+  "httpx>=0.25.0",
+  "python-dotenv==0.21.0",
+  "telegraph>=2.2.0",
+  "uvloop==0.21.0; sys_platform != 'win32' and sys_platform!='android'",
+  "pyrotgfork",
+  "PyTgCrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/thedragonsinn/ub-core/"
+
+[tool.setuptools]
+script-files = ["bin/run-ub-core"]
+
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.ruff]
 extend = "/data/data/com.termux/files/home/ruff.toml"
 
 [tool.ruff.lint.isort]
-known-first-party =  ["ub_core"]
+known-first-party = ["ub_core"]
