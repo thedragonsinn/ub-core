@@ -146,7 +146,7 @@ class Properties:
         if hasattr(Config, "TRIGGER"):
             return Config.TRIGGER
 
-        if self.is_from_owner and not self._client.is_bot:
+        if self.is_from_owner:
             return Config.CMD_TRIGGER
         else:
             return Config.SUDO_TRIGGER
