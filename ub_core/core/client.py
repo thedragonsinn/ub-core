@@ -2,10 +2,10 @@ import asyncio
 import importlib
 import logging
 import os
+import pathlib
 import signal
 import sys
 from functools import cached_property
-from pathlib import Path
 
 import pyrogram
 
@@ -20,17 +20,17 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
 def import_modules(dir_name):
-    """Import Plugins and Append init_task to Config.INIT_TASK"""
-    plugins_dir = Path(dir_name)
+    """Import Plugins and add init_task to Task Manager"""
+    top_path = pathlib.Path(dir_name)
+    root = top_path.name
 
-    modules = plugins_dir.rglob("**/[!^_]*.py")
+    for module in top_path.rglob("[!^_]*.py"):
+        parts = module.with_suffix("").parts
+        name_index = parts.index(root)
+        # converted to relative paths
+        # site-packages for core
+        py_name = ".".join(parts[name_index:])
 
-    if dir_name == ub_core_dirname:
-        modules = [str(m).split("site-packages/")[1] for m in modules]
-
-    for py_module in modules:
-        name = os.path.splitext(py_module)[0]
-        py_name = name.replace("/", ".")
         try:
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
