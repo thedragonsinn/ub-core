@@ -23,7 +23,7 @@ EXIT_CODE = 0
 
 def import_modules(dir_name):
     """Import Plugins and add init_task to Task Manager"""
-    top_path = pathlib.Path(dir_name).expanduser().resolve()
+    top_path = pathlib.Path(dir_name)
     root = top_path.name
 
     for module in top_path.rglob("[!^_]*.py"):
