@@ -72,3 +72,6 @@ async def cmd_dispatcher(
 
     except Exception as e:
         client.log.error(e, exc_info=True, extra={"tg_message": update})
+
+    if is_command:
+        update.stop_propagation()
