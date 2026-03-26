@@ -113,3 +113,6 @@ async def cmd_dispatcher(
         if not client.is_bot and update.id in USER_IS_PROCESSING_MESSAGE:
             await asyncio.sleep(1)
             USER_IS_PROCESSING_MESSAGE.discard(update.id)
+
+    if is_command:
+        update.stop_propagation()
