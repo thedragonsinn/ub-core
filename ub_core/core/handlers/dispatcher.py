@@ -87,8 +87,10 @@ async def cmd_dispatcher(
 
         func = cmd_object.func
 
+    task = Config.TASK_MANAGER.create_temp_task(func(client, update), name=update.task_id)
+
     try:
-        await asyncio.create_task(func(client, update), name=update.task_id)
+        await task
 
         if is_command:
             if update.is_from_owner:
@@ -98,10 +100,9 @@ async def cmd_dispatcher(
 
             record_usage(update)
 
-            update.stop_propagation()
-
     except asyncio.exceptions.CancelledError:
-        await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{update.text}</code>")
+        if client.client.is_idling:
+            await client.log_text(text=f"<b>#Cancelled</b>:\n<code>{update.text}</code>")
 
     except (StopPropagation, ContinuePropagation):
         raise

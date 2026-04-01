@@ -32,13 +32,7 @@ class TaskManager:
         return cls.__instance
 
     def __init__(self):
-        self._store = {
-            "init": set(),
-            "bg": set(),
-            "exit": set(),
-            "temp": set(),
-            "workers": set(),
-        }
+        self._store = {"init": set(), "bg": set(), "exit": set(), "temp": set(), "workers": set()}
 
         self._closed: bool = False
         self._loop = None
@@ -47,6 +41,9 @@ class TaskManager:
 
     def __str__(self) -> str:
         return json.dumps(self._store, indent=4, ensure_ascii=False, default=str)
+
+    def clear(self):
+        [v.clear() for v in self._store.values()]
 
     @property
     def loop(self):
@@ -112,12 +109,7 @@ class TaskManager:
             return None
 
     @ensure_is_not_closed
-    def create_bg_task(
-        self,
-        coro: Coroutine,
-        name: str | None = None,
-        replace: bool = False,
-    ) -> asyncio.Task:
+    def create_bg_task(self, coro: Coroutine, name: str | None = None, replace: bool = False) -> asyncio.Task:
         """
         type:
             must be coroutines
@@ -175,13 +167,7 @@ class TaskManager:
             await asyncio.sleep(interval)
 
     @ensure_is_not_closed
-    def create_worker(
-        self,
-        function: Callable,
-        interval: int,
-        name: str = None,
-        break_condition: Callable = None,
-    ):
+    def create_worker(self, function: Callable, interval: int, name: str = None, break_condition: Callable = None):
         """
         just a while loop wrapper for bg tasks,
         so you don't have to write worker code again and again
@@ -241,8 +227,8 @@ class TaskManager:
             from .utils.helpers import run_unknown_callable
 
             for resource in self._store["exit"]:
-                await run_unknown_callable(resource, ignore_errors=True)
+                await run_unknown_callable(resource, ignore_errors=False)
 
-            self._store.clear()
+            self.clear()
             self._closed = True
             LOGGER.info("Exit tasks Completed and Task manager is closed...")
