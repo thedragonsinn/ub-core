@@ -8,11 +8,7 @@ os.makedirs(name="logs", exist_ok=True)
 
 LOGGER = getLogger(Config.BOT_NAME)
 
-COLORS = {
-    INFO: "\033[32m",  # GREEN
-    WARNING: "\033[33m",  # YELLOW
-    ERROR: "\033[31m",  # RED
-}
+COLORS = {INFO: "\033[32m", WARNING: "\033[33m", ERROR: "\033[31m"}  # GREEN  # YELLOW  # RED
 DIM = "\033[2m"
 RESET = "\033[0m"
 
@@ -22,6 +18,24 @@ class ColorFormatter(Formatter):
         super().__init__(datefmt=datefmt, **kwargs)
         self.handler_name = handler_name
 
+    def should_color_format(self):
+        return (
+            self.handler_name == "stream_handler"
+            and os.getenv("COLORTERM") in ("truecolor", "24bit")
+            or os.getenv("TERM", "").endswith("256color")
+        )
+
+    @staticmethod
+    def _color_format(record):
+        level_color = COLORS.get(record.levelno, "")
+        if record.levelno >= ERROR:
+            level_color = COLORS[ERROR]
+
+        timestamp = DIM + record.asctime + RESET
+        level = f"{level_color}{record.levelname}{RESET}"
+        message = f"{level_color}{record.getMessage()}{RESET}"
+        return f"{timestamp}  {level}  [{record.name} : {record.module}]  {message}"
+
     def format(self, record):
         super().format(record)
 
@@ -30,22 +44,11 @@ class ColorFormatter(Formatter):
 
         record.asctime = self.formatTime(record, self.datefmt)
 
-        stdout_supports_color = os.getenv("COLORTERM") in ("truecolor", "24bit") or os.getenv("TERM", "").endswith(
-            "256color"
-        )
-
-        if self.handler_name == "stream_handler" and stdout_supports_color:
-            level_color = COLORS.get(record.levelno, "")
-            if record.levelno >= ERROR:
-                level_color = COLORS[ERROR]
-
-            timestamp = DIM + record.asctime + RESET
-            level = f"{level_color}{record.levelname}{RESET}"
-            message = f"{level_color}{record.getMessage()}{RESET}"
-            formatted_text = f"{level}  {timestamp}  [{record.name} : {record.module}]  {message}"
+        if self.should_color_format():
+            formatted_text = self._color_format(record)
         else:
             formatted_text = (
-                f"{record.levelname}  {record.asctime}  [{record.name} : {record.module}]  {record.getMessage()}"
+                f"{record.asctime}  {record.levelname}  [{record.name} : {record.module}]  {record.getMessage()}"
             )
 
         if record.exc_text:
@@ -69,15 +72,7 @@ file_handler.setFormatter(ColorFormatter("file_handler"))
 stream_handler = StreamHandler()
 stream_handler.setFormatter(ColorFormatter("stream_handler"))
 
-basicConfig(
-    level=INFO,
-    handlers={
-        file_handler,
-        stream_handler,
-        custom_error_handler,
-        custom_network_error_handler,
-    },
-)
+basicConfig(level=INFO, handlers={file_handler, stream_handler, custom_error_handler, custom_network_error_handler})
 
 
 getLogger("pyrogram").setLevel(WARNING)
