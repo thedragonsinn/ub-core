@@ -1,4 +1,5 @@
 import asyncio
+from io import BytesIO
 from typing import TYPE_CHECKING, Self
 
 from pyrogram import enums, errors, filters, types, utils
@@ -94,34 +95,30 @@ class Message(Properties, types.Message):
                 self.text = edited_message.text
 
         else:
-            _, edited_message = await asyncio.gather(
-                super().delete(),
-                self.reply(
-                    text=text,
-                    name=name,
-                    block=block,
-                    del_in=del_in,
-                    disable_preview=disable_preview,
-                    parse_mode=parse_mode,
-                    entities=entities,
-                    **kwargs,
-                ),
+            if len(self.text) > 1024:
+                caption = name
+                entities = None
+            else:
+                caption = self.text
+                entities = self.entities
+
+            file = BytesIO(text.encode())
+            file.name = name
+            media = types.InputMediaDocument(
+                media=file, caption=caption, caption_entities=entities, disable_content_type_detection=disable_preview
             )
+            edited_message = await self.edit_media(media=media, file_name=name)
+
         return edited_message
 
-    async def extract_user_n_reason(
-        self,
-    ) -> tuple[types.User | str | Exception, str | None]:
+    async def extract_user_n_reason(self) -> tuple[types.User | str | Exception, str | None]:
         if self.replied:
             return self.replied.from_user, self.filtered_input
 
         input_text_list = self.filtered_input.split(maxsplit=1)
 
         if not input_text_list:
-            return (
-                "Unable to Extract User info.\nReply to a user or input @ | id.",
-                None,
-            )
+            return ("Unable to Extract User info.\nReply to a user or input @ | id.", None)
 
         user = input_text_list[0]
         reason = None
@@ -146,11 +143,7 @@ class Message(Properties, types.Message):
     async def get_response(self, filters: "filters.Filter" = None, timeout: int = 8, **kwargs):
         """Get a Future Incoming message in chat where message was sent."""
         response: Message | None = await self._client.Convo.get_resp(
-            client=self._client,
-            chat_id=self.chat.id,
-            filters=filters,
-            timeout=timeout,
-            **kwargs,
+            client=self._client, chat_id=self.chat.id, filters=filters, timeout=timeout, **kwargs
         )
         return response
 
