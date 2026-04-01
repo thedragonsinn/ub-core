@@ -2,6 +2,7 @@ import os
 import tracemalloc
 
 from dotenv import load_dotenv
+from pathlib import Path
 
 tracemalloc.start()
 
@@ -15,7 +16,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     ...
 
-ub_core_dirname = os.path.dirname(__file__)
+ub_core_dir = Path(__file__).parent.resolve()
 
 from .config import Cmd, Config
 from .version import __version__

@@ -2,14 +2,14 @@ import asyncio
 import importlib
 import logging
 import os
-import pathlib
 import signal
 import sys
 from functools import cached_property
 
 import pyrogram
+from pyrogram import idle
 
-from ub_core import ub_core_dirname
+from ub_core import ub_core_dir
 
 from .conversation import Conversation as Convo
 from .decorators import CustomDecorators
@@ -21,16 +21,11 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 def import_modules(dir_name):
     """Import Plugins and add init_task to Task Manager"""
-    top_path = pathlib.Path(dir_name)
-    root = top_path.name
-
-    for module in top_path.rglob("[!^_]*.py"):
-        parts = module.with_suffix("").parts
-        name_index = parts.index(root)
-        # converted to relative paths
-        # site-packages for core
-        py_name = ".".join(parts[name_index:])
-
+    for module in dir_name.rglob("*.py"):
+        if module.name.startswith("_"):
+            continue
+        relative_path = module.relative_to(dir_name.parent)
+        py_name = ".".join(relative_path.with_suffix("").parts)
         try:
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
@@ -70,12 +65,13 @@ class BOT(CustomDecorators, Methods, pyrogram.Client):
     @staticmethod
     def _import() -> None:
         """Import Inbuilt and external Modules"""
-        import_modules(ub_core_dirname)
+        import_modules(ub_core_dir)
         import_modules(Config.WORKING_DIR)
         LOGGER.info("Plugins Imported.")
 
     async def boot(self) -> None:
         Config.TASK_MANAGER.loop = self.loop
+
         await super().start()
 
         LOGGER.info("Connected to TG.")
@@ -89,11 +85,13 @@ class BOT(CustomDecorators, Methods, pyrogram.Client):
         LOGGER.info("Idling...")
         self.is_idling = True
 
-        await pyrogram.idle()
+        await idle()
 
         await self.shut_down()
 
         LOGGER.info(f"\n\n{'#' * 10} END OF RUN {'#' * 10}\n\n", extra={"raw": True})
+
+        await asyncio.sleep(1)
 
         sys.exit(self.exit_code)
 
