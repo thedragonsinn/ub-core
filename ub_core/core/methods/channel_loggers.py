@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from pyrogram import Client
+from pyrogram import Client, utils
 from pyrogram.enums import ParseMode
 
 from ...config import Config
@@ -15,24 +15,19 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 class ChannelLogger(Client):
     async def log_text(
-        self: "DualClient",
-        text,
-        name="log.txt",
-        disable_preview=True,
-        parse_mode=ParseMode.HTML,
-        type: str = "",
+        self: "DualClient", text, name="log.txt", disable_preview=True, parse_mode=ParseMode.HTML, type: str = ""
     ) -> "Message":
         """Log Text to Channel and to Stream/File if type matches logging method."""
+        text_and_entities = await utils.parse_text_entities(client=self, text=text, parse_mode=parse_mode, entities=[])
 
         if type:
             if hasattr(LOGGER, type):
-                getattr(LOGGER, type)(text)
+                log = getattr(LOGGER, type)
+                log(text_and_entities["message"])
+
             text = f"#{type.upper()}\n{text}"
 
-        if self.bot:
-            client = self.bot
-        else:
-            client = self
+        client = self.bot if self.bot else self
 
         return (await client.send_message(
             chat_id=Config.LOG_CHAT,

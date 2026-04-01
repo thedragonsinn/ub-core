@@ -39,21 +39,14 @@ class SendMessage(Client):
             text = str(text)
 
         text_and_entities = await parse_text_entities(
-            client=self,
-            text=text,
-            parse_mode=parse_mode or self.parse_mode,
-            entities=entities,
+            client=self, text=text, parse_mode=parse_mode or self.parse_mode, entities=entities
         )
 
         if len(text_and_entities["message"]) <= 4096:
             if isinstance(disable_preview, bool):
                 kwargs["link_preview_options"] = LinkPreviewOptions(is_disabled=disable_preview)
             message = await super().send_message(
-                chat_id=chat_id,
-                text=text,
-                entities=entities,
-                parse_mode=parse_mode,
-                **kwargs,
+                chat_id=chat_id, text=text, entities=entities, parse_mode=parse_mode, **kwargs
             )
             return Message(message=message)
 
@@ -61,4 +54,4 @@ class SendMessage(Client):
 
         doc = BytesIO(bytes(text_and_entities["message"], encoding="utf-8"))
         doc.name = name
-        return await super().send_document(chat_id=chat_id, document=doc, **kwargs)
+        return Message(await super().send_document(chat_id=chat_id, document=doc, **kwargs))
