@@ -2,14 +2,14 @@ import asyncio
 import importlib
 import logging
 import os
-import pathlib
 import signal
 import sys
 import typing
 
 import pyrogram
+from pyrogram import idle
 
-from ub_core import ub_core_dirname
+from ub_core import ub_core_dir
 
 from . import CustomDB
 from .conversation import Conversation
@@ -23,16 +23,11 @@ EXIT_CODE = 0
 
 def import_modules(dir_name):
     """Import Plugins and add init_task to Task Manager"""
-    top_path = pathlib.Path(dir_name)
-    root = top_path.name
-
-    for module in top_path.rglob("[!^_]*.py"):
-        parts = module.with_suffix("").parts
-        name_index = parts.index(root)
-        # converted to relative paths
-        # site-packages for core
-        py_name = ".".join(parts[name_index:])
-
+    for module in dir_name.rglob("*.py"):
+        if module.name.startswith("_"):
+            continue
+        relative_path = module.relative_to(dir_name.parent)
+        py_name = ".".join(relative_path.with_suffix("").parts)
         try:
             mod = importlib.import_module(py_name)
             if hasattr(mod, "init_task"):
@@ -141,7 +136,7 @@ class DualClient(Bot):
     @staticmethod
     def _import() -> None:
         """Import Inbuilt and external Modules"""
-        import_modules(ub_core_dirname)
+        import_modules(ub_core_dir)
         import_modules(Config.WORKING_DIR)
 
         LOGGER.info("Plugins Imported.")
@@ -158,18 +153,24 @@ class DualClient(Bot):
             LOGGER.info("[BOT] Connected  to TG.")
 
         await asyncio.to_thread(self._import)
+
         await self.set_mode(force_bot=self.is_bot)
+
         await Config.TASK_MANAGER.run_init_tasks()
 
         await self.log_text(text="<i>Started</i>")
+
         LOGGER.info(f"Idling on [{Config.MODE.upper()}] Mode...")
         self.is_idling = True
-        await pyrogram.idle()
+
+        await idle()
 
         await self.shut_down()
 
-        # for readability of logs.
         LOGGER.info(f"\n\n{'#' * 10} < End of run > {'#' * 10}\n\n", extra={"raw": True})
+
+        await asyncio.sleep(1)
+
         global EXIT_CODE
         sys.exit(EXIT_CODE)
 

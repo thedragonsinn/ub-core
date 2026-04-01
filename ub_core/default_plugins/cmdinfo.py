@@ -1,39 +1,38 @@
-import os
-
-from ub_core import BOT, Config, Message
+from ub_core import BOT, Config, Message, ub_core_dir
 
 
 @BOT.add_cmd(cmd="ci")
 async def cmd_info(bot: BOT, message: Message):
     """
     CMD: CI (CMD INFO)
-    INFO: Get Github File URL of a Command.
+    INFO: Get GitHub File URL of a Command.
     USAGE: .ci ci
     """
-    cmd = message.filtered_input
-    cmd_obj = Config.CMD_DICT.get(cmd)
-
-    if cmd_obj is None:
+    cmd = message.filtered_input.strip()
+    if cmd not in Config.CMD_DICT:
         await message.reply("Give a valid cmd.", del_in=5)
         return
 
-    if cmd_obj.is_from_core:
-        plugin_path = cmd_obj.cmd_path.split("site-packages/")[1]
+    command = Config.CMD_DICT[cmd]
+
+    if command.is_from_core:
+        relative_root = ub_core_dir.parent
         repo = Config.UPDATE_REPO
         branch = "dual_mode"
     else:
-        plugin_path = os.path.relpath(cmd_obj.cmd_path, os.curdir)
+        relative_root = Config.WORKING_DIR.parent.resolve()
         repo = Config.REPO.remotes.origin.url
         branch = Config.REPO.active_branch
 
-    to_join = [str(item).strip("/") for item in (repo, "blob", branch, plugin_path)]
-
-    remote_url = os.path.join(*to_join)
+    relative_path = command.path.relative_to(relative_root)
+    parts = relative_path.parts
+    url_parts = [str(item).strip("/") for item in (repo, "blob", branch, *parts)]
+    remote_url = "/".join(url_parts)
 
     resp_str = (
         "<blockquote>"
         f"<b>Command</b>: <code>{cmd}</code>"
-        f"\n<b>Path</b>: <code>{plugin_path}</code>"
+        f"\n<b>Path</b>: <code>{relative_path}</code>"
         f"\n\n<b>Link</b>: <a href='{remote_url}'>Github</a>"
         "</blockquote>"
     )
