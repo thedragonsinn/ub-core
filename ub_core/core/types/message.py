@@ -1,4 +1,5 @@
 import asyncio
+from io import BytesIO
 from typing import TYPE_CHECKING, Self
 
 from pyrogram import enums, errors, filters, types, utils
@@ -56,7 +57,7 @@ class Message(Properties, types.Message):
                 pass
 
         if reply and self.replied:
-            await self.replied.delete()
+            await self.replied.delete(revoke=revoke)
 
     async def edit(
         self,
@@ -77,10 +78,7 @@ class Message(Properties, types.Message):
         parse_mode = parse_mode or self._client.parse_mode
 
         text_and_entities = await utils.parse_text_entities(
-            client=self._client,
-            text=text,
-            parse_mode=parse_mode,
-            entities=entities,
+            client=self._client, text=text, parse_mode=parse_mode, entities=entities
         )
 
         # text, entities = text_and_entities.values()
@@ -97,19 +95,20 @@ class Message(Properties, types.Message):
                 self.text = edited_message.text
 
         else:
-            _, edited_message = await asyncio.gather(
-                super().delete(),
-                self.reply(
-                    text=text,
-                    name=name,
-                    block=block,
-                    del_in=del_in,
-                    disable_preview=disable_preview,
-                    parse_mode=parse_mode,
-                    entities=entities,
-                    **kwargs,
-                ),
+            if len(self.text) > 1024:
+                caption = name
+                entities = None
+            else:
+                caption = self.text
+                entities = self.entities
+
+            file = BytesIO(text.encode())
+            file.name = name
+            media = types.InputMediaDocument(
+                media=file, caption=caption, caption_entities=entities, disable_content_type_detection=disable_preview
             )
+            edited_message = await self.edit_media(media=media, file_name=name)
+
         return edited_message
 
     async def extract_user_n_reason(self) -> tuple[types.User | str | Exception, str | None]:
@@ -119,10 +118,7 @@ class Message(Properties, types.Message):
         input_text_list = self.filtered_input.split(maxsplit=1)
 
         if not input_text_list:
-            return (
-                "Unable to Extract User info.\nReply to a user or input @ | id.",
-                None,
-            )
+            return ("Unable to Extract User info.\nReply to a user or input @ | id.", None)
 
         user = input_text_list[0]
         reason = None
@@ -147,11 +143,7 @@ class Message(Properties, types.Message):
     async def get_response(self, filters: "filters.Filter" = None, timeout: int = 8, **kwargs):
         """Get a Future Incoming message in chat where message was sent."""
         response: Message | None = await self._client.Convo.get_resp(
-            client=self._client,
-            chat_id=self.chat.id,
-            filters=filters,
-            timeout=timeout,
-            **kwargs,
+            client=self._client, chat_id=self.chat.id, filters=filters, timeout=timeout, **kwargs
         )
         return response
 
@@ -169,15 +161,15 @@ class Message(Properties, types.Message):
         **kwargs,
     ) -> "Message":
         """reply text or send a file with text if text length exceeds 4096 chars"""
-        task = self._client.send_message(
+        coro = self._client.send_message(
             chat_id=self.chat.id,
             text=text,
             disable_preview=disable_preview,
             reply_parameters=reply_parameters or types.ReplyParameters(message_id=self.id),
-            message_thread_id=self.message_thread_id,
             **kwargs,
         )
         if del_in:
-            await async_deleter(coro=task, del_in=del_in, block=block)
+            await async_deleter(coro=coro, del_in=del_in, block=block)
+
         else:
-            return Message(await task)
+            return Message(await coro)
