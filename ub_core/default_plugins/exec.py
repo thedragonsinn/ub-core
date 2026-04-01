@@ -1,6 +1,6 @@
 import asyncio
-import sys
 import traceback
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 
 from pyrogram.enums import ParseMode
@@ -11,7 +11,7 @@ import ub_core
 
 # noinspection PyUnresolvedReferences
 # ruff: noqa: F401
-from ub_core import BOT, Cmd, Config, CustomDB, Message, bot, core, default_plugins, utils
+from ub_core import BOT, Cmd, Config, CustomDB, Message, bot, core, default_plugins, ub_core_dir, utils
 
 # noinspection PyUnresolvedReferences
 # ruff: noqa: F401
@@ -36,6 +36,19 @@ def generate_locals(message: Message) -> tuple:
     return r, c, cid, u, uid, ru, ruid
 
 
+async def _exec(bot: BOT, message: Message, code: str):
+    function_definitions = {}
+    exec(
+        "async def __exec(bot: BOT, message: Message):"
+        + "\n    r, c, cid , u, uid, ru, ruid = generate_locals(message=message)"
+        + "\n    "
+        + "\n    ".join(code.splitlines()),
+        globals(),
+        function_definitions,
+    )
+    return await function_definitions["__exec"](bot, message)
+
+
 async def executor(bot: BOT, message: Message) -> None:
     """
     CMD: PY
@@ -54,7 +67,7 @@ async def executor(bot: BOT, message: Message) -> None:
     USAGE:
         .py [-s] return 1
     """
-    code: str = message.filtered_input.strip()
+    code: str = message.filtered_input.strip().replace("\u00a0", " ")
 
     if not code:
         await message.reply("exec Jo mama?")
@@ -62,46 +75,37 @@ async def executor(bot: BOT, message: Message) -> None:
 
     reply: Message = await message.reply("executing")
 
-    sys.stdout = codeOut = StringIO()
-    sys.stderr = codeErr = StringIO()
-    func_def = {}
+    stdout = StringIO()
 
-    try:
-        # Create and initialise the function
-        exec(
-            "async def _exec(bot: BOT, message: Message):"
-            + "\n    r, c, cid , u, uid, ru, ruid = generate_locals(message=message)"
-            + "\n    "
-            + "\n    ".join(code.splitlines()),
-            globals(),
-            func_def,
-        )
-        func_out = await asyncio.create_task(func_def["_exec"](bot, message), name=reply.task_id)
-    except asyncio.exceptions.CancelledError:
-        await reply.edit("`Cancelled....`")
-        return
+    with redirect_stdout(stdout), redirect_stderr(stdout):
+        try:
+            func_out = await asyncio.create_task(_exec(bot, message, code), name=reply.task_id)
+        except asyncio.exceptions.CancelledError:
+            await reply.edit("`Cancelled....`")
+            return
 
-    except Exception:
-        func_out = str(traceback.format_exc())
+        except Exception:
+            func_out = traceback.format_exc()
 
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
+    stdout_text = stdout.getvalue().strip()
 
-    output = codeErr.getvalue().strip() or codeOut.getvalue().strip()
-
-    if func_out is not None:
-        output = f"{output}\n\n{func_out}".strip()
-
-    elif not output and "-s" in message.flags:
+    if func_out is None and not stdout_text and "-s" in message.flags:
         await reply.delete()
         return
 
-    if "-s" in message.flags:
-        output = f"|>> ```\n{output}```"
-    else:
-        output = f"```python\n{code}```\n\n```\n{output}```"
+    if func_out is None:
+        func_out = ""
 
-    await reply.edit(output, name="exec.txt", disable_preview=True, parse_mode=ParseMode.MARKDOWN)
+    final_output = f"{stdout_text}\n\n{func_out}".strip()
+    formatted_input = "" if "-s" in message.flags else f"```python\n{code}```"
+    formatted_output = f"```\n{final_output}```" if final_output else ""
+
+    await reply.edit(
+        "\n".join((formatted_input, formatted_output)),
+        name="exec.txt",
+        disable_preview=True,
+        parse_mode=ParseMode.MARKDOWN,
+    )
 
 
 if Config.DEV_MODE:
