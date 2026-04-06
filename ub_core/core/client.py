@@ -102,6 +102,15 @@ class BOT(CustomDecorators, Methods, pyrogram.Client):
     async def shut_down(self) -> None:
         """Gracefully ShutDown all Processes"""
         LOGGER.info("Stopping all processes...")
+        
+        try:
+            if "app.webui.server" in sys.modules:
+                await sys.modules["app.webui.server"].webui_manager.stop()
+            if "app.plugins.misc.webui" in sys.modules:
+                sys.modules["app.plugins.misc.webui"].terminate_tunnel()
+        except Exception as e:
+            LOGGER.error(f"Failed to stop WebUI hooks: {e}")
+
         await Config.TASK_MANAGER.close_and_run_exit_tasks()
         await super().stop()
         LOGGER.info("Exiting...")
