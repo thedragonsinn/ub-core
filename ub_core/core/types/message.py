@@ -107,7 +107,7 @@ class Message(Properties, types.Message):
             media = types.InputMediaDocument(
                 media=file, caption=caption, caption_entities=entities, disable_content_type_detection=disable_preview
             )
-            edited_message = await self.edit_media(media=media, file_name=name)
+            edited_message = await self.edit_media(media=media)
 
         return edited_message
 
