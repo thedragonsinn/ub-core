@@ -18,8 +18,8 @@ telegraph>=2.2.0
 
 uvloop==0.21.0
 
-pyrotgfork
+# pyrotgfork
 
-# @ git+https://github.com/TelegramPlayGround/pyrogram.git@a9427b4d4c5e35e0e826a9e50345a0e61b61f561
+pyrotgfork @ git+https://github.com/TelegramPlayground/pyrogram@a496cd13b259b321d6997f18d5c08d017876f660
 
-PyTgCrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto
+pytgcrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto
