@@ -20,6 +20,6 @@ uvloop==0.21.0
 
 # pyrotgfork
 
-pyrotgfork @ git+https://github.com/TelegramPlayground/pyrogram@a496cd13b259b321d6997f18d5c08d017876f660
+pyrotgfork @ https://github.com/TelegramPlayground/PyroTGFork/archive/89297a6b45c56c1029f4a93634f937a8a5c2e3cb.zip
 
 pytgcrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto
