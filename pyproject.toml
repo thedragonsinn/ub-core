@@ -32,7 +32,7 @@ dependencies = [
   "gitpython>=3.1.41",
   "python-dotenv==0.21.0",
   "telegraph>=2.2.0",
-  "pyrotgfork",
+  "pyrotgfork @ https://github.com/TelegramPlayground/PyroTGFork/archive/89297a6b45c56c1029f4a93634f937a8a5c2e3cb.zip",
   "PyTgCrypto @ git+https://github.com/TelegramPlayGround/pyrogram-tgcrypto",
 ]
 

@@ -1,3 +1,6 @@
+# Note to self
+# Change reqs in pyproject.toml too
+
 aiohttp>=3.9.0
 
 aiofiles>=23.2.1
