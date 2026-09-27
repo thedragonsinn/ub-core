@@ -38,7 +38,7 @@ class Conversation:
         self.check_for_duplicates: bool = check_for_duplicates
 
         self.filters: filters.Filter = filters
-        self.from_user: int = from_user
+        self.from_user: int | list[int] = from_user
         self.reply_to_message_id: int = reply_to_message_id
         self.reply_to_user_id = reply_to_user_id
 
@@ -64,7 +64,7 @@ class Conversation:
         if isinstance(self.chat_id, str):
             self.chat_id = (await self.client.get_chat(self.chat_id)).id
 
-        if self.check_for_duplicates and self.chat_id in Conversation.CONVO_DICT.keys():
+        if self.check_for_duplicates and Conversation.CONVO_DICT[self.chat_id]:
             raise self.DuplicateConvoError(self.chat_id)
 
         Conversation.CONVO_DICT[self.chat_id].add(self)
@@ -195,11 +195,7 @@ class Conversation:
             reply_parameters = ReplyParameters(message_id=reply_to_id)
 
         message = await self.client.send_photo(
-            chat_id=self.chat_id,
-            photo=photo,
-            caption=caption,
-            reply_parameters=reply_parameters,
-            **kwargs,
+            chat_id=self.chat_id, photo=photo, caption=caption, reply_parameters=reply_parameters, **kwargs
         )
 
         if get_response:
@@ -220,11 +216,7 @@ class Conversation:
             reply_parameters = ReplyParameters(message_id=reply_to_id)
 
         message = await self.client.send_voice(
-            chat_id=self.chat_id,
-            voice=voice,
-            caption=caption,
-            reply_parameters=reply_parameters,
-            **kwargs,
+            chat_id=self.chat_id, voice=voice, caption=caption, reply_parameters=reply_parameters, **kwargs
         )
 
         if get_response:
