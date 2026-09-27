@@ -49,8 +49,8 @@ class Bot(CustomDecorators, Methods, pyrogram.Client):
             session_string=session_string,
             sleep_threshold=60,
             max_concurrent_transmissions=4,
-            max_message_cache_size=1000,
-            max_business_user_connection_cache_size=1000,
+            max_message_cache_size=100,
+            max_business_user_connection_cache_size=0,
         )
         self.log = LOGGER
         self.Convo = Conversation
@@ -174,7 +174,8 @@ class DualClient(Bot):
         global EXIT_CODE
         sys.exit(EXIT_CODE)
 
-    def raise_sigint(self):
+    @staticmethod
+    def raise_sigint():
         global EXIT_CODE
         EXIT_CODE = 69
         signal.raise_signal(signal.SIGINT)
