@@ -10,9 +10,11 @@ load_dotenv("config.env")
 
 
 try:
-    import uvloop
-
-    uvloop.install()
+    import uvloop  # NOQA
+    # if uvloop is installed
+    # set uvloop's loop as the default for this runtime.
+    import asyncio
+    asyncio.set_event_loop(uvloop.new_event_loop())
 except (ImportError, ModuleNotFoundError):
     ...
 
