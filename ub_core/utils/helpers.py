@@ -12,8 +12,7 @@ from telegraph.aio import Telegraph
 from .media_helper import bytes_to_mb
 from ..config import Config
 
-TELEGRAPH: None | Telegraph = None
-
+TELEGRAPH: Telegraph = Telegraph()
 
 PROGRESS_DICT: dict[str, dict[str, float]] = defaultdict(lambda: {"start_time": (t := time.time()), "progress_time": t})
 
@@ -21,8 +20,6 @@ LOGGER = logging.getLogger(Config.BOT_NAME)
 
 
 async def init_task():
-    global TELEGRAPH
-    TELEGRAPH = Telegraph()
     try:
         await TELEGRAPH.create_account(
             short_name=Config.BOT_NAME, author_name=Config.BOT_NAME, author_url=Config.UPSTREAM_REPO
@@ -32,10 +29,7 @@ async def init_task():
 
 
 async def post_to_telegraph(
-    title: str,
-    text: str,
-    author_name: str = Config.BOT_NAME,
-    author_url: str = Config.UPSTREAM_REPO,
+    title: str, text: str, author_name: str = Config.BOT_NAME, author_url: str = Config.UPSTREAM_REPO
 ) -> str:
     telegraph = await TELEGRAPH.create_page(
         title=title, html_content=f"<p>{text}</p>", author_name=author_name, author_url=author_url
@@ -44,12 +38,7 @@ async def post_to_telegraph(
 
 
 def get_name(user_or_chat: User | Chat) -> str:
-    first = user_or_chat.first_name or ""
-    last = user_or_chat.last_name or ""
-    name = f"{first} {last}".strip()
-    if not name:
-        name = user_or_chat.title
-    return name
+    return user_or_chat.full_name
 
 
 def extract_user_data(user: User) -> dict:
@@ -124,7 +113,7 @@ def create_chunks(array: list[Any], chunk_size: int = 5) -> list[list[Any]]:
 async def run_unknown_callable(resource, *args, ignore_errors: bool = False, **kwargs) -> Any:
     try:
         if resource is None:
-            return
+            return None
         elif iscoroutinefunction(resource):
             return await resource(*args, **kwargs)
         elif iscoroutine(resource) or isawaitable(resource):
@@ -139,7 +128,7 @@ async def run_unknown_callable(resource, *args, ignore_errors: bool = False, **k
     return None
 
 
-def wrap_in_block_quote(text: str, quote_delimiter: str, end_delimiter: str = "") -> str:
+def wrap_in_block_quote(text: str, expandable: bool = False) -> str:
     """
 
     quote_delimiters:
@@ -150,4 +139,11 @@ def wrap_in_block_quote(text: str, quote_delimiter: str, end_delimiter: str = ""
         '<**' for closing expandable quote
 
     """
-    return quote_delimiter + quote_delimiter.join(text.splitlines(keepends=True)) + end_delimiter
+    if expandable:
+        start_delimiter = "**>"
+        end_delimiter = "||"
+    else:
+        start_delimiter = ">"
+        end_delimiter = ""
+
+    return start_delimiter + ">".join(text.splitlines(keepends=True)) + end_delimiter
