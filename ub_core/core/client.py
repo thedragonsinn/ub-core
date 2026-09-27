@@ -47,6 +47,8 @@ class BOT(CustomDecorators, Methods, pyrogram.Client):
             session_string=os.getenv("SESSION_STRING"),
             sleep_threshold=30,
             max_concurrent_transmissions=2,
+            max_message_cache_size=100,
+            max_business_user_connection_cache_size=0,
         )
 
         self.is_idling = False
