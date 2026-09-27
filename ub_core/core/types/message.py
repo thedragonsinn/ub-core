@@ -68,6 +68,7 @@ class Message(Properties, types.Message):
         disable_preview: bool = None,
         parse_mode: "ParseMode" = None,
         entities: list["MessageEntity"] = None,
+        clear_text: bool = True,
         **kwargs,
     ) -> "Message":
         """Edit self.text or send a file with text if text length exceeds 4096 chars"""
@@ -95,7 +96,7 @@ class Message(Properties, types.Message):
                 self.text = edited_message.text
 
         else:
-            if len(self.text) > 1024:
+            if clear_text or len(self.text) > 1024:
                 caption = name
                 entities = None
             else:
@@ -118,7 +119,7 @@ class Message(Properties, types.Message):
         input_text_list = self.filtered_input.split(maxsplit=1)
 
         if not input_text_list:
-            return ("Unable to Extract User info.\nReply to a user or input @ | id.", None)
+            return "Unable to Extract User info.\nReply to a user or input @ | id.", None
 
         user = input_text_list[0]
         reason = None
