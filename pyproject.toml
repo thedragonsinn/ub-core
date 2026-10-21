@@ -33,7 +33,7 @@ dependencies = [
   "python-dotenv>=0.21.0",
   "telegraph>=2.2.0",
   "pyrotgfork @ git+https://github.com/anonymousx97/pyrogram",
-  "pytgcrypto @ git+https://github.com/anonymousx97/pyrogram-tgcrypto",
+  "rtgcrypto",
 ]
 
 
@@ -49,7 +49,7 @@ nodb = [
   "telegraph>=2.2.0",
   "uvloop>=0.21.0; sys_platform != 'win32' and sys_platform!='android'",
   "pyrotgfork @ git+https://github.com/anonymousx97/pyrogram",
-  "pytgcrypto @ git+https://github.com/anonymousx97/pyrogram-tgcrypto",
+  "rtgcrypto",
 ]
 
 
