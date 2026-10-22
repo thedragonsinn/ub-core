@@ -1,3 +1,8 @@
+from . import lazy_filter
+
+lazy_filter.apply()
+
+
 import os
 import tracemalloc
 
